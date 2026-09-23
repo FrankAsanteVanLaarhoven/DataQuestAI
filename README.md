@@ -1,6 +1,6 @@
 # DataQuestAI 🚀
 
-> **CSC1033 Made Simple — Gamified Database & Enterprise Architecture Learning Platform**
+> **a data-base course end to end with illustrations, and gamification**
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FFrankAsanteVanLaarhoven%2FDataQuestAI)
 [![Live Demo](https://img.shields.io/badge/Vercel-Live%20Demo-success?logo=vercel&style=for-the-badge)](https://temporary-rushing-pearl-9vona5c.vercel.app)
@@ -8,9 +8,31 @@
 
 **Live Application**: [https://temporary-rushing-pearl-9vona5c.vercel.app](https://temporary-rushing-pearl-9vona5c.vercel.app)
 
-DataQuestAI is an interactive, full-stack learning platform designed for computer science students, lecturers, and enterprise data architects. It turns relational database theory, ERD modeling, SQL optimization, and large-scale enterprise system design into an engaging gamified experience.
+**DataQuestAI** is a complete, production-ready, interactive **database course end to end with illustrations, and gamification**. Built for computer science students (CSC1033), university lecturers, and enterprise software engineers, it teaches foundational data concepts through to high-scale enterprise architectures using hands-on interactive visual diagrams, live SQLite code execution, and gamified challenges.
 
 ---
+
+## 📚 End-to-End Course Curriculum (Illustrated & Gamified)
+
+1. **Chapter 1: What Data Is & How Computers Store It**
+   - *Visual Illustrations*: Structured (Relational Grid) vs Semi-Structured (JSON/XML Tree) vs Unstructured (Vector Embeddings/BLOBs) + CPU Storage Latency Hierarchy.
+   - *Gamification*: +50 XP Chapter Knowledge Check Quiz.
+2. **Chapter 2: Database Building Blocks & ERD Modeling**
+   - *Visual Illustrations*: Crow’s Foot Relational ERD Diagram (Entities, Attributes, Primary Keys 🔑, Foreign Keys 🔗, 1:1, 1:N, and M:N Junction Tables).
+   - *Gamification*: +50 XP Referential Integrity Quiz.
+3. **Chapter 3: Relational DBs, SQL Mastery & 3NF Normalisation**
+   - *Visual Illustrations*: Normalisation Pipeline (1NF Atomic Values → 2NF Full Functional Dependency → 3NF Transitive Dependency Removal).
+   - *Interactive Sandbox*: Live interactive SQL console with real SQLite execution.
+   - *Gamification*: +50 XP Normalisation Quiz.
+4. **Chapter 4: Search Systems, B-Tree Indexes & Retrieval**
+   - *Visual Illustrations*: B-Tree Index Hierarchy Diagram ($O(\log N)$ seeks vs $O(N)$ sequential scans) and Inverted Indexes for full-text search.
+   - *Gamification*: +50 XP Indexing Optimization Quiz.
+5. **Chapter 5: Transactions, ACID & OLTP vs OLAP**
+   - *Visual Illustrations*: ACID Quadrant (Atomicity, Consistency, Isolation, Durability) and Row-Store (OLTP) vs Columnar-Store (OLAP) memory layouts.
+   - *Gamification*: +50 XP Transactional Isolation Quiz.
+6. **Chapter 6: Big Data, AI Vector DBs & Enterprise Ethics**
+   - *Visual Illustrations*: CAP Theorem Triangle (Consistency, Availability, Partition Tolerance) and AI Vector Similarity Space (Cosine similarity for RAG).
+   - *Gamification*: +50 XP Distributed Systems Quiz + Certified Database Architect Graduation Credential.
 
 ## 🌟 Key Features
 

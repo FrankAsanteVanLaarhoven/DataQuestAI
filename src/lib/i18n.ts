@@ -20,6 +20,7 @@ export const languages: LanguageMeta[] = [
 export const translations: Record<SupportedLanguage, Record<string, string>> = {
   en: {
     tagline: 'Learn • Build • Earn • Make an Impact',
+    courseTagline: 'A database course end to end with illustrations, and gamification',
     home: 'Home',
     missions: 'Missions',
     learn: 'Learn',
@@ -72,6 +73,7 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   },
   es: {
     tagline: 'Aprende • Construye • Gana • Genera Impacto',
+    courseTagline: 'Un curso de bases de datos de principio a fin con ilustraciones y gamificación',
     home: 'Inicio',
     missions: 'Misiones',
     learn: 'Aprender',
@@ -124,6 +126,7 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   },
   fr: {
     tagline: 'Apprendre • Bâtir • Gagner • Avoir un Impact',
+    courseTagline: 'Un cours de base de données de bout en bout avec illustrations et gamification',
     home: 'Accueil',
     missions: 'Missions',
     learn: 'Apprendre',
@@ -176,6 +179,7 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   },
   de: {
     tagline: 'Lernen • Bauen • Verdienen • Einfluss Nehmen',
+    courseTagline: 'Ein Datenbankkurs von Anfang bis Ende mit Illustrationen und Gamification',
     home: 'Start',
     missions: 'Missionen',
     learn: 'Lernen',
@@ -228,6 +232,7 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   },
   zh: {
     tagline: '学习 • 构建 • 收获 • 创造价值',
+    courseTagline: '端到端数据库全流程课程：包含图解说明与游戏化机制',
     home: '首页',
     missions: '实战任务',
     learn: '学习教程',
@@ -280,6 +285,7 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   },
   ja: {
     tagline: '学ぶ • 創る • 獲得する • 影響を与える',
+    courseTagline: 'イラストとゲーミフィケーションを備えたエンドツーエンドのデータベース講座',
     home: 'ホーム',
     missions: 'ミッション',
     learn: '学習コース',
@@ -332,6 +338,7 @@ export const translations: Record<SupportedLanguage, Record<string, string>> = {
   },
   ar: {
     tagline: 'تعلّم • ابنِ • اكسب • اترك أثراً',
+    courseTagline: 'دورة قواعد بيانات شاملة من البداية إلى النهاية بالرسوم التوضيحية والتلعيب',
     home: 'الرئيسية',
     missions: 'المهام',
     learn: 'تعلّم',

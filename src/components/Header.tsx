@@ -92,8 +92,8 @@ export const Header: React.FC = () => {
                   SQLite
                 </span>
               </div>
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 -mt-0.5">
-                {t.tagline}
+              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 -mt-0.5 line-clamp-1 max-w-[360px]">
+                {t.courseTagline || 'A database course end to end with illustrations, and gamification'}
               </p>
             </div>
           </div>
@@ -131,7 +131,8 @@ export const Header: React.FC = () => {
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
-              {t.learn}
+              <span>{t.learn}</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 font-black">Course</span>
             </button>
             <button
               onClick={() => setActiveTab('analytics')}

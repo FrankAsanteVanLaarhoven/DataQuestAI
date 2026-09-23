@@ -53,8 +53,9 @@ export default function HomePage() {
                       {t.capstoneTitle}
                     </h1>
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium">
-                    {t.capstoneSubtitle}
+                  <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 font-semibold flex items-center gap-1.5">
+                    <span className="text-pink-600 dark:text-pink-400 font-black">✦</span>
+                    {t.courseTagline || 'A database course end to end with illustrations, and gamification'}
                   </p>
 
                   {/* 5 Feature Badges matching Image 1 */}
