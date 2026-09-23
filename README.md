@@ -3,10 +3,11 @@
 > **a data-base course end to end with illustrations, and gamification**
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FFrankAsanteVanLaarhoven%2FDataQuestAI)
-[![Live Demo](https://img.shields.io/badge/Vercel-Live%20Demo-success?logo=vercel&style=for-the-badge)](https://temporary-rushing-pearl-9vona5c.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Vercel-Live%20Production-success?logo=vercel&style=for-the-badge)](https://data-quest-ai.vercel.app)
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-blue?logo=github&style=for-the-badge)](https://github.com/FrankAsanteVanLaarhoven/DataQuestAI)
 
-**Live Application**: [https://temporary-rushing-pearl-9vona5c.vercel.app](https://temporary-rushing-pearl-9vona5c.vercel.app)
+- **Production URL**: [https://data-quest-ai.vercel.app](https://data-quest-ai.vercel.app)
+- **Vercel Dashboard**: [frank-asante-van-laarhovens-projects/data-quest-ai](https://vercel.com/frank-asante-van-laarhovens-projects/data-quest-ai)
 
 **DataQuestAI** is a complete, production-ready, interactive **database course end to end with illustrations, and gamification**. Built for computer science students (CSC1033), university lecturers, and enterprise software engineers, it teaches foundational data concepts through to high-scale enterprise architectures using hands-on interactive visual diagrams, live SQLite code execution, and gamified challenges.
 
