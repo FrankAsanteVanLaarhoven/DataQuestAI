@@ -40,9 +40,12 @@ export const SystemCanvas: React.FC = () => {
     resetMissionCanvas,
     autoLayoutCanvas,
     language,
+    missions,
+    activeMissionId,
   } = useAppStore();
 
   const t = translations[language] || translations.en;
+  const activeMission = missions.find((m) => m.id === activeMissionId);
 
   const [connectingFromId, setConnectingFromId] = useState<string | null>(null);
   const [dragLineEnd, setDragLineEnd] = useState<{ x: number; y: number } | null>(null);
@@ -232,15 +235,15 @@ export const SystemCanvas: React.FC = () => {
   const contextNode = nodes.find((n) => n.id === contextMenu?.nodeId);
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden flex flex-col">
+    <div className="bg-white/80 dark:bg-[#111420]/80 backdrop-blur-2xl border border-black/[0.06] dark:border-white/[0.08] rounded-2xl shadow-sm overflow-hidden flex flex-col">
       {/* Canvas Top Bar */}
-      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-50/60 dark:bg-slate-900/60">
+      <div className="px-4 py-3 border-b border-black/[0.05] dark:border-white/[0.06] flex flex-wrap items-center justify-between gap-3 bg-zinc-50/50 dark:bg-white/[0.02]">
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-pink-100 dark:bg-pink-950 text-pink-600">
+          <div className="p-1.5 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
             <Layers className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2 tracking-tight">
               {t.canvasTitle}
               {connectingFromId && (
                 <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-violet-600 dark:text-violet-400 bg-violet-500/10 px-2.5 py-0.5 rounded-full border border-violet-500/20 animate-pulse">
@@ -249,7 +252,7 @@ export const SystemCanvas: React.FC = () => {
                 </span>
               )}
             </h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
               {t.canvasSubtitle}
             </p>
           </div>
@@ -259,16 +262,16 @@ export const SystemCanvas: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={resetMissionCanvas}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 text-xs font-medium hover:bg-zinc-50 dark:hover:bg-white/[0.08] transition-all"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+            <RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
             {t.reset}
           </button>
 
           <button
             onClick={autoLayoutCanvas}
             title="Auto-arrange canvas cards in a clean grid"
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 transition-all"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 text-xs font-medium hover:bg-zinc-50 dark:hover:bg-white/[0.08] transition-all"
           >
             <Move className="w-3.5 h-3.5 text-indigo-500" />
             {t.autoLayout}
@@ -276,7 +279,7 @@ export const SystemCanvas: React.FC = () => {
 
           <button
             onClick={handleExportSql}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 transition-all"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-white/[0.04] text-zinc-700 dark:text-zinc-300 text-xs font-medium hover:bg-zinc-50 dark:hover:bg-white/[0.08] transition-all"
           >
             <FileCode2 className="w-3.5 h-3.5 text-purple-500" />
             {t.exportDdl}
@@ -284,13 +287,34 @@ export const SystemCanvas: React.FC = () => {
 
           <button
             onClick={checkSolution}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white text-xs font-black shadow-md shadow-pink-500/20 active:scale-95 transition-all"
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-xs active:scale-95 transition-all"
           >
             <CheckCircle className="w-4 h-4" />
             {t.checkSolution}
           </button>
         </div>
       </div>
+
+      {/* Active Mission Directive Ribbon */}
+      {activeMission && (
+        <div className="px-4 py-2 bg-violet-500/[0.04] dark:bg-violet-500/[0.07] border-b border-black/[0.05] dark:border-white/[0.06] flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="shrink-0 px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-700 dark:text-violet-300 font-semibold text-[10px] uppercase tracking-wider border border-violet-500/20">
+              Mission {activeMission.number} Directive
+            </span>
+            <p className="truncate text-zinc-700 dark:text-zinc-300 text-[11px]">
+              <span className="font-semibold text-zinc-900 dark:text-white mr-1.5">{activeMission.title}:</span>
+              {activeMission.systemGoal}
+            </p>
+          </div>
+          <div className="shrink-0 flex items-center gap-1.5 text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
+            <span>Verified:</span>
+            <span className={`font-bold ${activeMission.progress === 100 ? 'text-emerald-500' : 'text-violet-600 dark:text-violet-400'}`}>
+              {activeMission.progress}%
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Main Canvas Workspace with Lucid Dot Grid */}
       <div

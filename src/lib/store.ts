@@ -107,19 +107,21 @@ export const initialMissions: Mission[] = [
   {
     id: 'mission-1',
     number: 1,
-    title: 'Design a school library database',
-    description: 'Model books, members, and loans for a school library.',
+    title: 'E-Commerce & Checkout Fulfillment Engine',
+    description: 'Architect a high-concurrency transactional database powering retail checkouts, order line items, and payment reconciliation.',
     level: 'Beginner',
     xpReward: 250,
-    progress: 80,
+    progress: 75,
     unlocked: true,
     completed: false,
-    iconName: 'BookOpen',
-    systemGoal: 'Establish the core entities (Books, Members, Loans) and primary keys.',
+    iconName: 'ShoppingCart',
+    systemGoal: 'Establish 3NF normalized tables: Customer, Order, OrderItem, and Payment with primary/foreign keys and fix the misplaced attribute.',
     instructions: [
-      'Identify the main entities: Member, Book, Loan.',
-      'Place Primary Keys (member_id, book_id, loan_id) under their respective tables.',
-      'Define the borrowing relationship between Members and Books.',
+      'Live Setting: High-volume transactional checkout pipeline (Shopify / Stripe).',
+      'Convert "Date of Birth" from an Entity into an Attribute on the Customer table.',
+      'Ensure "Customer", "Order", and "Payment" are configured as core Entities.',
+      'Verify "customer_id", "order_id", and "payment_id" serve as Primary Keys.',
+      'Connect Customer (1) to Order (N), and Order (1) to Payment (1).',
     ],
     initialNodes: [
       {
@@ -127,25 +129,42 @@ export const initialMissions: Mission[] = [
         type: 'entity',
         label: 'Customer',
         x: 60,
-        y: 80,
+        y: 60,
         status: 'correct',
-        feedback: 'Customer is an entity. Well done!',
+        feedback: 'Customer is a core 3NF entity storing verified buyer profiles.',
       },
       {
-        id: 'node-rel',
+        id: 'node-rel-places',
         type: 'relationship',
         label: 'Places',
         x: 230,
-        y: 80,
+        y: 60,
         status: 'correct',
-        feedback: 'Valid relationship between Customer and Order.',
+        feedback: 'Valid 1-to-N relationship between Customer and Order.',
       },
       {
         id: 'node-order',
         type: 'entity',
         label: 'Order',
-        x: 410,
-        y: 80,
+        x: 400,
+        y: 60,
+        status: 'idle',
+      },
+      {
+        id: 'node-rel-pays',
+        type: 'relationship',
+        label: 'Settles',
+        x: 570,
+        y: 60,
+        status: 'correct',
+        feedback: 'Valid 1-to-1 relationship between Order and Payment.',
+      },
+      {
+        id: 'node-payment',
+        type: 'entity',
+        label: 'Payment',
+        x: 740,
+        y: 60,
         status: 'idle',
       },
       {
@@ -153,7 +172,7 @@ export const initialMissions: Mission[] = [
         type: 'primaryKey',
         label: 'customer_id',
         x: 50,
-        y: 220,
+        y: 200,
         status: 'correct',
         feedback: 'customer_id is the primary key for Customer.',
       },
@@ -161,116 +180,287 @@ export const initialMissions: Mission[] = [
         id: 'node-dob',
         type: 'entity',
         label: 'Date of Birth',
-        x: 210,
-        y: 220,
+        x: 200,
+        y: 200,
         status: 'wrong',
         expectedType: 'attribute',
-        feedback: 'Date of Birth is not an entity!',
-        recommendation: 'Try moving "Date of Birth" to Attributes.',
+        feedback: 'Date of Birth is an attribute describing Customer, not an independent entity!',
+        recommendation: 'Change "Date of Birth" card type to Attribute.',
       },
       {
         id: 'node-pk2',
         type: 'primaryKey',
         label: 'order_id',
-        x: 370,
-        y: 220,
+        x: 380,
+        y: 200,
         status: 'correct',
         feedback: 'order_id is the primary key for Order.',
       },
       {
-        id: 'node-fk1',
-        type: 'foreignKey',
-        label: 'customer_id',
+        id: 'node-total',
+        type: 'attribute',
+        label: 'Total Amount',
         x: 520,
-        y: 220,
-        status: 'correct',
-        feedback: 'customer_id references Customer(customer_id).',
+        y: 200,
+        status: 'idle',
+      },
+      {
+        id: 'node-pk3',
+        type: 'primaryKey',
+        label: 'payment_id',
+        x: 730,
+        y: 200,
+        status: 'idle',
       },
     ],
     initialEdges: [
-      { id: 'edge-1', fromId: 'node-cust', toId: 'node-rel', label: '1' },
-      { id: 'edge-2', fromId: 'node-rel', toId: 'node-order', label: 'N' },
+      { id: 'edge-1', fromId: 'node-cust', toId: 'node-rel-places', label: '1' },
+      { id: 'edge-2', fromId: 'node-rel-places', toId: 'node-order', label: 'N' },
       { id: 'edge-3', fromId: 'node-cust', toId: 'node-pk1' },
       { id: 'edge-4', fromId: 'node-cust', toId: 'node-dob' },
       { id: 'edge-5', fromId: 'node-order', toId: 'node-pk2' },
-      { id: 'edge-6', fromId: 'node-order', toId: 'node-fk1' },
+      { id: 'edge-6', fromId: 'node-order', toId: 'node-total' },
+      { id: 'edge-7', fromId: 'node-order', toId: 'node-rel-pays', label: '1' },
+      { id: 'edge-8', fromId: 'node-rel-pays', toId: 'node-payment', label: '1' },
+      { id: 'edge-9', fromId: 'node-payment', toId: 'node-pk3' },
     ],
     expectedRules: {
       correctNodes: [
         { label: 'Customer', validTypes: ['entity'] },
         { label: 'Order', validTypes: ['entity'] },
+        { label: 'Payment', validTypes: ['entity'] },
+        { label: 'Places', validTypes: ['relationship'] },
+        { label: 'Settles', validTypes: ['relationship'] },
         { label: 'Date of Birth', validTypes: ['attribute'] },
+        { label: 'Total Amount', validTypes: ['attribute', 'kpi'] },
         { label: 'customer_id', validTypes: ['primaryKey', 'foreignKey'] },
-        { label: 'order_id', validTypes: ['primaryKey'] },
+        { label: 'order_id', validTypes: ['primaryKey', 'foreignKey'] },
+        { label: 'payment_id', validTypes: ['primaryKey'] },
       ],
-      requiredRelationships: [{ from: 'Customer', to: 'Order' }],
+      requiredRelationships: [
+        { from: 'Customer', to: 'Order' },
+        { from: 'Order', to: 'Payment' },
+      ],
     },
   },
   {
     id: 'mission-2',
     number: 2,
-    title: 'Create an online shop schema',
-    description: 'Model products, customers and orders with inventory stock.',
+    title: 'Healthcare EHR & Clinical Data Infrastructure',
+    description: 'Model HIPAA-compliant clinical systems linking Patients, Clinicians, Appointments, and Medical Prescriptions.',
     level: 'Intermediate',
-    xpReward: 300,
-    progress: 40,
+    xpReward: 350,
+    progress: 30,
     unlocked: true,
     completed: false,
-    iconName: 'ShoppingCart',
-    systemGoal: 'Prevent redundant product rows by creating an OrderItems join table.',
+    iconName: 'BookOpen',
+    systemGoal: 'Structure patient encounter schemas ensuring doctor consultation histories and pharmaceutical dosages adhere to strict relational integrity.',
     instructions: [
-      'Connect Orders and Products through an OrderItems linking table.',
-      'Enforce Foreign Keys pointing to Products(product_id) and Orders(order_id).',
+      'Live Setting: Hospital EHR network & electronic prescribing (Epic Systems / HIPAA).',
+      'Set "Patient" and "Clinician" as primary Entities with primary keys (patient_id, doctor_id).',
+      'Classify "Dosage" as an Attribute on prescriptions (not an independent Entity).',
+      'Set "Appointment" as an encounter Entity linked between Patient and Clinician.',
+      'Verify "Diagnosis Code" acts as a clinical attribute.',
     ],
     initialNodes: [
-      { id: 'n2-1', type: 'entity', label: 'Product', x: 80, y: 100, status: 'idle' },
-      { id: 'n2-2', type: 'entity', label: 'Customer', x: 260, y: 100, status: 'idle' },
-      { id: 'n2-3', type: 'entity', label: 'Order', x: 440, y: 100, status: 'idle' },
-      { id: 'n2-4', type: 'primaryKey', label: 'product_id', x: 80, y: 220, status: 'idle' },
-      { id: 'n2-5', type: 'attribute', label: 'Price', x: 180, y: 220, status: 'idle' },
+      { id: 'node-pat', type: 'entity', label: 'Patient', x: 60, y: 60, status: 'idle' },
+      { id: 'node-rel-sched', type: 'relationship', label: 'Schedules', x: 230, y: 60, status: 'idle' },
+      { id: 'node-appt', type: 'entity', label: 'Appointment', x: 400, y: 60, status: 'idle' },
+      { id: 'node-rel-att', type: 'relationship', label: 'Attends', x: 570, y: 60, status: 'idle' },
+      { id: 'node-doc', type: 'entity', label: 'Clinician', x: 740, y: 60, status: 'idle' },
+      { id: 'node-pat-pk', type: 'primaryKey', label: 'patient_id', x: 50, y: 200, status: 'idle' },
+      {
+        id: 'node-dosage',
+        type: 'entity',
+        label: 'Dosage',
+        x: 200,
+        y: 200,
+        status: 'wrong',
+        expectedType: 'attribute',
+        feedback: 'Dosage is a prescription quantity (e.g. 500mg) and belongs as an attribute, not an independent entity!',
+        recommendation: 'Change "Dosage" card type to Attribute.',
+      },
+      { id: 'node-appt-pk', type: 'primaryKey', label: 'appointment_id', x: 380, y: 200, status: 'idle' },
+      { id: 'node-diag', type: 'attribute', label: 'Diagnosis Code', x: 530, y: 200, status: 'idle' },
+      { id: 'node-doc-pk', type: 'primaryKey', label: 'doctor_id', x: 730, y: 200, status: 'idle' },
     ],
-    initialEdges: [],
+    initialEdges: [
+      { id: 'e2-1', fromId: 'node-pat', toId: 'node-rel-sched', label: '1' },
+      { id: 'e2-2', fromId: 'node-rel-sched', toId: 'node-appt', label: 'N' },
+      { id: 'e2-3', fromId: 'node-doc', toId: 'node-rel-att', label: '1' },
+      { id: 'e2-4', fromId: 'node-rel-att', toId: 'node-appt', label: 'N' },
+      { id: 'e2-5', fromId: 'node-pat', toId: 'node-pat-pk' },
+      { id: 'e2-6', fromId: 'node-appt', toId: 'node-appt-pk' },
+      { id: 'e2-7', fromId: 'node-appt', toId: 'node-diag' },
+      { id: 'e2-8', fromId: 'node-appt', toId: 'node-dosage' },
+      { id: 'e2-9', fromId: 'node-doc', toId: 'node-doc-pk' },
+    ],
     expectedRules: {
       correctNodes: [
-        { label: 'Product', validTypes: ['entity'] },
-        { label: 'Order', validTypes: ['entity'] },
+        { label: 'Patient', validTypes: ['entity'] },
+        { label: 'Clinician', validTypes: ['entity'] },
+        { label: 'Appointment', validTypes: ['entity'] },
+        { label: 'Schedules', validTypes: ['relationship'] },
+        { label: 'Attends', validTypes: ['relationship'] },
+        { label: 'Dosage', validTypes: ['attribute'] },
+        { label: 'Diagnosis Code', validTypes: ['attribute'] },
+        { label: 'patient_id', validTypes: ['primaryKey', 'foreignKey'] },
+        { label: 'appointment_id', validTypes: ['primaryKey'] },
+        { label: 'doctor_id', validTypes: ['primaryKey'] },
       ],
-      requiredRelationships: [],
+      requiredRelationships: [
+        { from: 'Patient', to: 'Appointment' },
+        { from: 'Clinician', to: 'Appointment' },
+      ],
     },
   },
   {
     id: 'mission-3',
     number: 3,
-    title: 'Build a search system for a digital archive',
-    description: 'Index and search documents, images and metadata.',
+    title: 'Global Media Streaming Telemetry & Search Engine',
+    description: 'Build the data architecture for real-time video streaming sessions, media metadata catalogs, and inverted search indexes.',
     level: 'Advanced',
     xpReward: 400,
-    progress: 25,
+    progress: 15,
     unlocked: true,
     completed: false,
     iconName: 'Search',
-    systemGoal: 'Connect Inverted Index tables with Document metadata for fast querying.',
-    instructions: ['Build inverted indexes with term frequency counters.'],
-    initialNodes: [],
-    initialEdges: [],
-    expectedRules: { correctNodes: [], requiredRelationships: [] },
+    systemGoal: 'Architect an inverted search index coupled with streaming session telemetry to deliver sub-10ms search lookups and playback logs.',
+    instructions: [
+      'Live Setting: High-throughput media streaming & recommendation graph (Netflix / Spotify).',
+      'Establish "MediaAsset" and "UserAccount" as core catalog and audience Entities.',
+      'Configure "Search Index" as a dedicated Search Primitive for title indexing.',
+      'Fix "Bitrate Kbps" from an Entity into an Attribute or KPI metric.',
+      'Connect UserAccount to StreamSession (1-to-N) and StreamSession to MediaAsset.',
+    ],
+    initialNodes: [
+      { id: 'node-user', type: 'entity', label: 'UserAccount', x: 60, y: 60, status: 'idle' },
+      { id: 'node-rel-streams', type: 'relationship', label: 'Streams', x: 230, y: 60, status: 'idle' },
+      { id: 'node-session', type: 'entity', label: 'StreamSession', x: 400, y: 60, status: 'idle' },
+      { id: 'node-rel-plays', type: 'relationship', label: 'Plays', x: 570, y: 60, status: 'idle' },
+      { id: 'node-media', type: 'entity', label: 'MediaAsset', x: 740, y: 60, status: 'idle' },
+      { id: 'node-user-pk', type: 'primaryKey', label: 'user_id', x: 50, y: 200, status: 'idle' },
+      {
+        id: 'node-bitrate',
+        type: 'entity',
+        label: 'Bitrate Kbps',
+        x: 200,
+        y: 200,
+        status: 'wrong',
+        expectedType: 'attribute',
+        feedback: 'Bitrate is a telemetry performance metric measuring streaming quality, not a relational entity!',
+        recommendation: 'Change "Bitrate Kbps" card type to Attribute or KPI.',
+      },
+      { id: 'node-sess-pk', type: 'primaryKey', label: 'session_id', x: 380, y: 200, status: 'idle' },
+      { id: 'node-search', type: 'search', label: 'Search Index', x: 550, y: 200, status: 'correct', feedback: 'Search Index delivers sub-10ms inverted full-text lookups.' },
+      { id: 'node-asset-pk', type: 'primaryKey', label: 'asset_id', x: 730, y: 200, status: 'idle' },
+    ],
+    initialEdges: [
+      { id: 'e3-1', fromId: 'node-user', toId: 'node-rel-streams', label: '1' },
+      { id: 'e3-2', fromId: 'node-rel-streams', toId: 'node-session', label: 'N' },
+      { id: 'e3-3', fromId: 'node-session', toId: 'node-rel-plays', label: 'N' },
+      { id: 'e3-4', fromId: 'node-rel-plays', toId: 'node-media', label: '1' },
+      { id: 'e3-5', fromId: 'node-user', toId: 'node-user-pk' },
+      { id: 'e3-6', fromId: 'node-session', toId: 'node-sess-pk' },
+      { id: 'e3-7', fromId: 'node-session', toId: 'node-bitrate' },
+      { id: 'e3-8', fromId: 'node-media', toId: 'node-search' },
+      { id: 'e3-9', fromId: 'node-media', toId: 'node-asset-pk' },
+    ],
+    expectedRules: {
+      correctNodes: [
+        { label: 'UserAccount', validTypes: ['entity'] },
+        { label: 'StreamSession', validTypes: ['entity'] },
+        { label: 'MediaAsset', validTypes: ['entity'] },
+        { label: 'Streams', validTypes: ['relationship'] },
+        { label: 'Plays', validTypes: ['relationship'] },
+        { label: 'Search Index', validTypes: ['search', 'retrieval'] },
+        { label: 'Bitrate Kbps', validTypes: ['attribute', 'kpi'] },
+        { label: 'user_id', validTypes: ['primaryKey', 'foreignKey'] },
+        { label: 'session_id', validTypes: ['primaryKey'] },
+        { label: 'asset_id', validTypes: ['primaryKey'] },
+      ],
+      requiredRelationships: [
+        { from: 'UserAccount', to: 'StreamSession' },
+        { from: 'StreamSession', to: 'MediaAsset' },
+      ],
+    },
   },
   {
     id: 'mission-4',
     number: 4,
-    title: 'Design a dashboard using warehouse data',
-    description: 'Analyze trends with an interactive dashboard and star schema.',
+    title: 'Financial Warehouse & OLAP Dimensional Star Schema',
+    description: 'Construct an enterprise dimensional model (Kimball methodology) optimizing analytical query performance across millions of transactions.',
     level: 'Advanced',
-    xpReward: 400,
+    xpReward: 450,
     progress: 10,
-    unlocked: false,
+    unlocked: true,
     completed: false,
     iconName: 'BarChart2',
-    systemGoal: 'Create fact and dimension tables for high-performance OLAP analytics.',
-    instructions: ['Link FactSales to DimTime, DimProduct, and DimStore.'],
-    initialNodes: [],
-    initialEdges: [],
-    expectedRules: { correctNodes: [], requiredRelationships: [] },
+    systemGoal: 'Design a Kimball-compliant Star Schema centering on FactSales with surrogate keys connected to DimCustomer, DimProduct, and DimDate.',
+    instructions: [
+      'Live Setting: Enterprise OLAP Financial Analytics Warehouse (Snowflake / BigQuery).',
+      'Establish "FactSales" as the central Fact Entity storing numerical transaction measures.',
+      'Surround FactSales with Conformed Dimension Entities: "DimCustomer", "DimProduct", and "DimDate".',
+      'Convert "Gross Margin %" from an Entity into a KPI Metric or Attribute.',
+      'Ensure "sale_id" acts as Fact primary key and surrogate foreign keys link to dimensions.',
+    ],
+    initialNodes: [
+      { id: 'node-dim-cust', type: 'entity', label: 'DimCustomer', x: 60, y: 60, status: 'idle' },
+      { id: 'node-dim-prod', type: 'entity', label: 'DimProduct', x: 390, y: 60, status: 'idle' },
+      { id: 'node-dim-date', type: 'entity', label: 'DimDate', x: 720, y: 60, status: 'idle' },
+      {
+        id: 'node-margin',
+        type: 'entity',
+        label: 'Gross Margin %',
+        x: 60,
+        y: 190,
+        status: 'wrong',
+        expectedType: 'kpi',
+        feedback: 'Gross Margin % is a computed financial measure for OLAP aggregation, not an independent dimension!',
+        recommendation: 'Change "Gross Margin %" card type to KPI Metric.',
+      },
+      {
+        id: 'node-fact',
+        type: 'entity',
+        label: 'FactSales',
+        x: 390,
+        y: 190,
+        status: 'correct',
+        feedback: 'FactSales is the central fact table containing numerical measures.',
+      },
+      { id: 'node-dash', type: 'dashboard', label: 'Executive Dash', x: 720, y: 190, status: 'correct' },
+      { id: 'node-sale-pk', type: 'primaryKey', label: 'sale_id', x: 220, y: 310, status: 'idle' },
+      { id: 'node-cust-sk', type: 'foreignKey', label: 'customer_sk', x: 380, y: 310, status: 'idle' },
+      { id: 'node-prod-sk', type: 'foreignKey', label: 'product_sk', x: 540, y: 310, status: 'idle' },
+    ],
+    initialEdges: [
+      { id: 'e4-1', fromId: 'node-dim-cust', toId: 'node-fact' },
+      { id: 'e4-2', fromId: 'node-dim-prod', toId: 'node-fact' },
+      { id: 'e4-3', fromId: 'node-dim-date', toId: 'node-fact' },
+      { id: 'e4-4', fromId: 'node-fact', toId: 'node-margin' },
+      { id: 'e4-5', fromId: 'node-fact', toId: 'node-dash' },
+      { id: 'e4-6', fromId: 'node-fact', toId: 'node-sale-pk' },
+      { id: 'e4-7', fromId: 'node-fact', toId: 'node-cust-sk' },
+      { id: 'e4-8', fromId: 'node-fact', toId: 'node-prod-sk' },
+    ],
+    expectedRules: {
+      correctNodes: [
+        { label: 'FactSales', validTypes: ['entity'] },
+        { label: 'DimCustomer', validTypes: ['entity'] },
+        { label: 'DimProduct', validTypes: ['entity'] },
+        { label: 'DimDate', validTypes: ['entity'] },
+        { label: 'Gross Margin %', validTypes: ['kpi', 'attribute'] },
+        { label: 'sale_id', validTypes: ['primaryKey'] },
+        { label: 'customer_sk', validTypes: ['foreignKey', 'primaryKey'] },
+        { label: 'product_sk', validTypes: ['foreignKey', 'primaryKey'] },
+        { label: 'Executive Dash', validTypes: ['dashboard', 'kpi'] },
+      ],
+      requiredRelationships: [
+        { from: 'DimCustomer', to: 'FactSales' },
+        { from: 'DimProduct', to: 'FactSales' },
+        { from: 'DimDate', to: 'FactSales' },
+      ],
+    },
   },
 ];
 
@@ -603,30 +793,35 @@ export const useAppStore = create<AppState>((set, get) => {
     changeNodeType: (id, newType) => {
       sound.playSnap();
       set((state) => {
+        const mission = state.missions.find((m) => m.id === state.activeMissionId);
         const updated = state.nodes.map((n) => {
           if (n.id !== id) return n;
 
-          // Check if this fix resolved a known mistake (e.g. Date of Birth -> attribute)
           let status: CanvasNode['status'] = 'idle';
           let feedback = '';
           let recommendation = '';
 
-          if (n.label === 'Date of Birth') {
-            if (newType === 'attribute') {
+          // Look up against active mission's expected rules
+          const rule = mission?.expectedRules.correctNodes.find(
+            (r) => r.label.toLowerCase() === n.label.toLowerCase()
+          );
+
+          if (rule) {
+            if (rule.validTypes.includes(newType)) {
               status = 'correct';
-              feedback = 'Great job! Date of Birth is an attribute describing an entity.';
+              feedback = `Great job! "${n.label}" is verified as a valid ${newType}.`;
             } else {
               status = 'wrong';
-              feedback = 'Date of Birth should be an attribute.';
-              recommendation = 'Try moving "Date of Birth" to Attributes.';
+              feedback = `"${n.label}" cannot be a ${newType} in this schema.`;
+              recommendation = `Set "${n.label}" to ${rule.validTypes[0]}.`;
             }
-          } else if (n.label === 'Customer' || n.label === 'Order' || n.label === 'Product') {
-            if (newType === 'entity') {
+          } else {
+            // General rules for dynamically placed cards
+            if (newType === 'primaryKey' || newType === 'foreignKey') {
               status = 'correct';
-              feedback = `${n.label} is an entity. Well done!`;
+              feedback = `Key identifier verified for "${n.label}".`;
             } else {
-              status = 'wrong';
-              recommendation = `Set ${n.label} type back to Entity.`;
+              status = 'correct';
             }
           }
 
@@ -642,10 +837,14 @@ export const useAppStore = create<AppState>((set, get) => {
         return { nodes: updated };
       });
 
-      // Award XP if fixed
+      // Award XP if user resolved a known schema flaw
       const target = get().nodes.find((n) => n.id === id);
-      if (target?.label === 'Date of Birth' && newType === 'attribute') {
-        get().awardXp(15, 'You fixed the Date of Birth attribute!');
+      const mission = get().missions.find((m) => m.id === get().activeMissionId);
+      const rule = mission?.expectedRules.correctNodes.find(
+        (r) => r.label.toLowerCase() === target?.label.toLowerCase()
+      );
+      if (rule && rule.validTypes.includes(newType) && target?.expectedType) {
+        get().awardXp(25, `Resolved schema flaw: "${target.label}" is now ${newType}!`);
       }
     },
 
@@ -710,47 +909,47 @@ export const useAppStore = create<AppState>((set, get) => {
 
     checkSolution: () => {
       const nodes = get().nodes;
+      const mission = get().missions.find((m) => m.id === get().activeMissionId);
       let correct = 0;
       let wrong = 0;
+      const issues: string[] = [];
 
       const updated = nodes.map((node) => {
-        if (node.label === 'Customer') {
-          if (node.type === 'entity') {
+        const rule = mission?.expectedRules.correctNodes.find(
+          (r) => r.label.toLowerCase() === node.label.toLowerCase()
+        );
+
+        if (rule) {
+          if (rule.validTypes.includes(node.type)) {
             correct++;
-            return { ...node, status: 'correct' as const, feedback: 'Customer is an entity. Well done!' };
+            return {
+              ...node,
+              status: 'correct' as const,
+              feedback: `Verified: "${node.label}" is properly configured as ${node.type}.`,
+              recommendation: undefined,
+            };
           }
           wrong++;
-          return { ...node, status: 'wrong' as const, recommendation: 'Change Customer to Entity.' };
-        }
-        if (node.label === 'Date of Birth') {
-          if (node.type === 'attribute') {
-            correct++;
-            return { ...node, status: 'correct' as const, feedback: 'Date of Birth is an attribute. Perfect!' };
-          }
-          wrong++;
+          issues.push(`"${node.label}" should be ${rule.validTypes[0]}`);
           return {
             ...node,
             status: 'wrong' as const,
-            feedback: 'Date of Birth is not an entity!',
-            recommendation: 'Try moving "Date of Birth" to Attributes.',
+            feedback: `"${node.label}" is not a valid ${node.type} in this schema.`,
+            recommendation: `Try changing "${node.label}" to ${rule.validTypes[0]}.`,
           };
         }
-        if (node.label === 'Order') {
-          if (node.type === 'entity') {
+
+        // Heuristics for custom cards
+        if (node.label.endsWith('_id') || node.label.endsWith('_sk')) {
+          if (node.type === 'primaryKey' || node.type === 'foreignKey') {
             correct++;
-            return { ...node, status: 'correct' as const, feedback: 'Order is an entity.' };
+            return { ...node, status: 'correct' as const, feedback: 'Valid key identifier.' };
           }
           wrong++;
-          return { ...node, status: 'wrong' as const, recommendation: 'Order should be an Entity.' };
+          issues.push(`"${node.label}" should be a Primary or Foreign Key`);
+          return { ...node, status: 'wrong' as const, recommendation: 'Change to Primary Key or Foreign Key.' };
         }
-        if (node.label === 'customer_id') {
-          correct++;
-          return { ...node, status: 'correct' as const, feedback: 'Valid primary/foreign key.' };
-        }
-        if (node.label === 'order_id') {
-          correct++;
-          return { ...node, status: 'correct' as const, feedback: 'Valid primary key.' };
-        }
+
         correct++;
         return { ...node, status: 'correct' as const };
       });
@@ -758,23 +957,27 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ nodes: updated });
 
       const allValid = wrong === 0;
+      const progressPercent = Math.min(100, Math.round((correct / Math.max(nodes.length, 1)) * 100));
+
       if (allValid) {
         sound.playSuccess();
-        get().awardXp(50, 'Capstone challenge validated!');
+        const xpEarned = mission?.xpReward || 50;
+        get().awardXp(xpEarned, `${mission?.title || 'Capstone'} verified!`);
         set((state) => ({
           missions: state.missions.map((m) =>
             m.id === state.activeMissionId ? { ...m, progress: 100, completed: true } : m
           ),
-          aiCoachText:
-            'Outstanding work! All entities, attributes, and relationships in this schema are 100% verified. You earned +50 XP and unlocked Capstone Champion progress!',
+          aiCoachText: `Outstanding architectural work! All entities, keys, and relational attributes in "${mission?.title}" are 100% verified to enterprise standards. You earned +${xpEarned} XP and unlocked Capstone Champion progress!`,
         }));
       } else {
         sound.playError();
-        get().addActivity(`Found ${wrong} issues in schema design`, undefined, 'error');
-        set({
-          aiCoachText:
-            'Almost there! Check the highlighted red cards on your canvas. Look at "Date of Birth" — is a birth date a standalone entity or an attribute describing a person?',
-        });
+        get().addActivity(`Found ${wrong} schema issue(s) in ${mission?.title}`, undefined, 'error');
+        set((state) => ({
+          missions: state.missions.map((m) =>
+            m.id === state.activeMissionId ? { ...m, progress: progressPercent } : m
+          ),
+          aiCoachText: `Architectural review found ${wrong} item(s) to fix: ${issues.slice(0, 2).join('; ')}. Check the highlighted red cards on your canvas!`,
+        }));
       }
 
       return { correct, total: nodes.length, allValid };
