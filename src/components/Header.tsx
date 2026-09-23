@@ -23,6 +23,7 @@ import {
   ChevronDown,
   Moon,
   Sun,
+  Laptop,
   Layers,
   ShieldCheck,
 } from 'lucide-react';
@@ -60,7 +61,7 @@ export const Header: React.FC = () => {
 
   const cycleTheme = () => {
     if (theme === 'vibrant') setTheme('dark');
-    else if (theme === 'dark') setTheme('blueprint');
+    else if (theme === 'dark') setTheme('system');
     else setTheme('vibrant');
   };
 
@@ -247,10 +248,10 @@ export const Header: React.FC = () => {
               <span className="font-mono">{user.streak}d</span>
             </div>
 
-            {/* Apple Theme Switcher (Dark / Light) */}
+            {/* Apple Theme Switcher (Dark / Light / System Theme) */}
             <button
               onClick={cycleTheme}
-              title={`Active Theme: ${theme.toUpperCase()} (Click to toggle Dark / Light)`}
+              title={`Active Theme: ${theme.toUpperCase()} (Click to toggle Light / Dark / System Theme)`}
               className="px-2.5 py-1.5 rounded-xl border border-zinc-200/80 dark:border-white/[0.08] bg-zinc-100/60 dark:bg-white/[0.04] hover:bg-zinc-100 dark:hover:bg-white/[0.08] text-zinc-700 dark:text-zinc-200 transition-all flex items-center gap-1.5 text-xs font-medium cursor-pointer"
             >
               {theme === 'dark' ? (
@@ -258,10 +259,10 @@ export const Header: React.FC = () => {
                   <Moon className="w-3.5 h-3.5 text-indigo-400" />
                   <span className="hidden md:inline">Dark</span>
                 </>
-              ) : theme === 'blueprint' ? (
+              ) : theme === 'system' ? (
                 <>
-                  <Palette className="w-3.5 h-3.5 text-cyan-400" />
-                  <span className="hidden md:inline">Blueprint</span>
+                  <Laptop className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="hidden md:inline">System Theme</span>
                 </>
               ) : (
                 <>

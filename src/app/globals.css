@@ -29,28 +29,52 @@ body {
 html.dark,
 body.dark,
 body.theme-dark,
+body.theme-system,
 .dark {
   --bg-main: #090a0f;
   --bg-card: #111420;
-  --text-primary: #f4f4f6;
-  --text-secondary: #8e8e93;
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --canvas-grid: rgba(255, 255, 255, 0.06);
+  --text-primary: #ffffff;
+  --text-secondary: #cbd5e1;
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --canvas-grid: rgba(255, 255, 255, 0.08);
   color-scheme: dark;
   background-color: #090a0f !important;
-  color: #f4f4f6 !important;
+  color: #ffffff !important;
 }
 
-body.theme-blueprint {
-  --bg-main: #061124;
-  --bg-card: #0a1b38;
-  --text-primary: #e0f2fe;
-  --text-secondary: #7dd3fc;
-  --border-subtle: rgba(56, 189, 248, 0.18);
-  --canvas-grid: rgba(56, 189, 248, 0.15);
-  color-scheme: dark;
-  background-color: #061124 !important;
-  color: #e0f2fe !important;
+/* High-Contrast Readability Enhancements for Dark Sections */
+.dark p,
+.dark span,
+.dark label,
+.dark div,
+.dark li {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dark .text-slate-400,
+.dark .text-zinc-400 {
+  color: #cbd5e1 !important; /* elevated contrast slate/zinc */
+}
+
+.dark .text-slate-500,
+.dark .text-zinc-500 {
+  color: #94a3b8 !important; /* visible secondary text */
+}
+
+.dark .text-slate-600,
+.dark .text-zinc-600 {
+  color: #e2e8f0 !important; /* bright body labels */
+}
+
+.dark .text-slate-700,
+.dark .text-zinc-700 {
+  color: #f1f5f9 !important; /* crisp primary text */
+}
+
+.dark .text-slate-800,
+.dark .text-zinc-800 {
+  color: #ffffff !important; /* ultra-crisp white headings */
 }
 
 /* Apple Pro Glassmorphism */

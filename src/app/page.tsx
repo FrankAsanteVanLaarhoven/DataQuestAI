@@ -31,34 +31,47 @@ export default function HomePage() {
   const currentLangMeta = languages.find((l) => l.code === language);
   const dir = currentLangMeta?.dir || 'ltr';
 
+  const [systemIsDark, setSystemIsDark] = React.useState(false);
+
   useEffect(() => {
     try {
       const savedTheme = localStorage.getItem('dataquest_theme');
-      if (savedTheme && (savedTheme === 'dark' || savedTheme === 'vibrant' || savedTheme === 'blueprint')) {
+      if (savedTheme && (savedTheme === 'dark' || savedTheme === 'vibrant' || savedTheme === 'system')) {
         setTheme(savedTheme as any);
       }
     } catch {}
   }, [setTheme]);
 
   useEffect(() => {
-    const isDark = theme === 'dark' || theme === 'blueprint';
-    if (isDark) {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setSystemIsDark(mediaQuery.matches);
+
+    const handler = (e: MediaQueryListEvent) => {
+      setSystemIsDark(e.matches);
+    };
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  const isDarkTheme = theme === 'dark' || (theme === 'system' && systemIsDark);
+
+  useEffect(() => {
+    if (isDarkTheme) {
       document.documentElement.classList.add('dark');
       document.body.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
       document.body.classList.remove('dark');
     }
-    document.body.className = `theme-${theme} ${isDark ? 'dark bg-[#070a13] text-slate-100' : 'bg-[#fbf8f5] text-slate-800'}`;
-  }, [theme]);
-
-  const isDarkTheme = theme === 'dark' || theme === 'blueprint';
+    document.body.className = `theme-${theme} ${isDarkTheme ? 'dark bg-[#08090e] text-zinc-100' : 'bg-[#fbf8f5] text-zinc-800'}`;
+  }, [theme, isDarkTheme]);
 
   return (
     <div
       dir={dir}
       className={`min-h-screen flex flex-col transition-colors ${
-        isDarkTheme ? 'dark bg-[#070a13] text-slate-100' : 'bg-[#fbf8f5] text-slate-800'
+        isDarkTheme ? 'dark bg-[#08090e] text-zinc-100' : 'bg-[#fbf8f5] text-zinc-800'
       }`}
     >
       {/* Top Header */}

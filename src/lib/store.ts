@@ -31,8 +31,8 @@ interface AppState {
     role: 'student' | 'teacher' | 'architect';
   };
   setUser: (user: Partial<AppState['user']>) => void;
-  theme: 'vibrant' | 'dark' | 'blueprint';
-  setTheme: (theme: 'vibrant' | 'dark' | 'blueprint') => void;
+  theme: 'vibrant' | 'dark' | 'system';
+  setTheme: (theme: 'vibrant' | 'dark' | 'system') => void;
   language: SupportedLanguage;
   setLanguage: (lang: SupportedLanguage) => void;
   isAuthModalOpen: boolean;
