@@ -2,6 +2,12 @@
 
 > **CSC1033 Made Simple — Gamified Database & Enterprise Architecture Learning Platform**
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FFrankAsanteVanLaarhoven%2FDataQuestAI)
+[![Live Demo](https://img.shields.io/badge/Vercel-Live%20Demo-success?logo=vercel&style=for-the-badge)](https://temporary-rushing-pearl-9vona5c.vercel.app)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-blue?logo=github&style=for-the-badge)](https://github.com/FrankAsanteVanLaarhoven/DataQuestAI)
+
+**Live Application**: [https://temporary-rushing-pearl-9vona5c.vercel.app](https://temporary-rushing-pearl-9vona5c.vercel.app)
+
 DataQuestAI is an interactive, full-stack learning platform designed for computer science students, lecturers, and enterprise data architects. It turns relational database theory, ERD modeling, SQL optimization, and large-scale enterprise system design into an engaging gamified experience.
 
 ---
