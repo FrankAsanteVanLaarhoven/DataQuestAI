@@ -3,12 +3,12 @@
 > **a data-base course end to end with illustrations, and gamification**
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FFrankAsanteVanLaarhoven%2FDataQuestAI)
-[![Live Demo](https://img.shields.io/badge/Vercel-dqai.vercel.app-success?logo=vercel&style=for-the-badge)](https://dqai.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Vercel-db--quest.vercel.app-success?logo=vercel&style=for-the-badge)](https://db-quest.vercel.app)
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-blue?logo=github&style=for-the-badge)](https://github.com/FrankAsanteVanLaarhoven/DataQuestAI)
 
-- **Short Production URL**: [https://dqai.vercel.app](https://dqai.vercel.app)
-- **Alternate Domain**: [https://data-quest-ai.vercel.app](https://data-quest-ai.vercel.app)
-- **Vercel Project Settings**: [frank-asante-van-laarhovens-projects/data-quest-ai/settings/domains](https://vercel.com/frank-asante-van-laarhovens-projects/data-quest-ai/settings/domains)
+- **Recommended Short Production Domain**: [https://db-quest.vercel.app](https://db-quest.vercel.app)
+- **Ultra-Short Domain Option**: [https://dq-db.vercel.app](https://dq-db.vercel.app)
+- **Vercel Domains Settings**: [frank-asante-van-laarhovens-projects/data-quest-ai/settings/domains](https://vercel.com/frank-asante-van-laarhovens-projects/data-quest-ai/settings/domains)
 
 **DataQuestAI** is a complete, production-ready, interactive **database course end to end with illustrations, and gamification**. Built for computer science students (CSC1033), university lecturers, and enterprise software engineers, it teaches foundational data concepts through to high-scale enterprise architectures using hands-on interactive visual diagrams, live SQLite code execution, and gamified challenges.
 
