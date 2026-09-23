@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --bg-main: #fbfbfd;
   --bg-card: #ffffff;
@@ -42,39 +44,99 @@ body.theme-system,
   color: #ffffff !important;
 }
 
-/* High-Contrast Readability Enhancements for Dark Sections */
-.dark p,
-.dark span,
-.dark label,
-.dark div,
-.dark li {
+/* High-Contrast Readability Enhancements for Dark Mode (WCAG AAA) */
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: #ffffff !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-.dark .text-slate-400,
-.dark .text-zinc-400 {
-  color: #cbd5e1 !important; /* elevated contrast slate/zinc */
+.dark p,
+.dark span,
+.dark label,
+.dark div,
+.dark li,
+.dark th,
+.dark td {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.dark .text-slate-500,
-.dark .text-zinc-500 {
-  color: #94a3b8 !important; /* visible secondary text */
-}
-
-.dark .text-slate-600,
-.dark .text-zinc-600 {
-  color: #e2e8f0 !important; /* bright body labels */
-}
-
-.dark .text-slate-700,
-.dark .text-zinc-700 {
-  color: #f1f5f9 !important; /* crisp primary text */
+/* Ensure dark mode headings and text never stay dark slate/zinc */
+.dark .text-slate-950,
+.dark .text-zinc-950,
+.dark .text-slate-900,
+.dark .text-zinc-900,
+.dark .text-black {
+  color: #ffffff !important; /* Pure white for titles and primary headers */
 }
 
 .dark .text-slate-800,
 .dark .text-zinc-800 {
-  color: #ffffff !important; /* ultra-crisp white headings */
+  color: #ffffff !important; /* White for card titles and section headers */
+}
+
+.dark .text-slate-700,
+.dark .text-zinc-700 {
+  color: #f1f5f9 !important; /* Crisp luminous text for main body */
+}
+
+.dark .text-slate-600,
+.dark .text-zinc-600 {
+  color: #e2e8f0 !important; /* Highly visible text for labels and items */
+}
+
+.dark .text-slate-500,
+.dark .text-zinc-500 {
+  color: #cbd5e1 !important; /* Elevated slate for descriptions (never muddy gray) */
+}
+
+.dark .text-slate-400,
+.dark .text-zinc-400 {
+  color: #cbd5e1 !important; /* High-contrast metadata and captions */
+}
+
+/* Dark Mode Card Background Fallbacks: Prevent blinding white cards */
+.dark .bg-white,
+.dark .bg-white\/95,
+.dark .bg-white\/90,
+.dark .bg-white\/80,
+.dark .bg-white\/70,
+.dark .bg-white\/60 {
+  background-color: #111420 !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-100,
+.dark .bg-zinc-50,
+.dark .bg-zinc-100 {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.dark .border-slate-200,
+.dark .border-slate-100,
+.dark .border-zinc-200,
+.dark .border-zinc-100 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Dropdown options in dark mode */
+.dark select,
+.dark option {
+  background-color: #161926 !important;
+  color: #ffffff !important;
+}
+
+/* Code and SQL blocks in dark mode */
+.dark code,
+.dark pre {
+  color: #38bdf8 !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
 }
 
 /* Apple Pro Glassmorphism */
@@ -139,6 +201,12 @@ body.dark ::-webkit-scrollbar-thumb:hover,
 .lucid-grid {
   background-size: 24px 24px;
   background-image: radial-gradient(circle, var(--canvas-grid) 1.2px, transparent 1.2px);
+}
+
+.dark .lucid-grid,
+html.dark .lucid-grid {
+  background-color: #0b0e17 !important;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.14) 1.2px, transparent 1.2px) !important;
 }
 
 /* Smooth flow line animation */

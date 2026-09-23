@@ -57,15 +57,19 @@ export default function HomePage() {
   const isDarkTheme = theme === 'dark' || (theme === 'system' && systemIsDark);
 
   useEffect(() => {
+    const root = document.documentElement;
     if (isDarkTheme) {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
       document.body.classList.add('dark');
+      document.body.style.backgroundColor = '#08090e';
+      document.body.style.color = '#f8fafc';
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
       document.body.classList.remove('dark');
+      document.body.style.backgroundColor = '#fbf8f5';
+      document.body.style.color = '#1e293b';
     }
-    document.body.className = `theme-${theme} ${isDarkTheme ? 'dark bg-[#08090e] text-zinc-100' : 'bg-[#fbf8f5] text-zinc-800'}`;
-  }, [theme, isDarkTheme]);
+  }, [isDarkTheme]);
 
   return (
     <div
@@ -89,34 +93,34 @@ export default function HomePage() {
                     <div className="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0">
                       <Sparkles className="w-4 h-4" />
                     </div>
-                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
                       {t.capstoneTitle}
                     </h1>
                   </div>
-                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 font-normal leading-relaxed">
+                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-200 font-normal leading-relaxed">
                     {t.courseTagline || 'A database course end to end with illustrations, and gamification'}
                   </p>
 
                   {/* Refined Apple Pills */}
                   <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200/80 dark:border-white/[0.08] text-zinc-700 dark:text-zinc-300 font-medium shadow-2xs">
-                      <MousePointer className="w-3 h-3 text-purple-500 opacity-80" />
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-white/[0.08] border border-zinc-200/80 dark:border-white/[0.12] text-zinc-700 dark:text-zinc-100 font-medium shadow-2xs">
+                      <MousePointer className="w-3 h-3 text-purple-500 dark:text-purple-400 opacity-90" />
                       {t.tagDrag}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200/80 dark:border-white/[0.08] text-zinc-700 dark:text-zinc-300 font-medium shadow-2xs">
-                      <Gamepad2 className="w-3 h-3 text-indigo-500 opacity-80" />
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-white/[0.08] border border-zinc-200/80 dark:border-white/[0.12] text-zinc-700 dark:text-zinc-100 font-medium shadow-2xs">
+                      <Gamepad2 className="w-3 h-3 text-indigo-500 dark:text-indigo-400 opacity-90" />
                       {t.tagFeedback}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200/80 dark:border-white/[0.08] text-zinc-700 dark:text-zinc-300 font-medium shadow-2xs">
-                      <TrendingUp className="w-3 h-3 text-blue-500 opacity-80" />
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-white/[0.08] border border-zinc-200/80 dark:border-white/[0.12] text-zinc-700 dark:text-zinc-100 font-medium shadow-2xs">
+                      <TrendingUp className="w-3 h-3 text-blue-500 dark:text-blue-400 opacity-90" />
                       {t.tagResults}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200/80 dark:border-white/[0.08] text-zinc-700 dark:text-zinc-300 font-medium shadow-2xs">
-                      <Award className="w-3 h-3 text-amber-500 opacity-80" />
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-white/[0.08] border border-zinc-200/80 dark:border-white/[0.12] text-zinc-700 dark:text-zinc-100 font-medium shadow-2xs">
+                      <Award className="w-3 h-3 text-amber-500 dark:text-amber-400 opacity-90" />
                       {t.tagBadges}
                     </span>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-white/[0.05] border border-zinc-200/80 dark:border-white/[0.08] text-zinc-700 dark:text-zinc-300 font-medium shadow-2xs">
-                      <Users className="w-3 h-3 text-emerald-500 opacity-80" />
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-white/[0.08] border border-zinc-200/80 dark:border-white/[0.12] text-zinc-700 dark:text-zinc-100 font-medium shadow-2xs">
+                      <Users className="w-3 h-3 text-emerald-500 dark:text-emerald-400 opacity-90" />
                       {t.tagImpact}
                     </span>
                   </div>
