@@ -38,38 +38,38 @@ export const LiveFeedSidebar: React.FC = () => {
   const getEventBadge = (type: string) => {
     switch (type) {
       case 'INSERT':
-        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300';
+        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
       case 'SELECT':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border-blue-300';
+        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
       case 'UPDATE':
-        return 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border-amber-300';
+        return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
       case 'DELETE':
-        return 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border-rose-300';
+        return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
       default:
-        return 'bg-slate-100 text-slate-700 dark:bg-slate-800';
+        return 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/20';
     }
   };
 
   return (
     <aside className="w-full lg:w-[290px] xl:w-[320px] shrink-0 flex flex-col gap-3">
       {/* 1. Live Data Feed */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs flex flex-col">
+      <div className="bg-white/80 dark:bg-[#111420]/80 backdrop-blur-2xl border border-black/[0.06] dark:border-white/[0.08] rounded-2xl p-3.5 shadow-sm flex flex-col">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5">
-            <Radio className={`w-4 h-4 ${isLiveFeedRunning ? 'text-emerald-500 animate-pulse' : 'text-slate-400'}`} />
+          <div className="flex items-center gap-2">
+            <Radio className={`w-3.5 h-3.5 ${isLiveFeedRunning ? 'text-emerald-500 animate-pulse' : 'text-zinc-400'}`} />
             <div>
-              <h3 className="text-xs font-black text-slate-800 dark:text-slate-100">{t.liveFeedTitle}</h3>
-              <p className="text-[10px] text-slate-400">{t.liveFeedSubtitle}</p>
+              <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">{t.liveFeedTitle}</h3>
+              <p className="text-[10px] text-zinc-500 dark:text-zinc-400">{t.liveFeedSubtitle}</p>
             </div>
           </div>
 
           {/* Live / Pause Button */}
           <button
             onClick={toggleLiveFeed}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all border ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all border ${
               isLiveFeedRunning
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300'
-                : 'bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800'
+                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                : 'bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-white/[0.08]'
             }`}
           >
             {isLiveFeedRunning ? (
@@ -87,31 +87,31 @@ export const LiveFeedSidebar: React.FC = () => {
         </div>
 
         {/* Streaming Events Table */}
-        <div className="border border-slate-100 dark:border-slate-800/80 rounded-xl overflow-hidden text-[10px]">
-          <div className="grid grid-cols-12 gap-1 px-2 py-1.5 bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-bold border-b border-slate-100 dark:border-slate-800">
+        <div className="border border-black/[0.05] dark:border-white/[0.06] rounded-xl overflow-hidden text-[10px]">
+          <div className="grid grid-cols-12 gap-1 px-2.5 py-1.5 bg-black/[0.02] dark:bg-white/[0.02] text-zinc-500 dark:text-zinc-400 font-medium border-b border-black/[0.05] dark:border-white/[0.06]">
             <span className="col-span-3">Time</span>
             <span className="col-span-3">Event</span>
             <span className="col-span-3">Table</span>
             <span className="col-span-3 text-right">Details</span>
           </div>
 
-          <div className="max-h-[175px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60">
+          <div className="max-h-[175px] overflow-y-auto divide-y divide-black/[0.04] dark:divide-white/[0.04]">
             {dataFeedEvents.map((evt, idx) => (
               <div
                 key={`${evt.id}-${idx}`}
                 onClick={() => setInspectEvent(evt)}
-                className="grid grid-cols-12 gap-1 px-2 py-1.5 items-center hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer transition-colors"
+                className="grid grid-cols-12 gap-1 px-2.5 py-1.5 items-center hover:bg-black/[0.02] dark:hover:bg-white/[0.03] cursor-pointer transition-colors"
               >
-                <span className="col-span-3 font-mono text-slate-400 text-[9px]">{evt.time}</span>
+                <span className="col-span-3 font-mono text-zinc-400 text-[9px]">{evt.time}</span>
                 <span className="col-span-3">
-                  <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black border ${getEventBadge(evt.event)}`}>
+                  <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-bold border ${getEventBadge(evt.event)}`}>
                     {evt.event}
                   </span>
                 </span>
-                <span className="col-span-3 font-semibold text-slate-700 dark:text-slate-300 truncate">
+                <span className="col-span-3 font-medium text-zinc-700 dark:text-zinc-300 truncate">
                   {evt.table}
                 </span>
-                <span className="col-span-3 text-right font-medium text-slate-500 dark:text-slate-400 truncate">
+                <span className="col-span-3 text-right font-normal text-zinc-500 dark:text-zinc-400 truncate">
                   {evt.details}
                 </span>
               </div>
@@ -121,13 +121,13 @@ export const LiveFeedSidebar: React.FC = () => {
       </div>
 
       {/* 2. Activity Timeline */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs">
+      <div className="bg-white/80 dark:bg-[#111420]/80 backdrop-blur-2xl border border-black/[0.06] dark:border-white/[0.08] rounded-2xl p-3.5 shadow-sm">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-4 h-4 text-purple-500" />
-            <h3 className="text-xs font-black text-slate-800 dark:text-slate-100">{t.activityTitle}</h3>
+          <div className="flex items-center gap-2">
+            <Clock className="w-3.5 h-3.5 text-violet-500" />
+            <h3 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">{t.activityTitle}</h3>
           </div>
-          <span className="text-[10px] font-bold text-pink-600 hover:underline cursor-pointer">
+          <span className="text-[10px] font-medium text-violet-600 dark:text-violet-400 hover:underline cursor-pointer">
             {t.viewAll}
           </span>
         </div>
@@ -139,19 +139,19 @@ export const LiveFeedSidebar: React.FC = () => {
                 {act.type === 'badge' ? (
                   <Award className="w-3.5 h-3.5 text-amber-500" />
                 ) : act.type === 'hint' ? (
-                  <Lightbulb className="w-3.5 h-3.5 text-blue-500" />
+                  <Lightbulb className="w-3.5 h-3.5 text-violet-500" />
                 ) : (
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-slate-700 dark:text-slate-300 font-medium leading-tight">
+                <p className="text-zinc-700 dark:text-zinc-300 font-normal leading-tight">
                   {act.message}
                 </p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[9px] font-mono text-slate-400">{act.time}</span>
+                  <span className="text-[9px] font-mono text-zinc-400">{act.time}</span>
                   {act.xpAward && (
-                    <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400">
+                    <span className="text-[9px] font-semibold text-amber-600 dark:text-amber-400">
                       +{act.xpAward} XP
                     </span>
                   )}
@@ -162,25 +162,25 @@ export const LiveFeedSidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. AI Learning Coach */}
-      <div className="bg-gradient-to-br from-pink-50/90 via-purple-50/70 to-indigo-50/80 dark:from-slate-900 dark:via-pink-950/20 dark:to-purple-950/20 border border-pink-200/80 dark:border-pink-900/60 rounded-2xl p-3.5 shadow-sm">
-        {/* Robot Header */}
+      {/* 3. AI Architecture Copilot */}
+      <div className="bg-white/80 dark:bg-[#111420]/80 backdrop-blur-2xl border border-black/[0.06] dark:border-white/[0.08] rounded-2xl p-3.5 shadow-sm">
+        {/* Architect Header */}
         <div className="flex items-start gap-2.5 mb-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-pink-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-pink-500/20 shrink-0 animate-pulse-glow">
-            <Bot className="w-5 h-5" />
+          <div className="w-8 h-8 rounded-xl bg-violet-500/10 dark:bg-violet-400/10 border border-violet-500/20 flex items-center justify-center text-violet-600 dark:text-violet-400 shrink-0">
+            <Sparkles className="w-4 h-4" />
           </div>
           <div>
-            <h4 className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+            <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5 tracking-tight">
               {t.coachTitle}
             </h4>
-            <p className="text-[10px] text-pink-700 dark:text-pink-300 font-semibold">
+            <p className="text-[10px] text-violet-600 dark:text-violet-400 font-medium">
               {t.coachSub}
             </p>
           </div>
         </div>
 
-        {/* Coach Speech Bubble */}
-        <div className="bg-white/90 dark:bg-slate-800/90 border border-pink-200/60 dark:border-pink-900/60 rounded-xl p-2.5 text-[11px] text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-line shadow-2xs">
+        {/* Coach Speech Box */}
+        <div className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/[0.06] rounded-xl p-2.5 text-[11px] text-zinc-700 dark:text-zinc-200 leading-relaxed whitespace-pre-line">
           {aiCoachText}
         </div>
 
@@ -188,7 +188,7 @@ export const LiveFeedSidebar: React.FC = () => {
         <div className="grid grid-cols-2 gap-1.5 mt-2.5">
           <button
             onClick={() => coachAction('hint')}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-amber-200 dark:border-slate-700 hover:bg-amber-50 text-[10px] font-bold text-amber-700 dark:text-amber-300 transition-all shadow-2xs"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-50 dark:bg-white/[0.03] border border-black/[0.05] dark:border-white/[0.06] hover:bg-white dark:hover:bg-white/[0.07] text-[10px] font-medium text-zinc-700 dark:text-zinc-300 transition-all"
           >
             <Lightbulb className="w-3 h-3 text-amber-500" />
             {t.hintBtn}
@@ -196,15 +196,15 @@ export const LiveFeedSidebar: React.FC = () => {
 
           <button
             onClick={() => coachAction('explain')}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-purple-200 dark:border-slate-700 hover:bg-purple-50 text-[10px] font-bold text-purple-700 dark:text-purple-300 transition-all shadow-2xs"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-50 dark:bg-white/[0.03] border border-black/[0.05] dark:border-white/[0.06] hover:bg-white dark:hover:bg-white/[0.07] text-[10px] font-medium text-zinc-700 dark:text-zinc-300 transition-all"
           >
-            <BookOpen className="w-3 h-3 text-purple-500" />
+            <BookOpen className="w-3 h-3 text-violet-500" />
             {t.explainBtn}
           </button>
 
           <button
             onClick={() => coachAction('example')}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-blue-200 dark:border-slate-700 hover:bg-blue-50 text-[10px] font-bold text-blue-700 dark:text-blue-300 transition-all shadow-2xs"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-50 dark:bg-white/[0.03] border border-black/[0.05] dark:border-white/[0.06] hover:bg-white dark:hover:bg-white/[0.07] text-[10px] font-medium text-zinc-700 dark:text-zinc-300 transition-all"
           >
             <Code2 className="w-3 h-3 text-blue-500" />
             {t.exampleBtn}
@@ -212,9 +212,9 @@ export const LiveFeedSidebar: React.FC = () => {
 
           <button
             onClick={() => coachAction('next')}
-            className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-pink-200 dark:border-slate-700 hover:bg-pink-50 text-[10px] font-bold text-pink-700 dark:text-pink-300 transition-all shadow-2xs"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-50 dark:bg-white/[0.03] border border-black/[0.05] dark:border-white/[0.06] hover:bg-white dark:hover:bg-white/[0.07] text-[10px] font-medium text-zinc-700 dark:text-zinc-300 transition-all"
           >
-            <ArrowRight className="w-3 h-3 text-pink-500" />
+            <ArrowRight className="w-3 h-3 text-emerald-500" />
             {t.nextBtn}
           </button>
         </div>

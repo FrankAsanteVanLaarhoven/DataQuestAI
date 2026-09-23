@@ -17,6 +17,7 @@ import {
   FileCode,
   Image as ImageIcon,
   Key,
+  Link2,
   ShieldCheck,
   TrendingUp,
   Sparkles,
@@ -29,6 +30,8 @@ import {
   HelpCircle,
   Share2,
   GraduationCap,
+  Trophy,
+  Lightbulb,
 } from 'lucide-react';
 
 interface QuizQuestion {
@@ -190,7 +193,7 @@ export const LearnRoadmap: React.FC = () => {
           <div className="mt-5 p-3.5 bg-black/25 backdrop-blur-md border border-white/20 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black text-lg shadow-md">
-                🏆
+                <Trophy className="w-5 h-5 text-slate-950" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -220,17 +223,17 @@ export const LearnRoadmap: React.FC = () => {
           </div>
         </div>
 
-        {/* Floating Cartoon Laptop & Illustration Icon */}
-        <div className="hidden lg:flex absolute right-8 top-1/2 -translate-y-1/2 items-center gap-4 text-6xl">
-          <div className="p-5 bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 text-center shadow-2xl">
-            <span className="block text-5xl mb-1 animate-bounce" style={{ animationDuration: '3s' }}>
-              📚
+        {/* Technical Architecture Overview Card */}
+        <div className="hidden lg:flex absolute right-8 top-1/2 -translate-y-1/2 items-center gap-4">
+          <div className="p-5 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 text-center shadow-xl">
+            <div className="w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-2 text-white">
+              <BookOpen className="w-6 h-6" />
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-pink-100 block">
+              ARCHITECTURE SPEC
             </span>
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-pink-100 block">
-              ILLUSTRATED
-            </span>
-            <span className="text-[9px] font-bold text-amber-300 uppercase block">
-              + GAMIFIED
+            <span className="text-[9px] font-semibold text-amber-300 uppercase block tracking-wider mt-0.5">
+              CSC1033 ACCREDITED
             </span>
           </div>
         </div>
@@ -304,7 +307,7 @@ export const LearnRoadmap: React.FC = () => {
               From microscopic bits and bytes to high-performance relational tables and document hierarchies.
             </p>
             <div className="mt-3 p-3 bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-900 rounded-2xl flex items-center gap-2">
-              <span className="text-lg">💡</span>
+              <Lightbulb className="w-4 h-4 text-amber-500 shrink-0" />
               <p className="text-xs text-pink-900 dark:text-pink-200 font-semibold">
                 <strong>Data</strong> = Pieces of factual information digitized into binary bits (<code className="bg-pink-100 dark:bg-pink-900 px-1 py-0.5 rounded text-[11px]">0</code> and <code className="bg-pink-100 dark:bg-pink-900 px-1 py-0.5 rounded text-[11px]">1</code>) that machines compute, query, and persist across storage tiers.
               </p>
@@ -430,7 +433,7 @@ export const LearnRoadmap: React.FC = () => {
           {/* Illustrated Storage Tier Hierarchy Diagram */}
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
             <h4 className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-              <span>⚡</span> Illustrated Storage Hierarchy: Latency & Permanence
+              <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500/20" /> Illustrated Storage Hierarchy: Latency & Permanence
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
               <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-pink-200 dark:border-pink-900/60 text-center">
@@ -503,7 +506,7 @@ export const LearnRoadmap: React.FC = () => {
                 </div>
                 <div className="space-y-1.5 font-mono text-[10px]">
                   <div className="flex items-center justify-between bg-pink-950/40 p-1.5 rounded text-pink-300 font-bold border border-pink-900/50">
-                    <span className="flex items-center gap-1">🔑 StudentID</span>
+                    <span className="flex items-center gap-1.5"><Key className="w-3 h-3 text-amber-400" /> StudentID</span>
                     <span className="text-slate-400">PK (INT)</span>
                   </div>
                   <div className="flex items-center justify-between p-1 text-slate-300">
@@ -525,15 +528,15 @@ export const LearnRoadmap: React.FC = () => {
                 </div>
                 <div className="space-y-1.5 font-mono text-[10px]">
                   <div className="flex items-center justify-between bg-purple-950/40 p-1.5 rounded text-purple-300 font-bold border border-purple-900/50">
-                    <span className="flex items-center gap-1">🔑 BorrowID</span>
+                    <span className="flex items-center gap-1.5"><Key className="w-3 h-3 text-amber-400" /> BorrowID</span>
                     <span className="text-slate-400">PK (INT)</span>
                   </div>
                   <div className="flex items-center justify-between bg-pink-950/30 p-1 text-pink-300 font-semibold border-b border-slate-800">
-                    <span className="flex items-center gap-1">🔗 StudentID</span>
+                    <span className="flex items-center gap-1.5"><Link2 className="w-3 h-3 text-pink-400" /> StudentID</span>
                     <span className="text-pink-400">FK (Students)</span>
                   </div>
                   <div className="flex items-center justify-between bg-indigo-950/30 p-1 text-indigo-300 font-semibold border-b border-slate-800">
-                    <span className="flex items-center gap-1">🔗 BookID</span>
+                    <span className="flex items-center gap-1.5"><Link2 className="w-3 h-3 text-indigo-400" /> BookID</span>
                     <span className="text-indigo-400">FK (Books)</span>
                   </div>
                   <div className="flex items-center justify-between p-1 text-slate-300">
@@ -551,7 +554,7 @@ export const LearnRoadmap: React.FC = () => {
                 </div>
                 <div className="space-y-1.5 font-mono text-[10px]">
                   <div className="flex items-center justify-between bg-indigo-950/40 p-1.5 rounded text-indigo-300 font-bold border border-indigo-900/50">
-                    <span className="flex items-center gap-1">🔑 BookID</span>
+                    <span className="flex items-center gap-1.5"><Key className="w-3 h-3 text-amber-400" /> BookID</span>
                     <span className="text-slate-400">PK (INT)</span>
                   </div>
                   <div className="flex items-center justify-between p-1 text-slate-300">
@@ -601,7 +604,7 @@ export const LearnRoadmap: React.FC = () => {
           {/* Illustrated Step-by-Step Normalisation Infographic */}
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-3">
             <h3 className="text-xs font-black uppercase text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-              <span>📐</span> Illustrated Normalisation Pipeline: 1NF → 2NF → 3NF
+              <Layers className="w-4 h-4 text-violet-500 shrink-0" /> Illustrated Normalisation Pipeline: 1NF → 2NF → 3NF
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-pink-200 dark:border-pink-900 shadow-xs">
@@ -765,7 +768,7 @@ export const LearnRoadmap: React.FC = () => {
           {/* Inverted Index Demonstration */}
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-2">
             <h4 className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-              <span>🔎</span> Inverted Index for Full-Text Search
+              <Search className="w-3.5 h-3.5 text-sky-500 shrink-0" /> Inverted Index for Full-Text Search
             </h4>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
               Google, Elasticsearch, and Lucene flip documents inside-out. Instead of scanning files, they maintain an inverted dictionary of tokens pointing to posting lists:
@@ -912,7 +915,7 @@ export const LearnRoadmap: React.FC = () => {
           <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 text-white space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-black uppercase tracking-wider text-pink-400 flex items-center gap-1.5">
-                <span>🔺</span> Illustrated CAP Theorem Triangle
+                <ShieldCheck className="w-3.5 h-3.5 text-pink-400 shrink-0" /> Illustrated CAP Theorem Model
               </h3>
               <span className="text-[10px] font-bold bg-pink-950 text-pink-300 border border-pink-800 px-2 py-0.5 rounded-full">
                 Choose Any 2
@@ -954,7 +957,7 @@ export const LearnRoadmap: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
               <h4 className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 mb-2">
-                <span>🤖</span> AI Vector Databases (RAG)
+                <Cpu className="w-3.5 h-3.5 text-violet-500 shrink-0" /> AI Vector Databases (RAG)
               </h4>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed mb-3">
                 Modern AI apps embed unstructured sentences into high-dimensional vectors. Databases like Pinecone, pgvector, and Milvus compute <strong>Cosine Similarity</strong> to retrieve context for LLMs:
@@ -966,7 +969,7 @@ export const LearnRoadmap: React.FC = () => {
 
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
               <h4 className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 mb-2">
-                <span>⚖️</span> Data Ethics &amp; Compliance (GDPR)
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> Data Ethics &amp; Compliance (GDPR)
               </h4>
               <ul className="text-[11px] text-slate-600 dark:text-slate-300 space-y-1.5">
                 <li>• <strong>Right to Erasure:</strong> Architect pipelines that cascade soft-deletes to hard-deletes.</li>
@@ -999,7 +1002,7 @@ export const LearnRoadmap: React.FC = () => {
             </button>
 
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 text-white flex items-center justify-center text-3xl mx-auto shadow-lg mb-3">
-              🎓
+              <GraduationCap className="w-8 h-8 text-white" />
             </div>
 
             <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">

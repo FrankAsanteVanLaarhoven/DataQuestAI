@@ -505,9 +505,14 @@ export const useAppStore = create<AppState>((set, get) => {
       });
     },
 
-    theme: 'vibrant',
+    theme: 'dark',
     setTheme: (theme) => {
       sound.playClick();
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('dataquest_theme', theme);
+        } catch {}
+      }
       set({ theme });
     },
 

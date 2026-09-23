@@ -20,6 +20,7 @@ import {
   MousePointer,
   HelpCircle,
   GitBranch,
+  Link2,
 } from 'lucide-react';
 
 export const SystemCanvas: React.FC = () => {
@@ -242,8 +243,9 @@ export const SystemCanvas: React.FC = () => {
             <h3 className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
               {t.canvasTitle}
               {connectingFromId && (
-                <span className="text-[10px] font-bold text-pink-600 bg-pink-50 dark:bg-pink-950 px-2 py-0.5 rounded-full animate-pulse border border-pink-200">
-                  Release on another card to connect 🔗
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-violet-600 dark:text-violet-400 bg-violet-500/10 px-2.5 py-0.5 rounded-full border border-violet-500/20 animate-pulse">
+                  <Link2 className="w-3 h-3" />
+                  Release on target node to link
                 </span>
               )}
             </h3>
@@ -409,37 +411,37 @@ export const SystemCanvas: React.FC = () => {
           const isConnectTarget = hoveredTargetNodeId === node.id;
 
           // Theme styling based on concept type
-          let nodeBg = 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700';
-          let badgeBg = 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
-          let iconDot = 'bg-slate-400';
+          let nodeBg = 'bg-white/95 dark:bg-[#131622]/95 backdrop-blur-xl border-black/[0.08] dark:border-white/[0.1] text-zinc-900 dark:text-zinc-100';
+          let badgeBg = 'bg-zinc-100 dark:bg-white/[0.06] text-zinc-700 dark:text-zinc-300 border border-black/[0.05] dark:border-white/[0.08]';
+          let iconDot = 'bg-zinc-400';
 
           if (node.type === 'entity') {
-            nodeBg = 'bg-pink-50/70 border-pink-300 dark:bg-pink-950/40 dark:border-pink-800 text-slate-900 dark:text-pink-100';
-            badgeBg = 'bg-pink-100 text-pink-700 dark:bg-pink-900/60 dark:text-pink-300';
-            iconDot = 'bg-pink-500';
+            nodeBg = 'bg-white/95 dark:bg-[#151324]/95 backdrop-blur-xl border-violet-500/30 dark:border-violet-400/30 text-zinc-900 dark:text-zinc-100';
+            badgeBg = 'bg-violet-500/10 text-violet-700 dark:text-violet-300 border border-violet-500/20';
+            iconDot = 'bg-violet-500';
           } else if (node.type === 'relationship') {
-            nodeBg = 'bg-purple-50/70 border-purple-300 dark:bg-purple-950/40 dark:border-purple-800';
-            badgeBg = 'bg-purple-100 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300';
-            iconDot = 'bg-purple-500';
+            nodeBg = 'bg-white/95 dark:bg-[#131524]/95 backdrop-blur-xl border-indigo-500/30 dark:border-indigo-400/30 text-zinc-900 dark:text-zinc-100';
+            badgeBg = 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20';
+            iconDot = 'bg-indigo-500';
           } else if (node.type === 'primaryKey') {
-            nodeBg = 'bg-amber-50/80 border-amber-300 dark:bg-amber-950/40 dark:border-amber-800';
-            badgeBg = 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300';
+            nodeBg = 'bg-white/95 dark:bg-[#1d1810]/95 backdrop-blur-xl border-amber-500/30 dark:border-amber-400/30 text-zinc-900 dark:text-zinc-100';
+            badgeBg = 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20';
             iconDot = 'bg-amber-500';
           } else if (node.type === 'foreignKey') {
-            nodeBg = 'bg-orange-50/80 border-orange-300 dark:bg-orange-950/40 dark:border-orange-800';
-            badgeBg = 'bg-orange-100 text-orange-800 dark:bg-orange-900/60 dark:text-orange-300';
+            nodeBg = 'bg-white/95 dark:bg-[#1d1610]/95 backdrop-blur-xl border-orange-500/30 dark:border-orange-400/30 text-zinc-900 dark:text-zinc-100';
+            badgeBg = 'bg-orange-500/10 text-orange-700 dark:text-orange-300 border border-orange-500/20';
             iconDot = 'bg-orange-500';
           } else if (node.type === 'attribute') {
-            nodeBg = 'bg-blue-50/80 border-blue-300 dark:bg-blue-950/40 dark:border-blue-800';
-            badgeBg = 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300';
+            nodeBg = 'bg-white/95 dark:bg-[#101724]/95 backdrop-blur-xl border-blue-500/30 dark:border-blue-400/30 text-zinc-900 dark:text-zinc-100';
+            badgeBg = 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20';
             iconDot = 'bg-blue-500';
           }
 
           // Validation Halo Overrides
           if (node.status === 'correct') {
-            nodeBg += ' halo-correct border-emerald-400 bg-emerald-50/50';
+            nodeBg += ' halo-correct border-emerald-500/60 ring-1 ring-emerald-500/30';
           } else if (node.status === 'wrong') {
-            nodeBg += ' halo-wrong border-red-500 bg-red-50/60';
+            nodeBg += ' halo-wrong border-rose-500/60 ring-1 ring-rose-500/30';
           }
 
           return (
@@ -518,11 +520,11 @@ export const SystemCanvas: React.FC = () => {
                 {/* Status indicator icon */}
                 {node.status === 'correct' ? (
                   <div className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] shadow-xs shrink-0">
-                    ✓
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
                   </div>
                 ) : node.status === 'wrong' ? (
-                  <div className="w-4 h-4 rounded-full bg-red-500 text-white flex items-center justify-center text-[10px] shadow-xs shrink-0">
-                    ✕
+                  <div className="w-4 h-4 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px] shadow-xs shrink-0">
+                    <X className="w-2.5 h-2.5 stroke-[3]" />
                   </div>
                 ) : null}
               </div>
