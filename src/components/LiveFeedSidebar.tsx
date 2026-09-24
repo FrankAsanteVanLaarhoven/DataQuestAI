@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '@/lib/store';
 import { translations } from '@/lib/i18n';
+import { voiceEngine, VoiceEngineState, VOICE_PROFILES, VoiceProfileId } from '@/lib/voice-engine';
 import {
   Radio,
   Play,
@@ -18,6 +19,10 @@ import {
   HelpCircle,
   CheckCircle2,
   X,
+  Volume2,
+  VolumeX,
+  Square,
+  Mic,
 } from 'lucide-react';
 
 export const LiveFeedSidebar: React.FC = () => {
@@ -29,11 +34,29 @@ export const LiveFeedSidebar: React.FC = () => {
     aiCoachText,
     coachAction,
     language,
+    voiceEnabled,
+    toggleVoice,
+    voiceProfile,
+    setVoiceProfile,
   } = useAppStore();
 
   const t = translations[language] || translations.en;
 
   const [inspectEvent, setInspectEvent] = useState<any | null>(null);
+  const [voiceState, setVoiceState] = useState<VoiceEngineState>(voiceEngine.getState());
+
+  useEffect(() => {
+    const unsub = voiceEngine.subscribe((st) => setVoiceState(st));
+    return unsub;
+  }, []);
+
+  const handleSpeakCoach = () => {
+    if (voiceState.isSpeaking) {
+      voiceEngine.stop();
+    } else {
+      voiceEngine.speak(aiCoachText, { profile: voiceProfile });
+    }
+  };
 
   const getEventBadge = (type: string) => {
     switch (type) {
@@ -182,6 +205,58 @@ export const LiveFeedSidebar: React.FC = () => {
         {/* Coach Speech Box */}
         <div className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/[0.06] rounded-xl p-2.5 text-[11px] text-zinc-700 dark:text-zinc-200 leading-relaxed whitespace-pre-line">
           {aiCoachText}
+        </div>
+
+        {/* Conversational Voice Bar */}
+        <div className="mt-2 p-2 rounded-xl bg-violet-500/5 dark:bg-violet-400/5 border border-violet-500/10 dark:border-violet-400/10 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSpeakCoach}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all shadow-xs ${
+                voiceState.isSpeaking
+                  ? 'bg-rose-500 hover:bg-rose-600 text-white'
+                  : 'bg-violet-600 hover:bg-violet-500 text-white'
+              }`}
+            >
+              {voiceState.isSpeaking ? (
+                <>
+                  <Square className="w-2.5 h-2.5 fill-current" />
+                  <span>Stop</span>
+                </>
+              ) : (
+                <>
+                  <Volume2 className="w-3 h-3" />
+                  <span>Listen</span>
+                </>
+              )}
+            </button>
+
+            {/* Audio Waveform Signal Bar */}
+            {voiceState.isSpeaking && (
+              <div className="flex items-center gap-0.5 h-3">
+                <span className="w-0.5 bg-violet-500 rounded-full animate-pulse h-2" />
+                <span className="w-0.5 bg-purple-500 rounded-full animate-pulse h-3" />
+                <span className="w-0.5 bg-indigo-500 rounded-full animate-pulse h-1.5" />
+                <span className="w-0.5 bg-violet-400 rounded-full animate-pulse h-2.5" />
+                <span className="text-[9px] font-mono text-violet-600 dark:text-violet-400 ml-1">Speaking...</span>
+              </div>
+            )}
+          </div>
+
+          {/* Voice Profile Selector */}
+          <div className="flex items-center gap-1">
+            <span className="text-[9px] text-zinc-400 font-medium">Voice:</span>
+            <select
+              value={voiceProfile}
+              onChange={(e) => setVoiceProfile(e.target.value as VoiceProfileId)}
+              className="bg-transparent text-[10px] font-semibold text-zinc-700 dark:text-zinc-300 border-none outline-hidden cursor-pointer"
+            >
+              <option value="mentor">Mentor</option>
+              <option value="lecturer">Lecturer</option>
+              <option value="coach">Coach</option>
+              <option value="calm">Calm</option>
+            </select>
+          </div>
         </div>
 
         {/* 4 Instant Action Buttons */}

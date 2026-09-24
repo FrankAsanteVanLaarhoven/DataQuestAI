@@ -28,7 +28,10 @@ import {
   ShieldCheck,
   GraduationCap,
   Building2,
+  Mic,
+  MicOff,
 } from 'lucide-react';
+import { voiceEngine } from '@/lib/voice-engine';
 
 export const Header: React.FC = () => {
   const {
@@ -41,12 +44,22 @@ export const Header: React.FC = () => {
     setLanguage,
     soundEnabled,
     toggleSound,
+    voiceEnabled,
+    toggleVoice,
+    voiceProfile,
     isAuthModalOpen,
     setAuthModalOpen,
     setUser,
     explanationMode,
     toggleExplanationMode,
   } = useAppStore();
+
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  useEffect(() => {
+    const unsub = voiceEngine.subscribe((st) => setIsSpeaking(st.isSpeaking));
+    return unsub;
+  }, []);
 
   const t = translations[language] || translations.en;
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
@@ -328,16 +341,42 @@ export const Header: React.FC = () => {
               )}
             </button>
 
-            {/* Audio Toggle */}
+            {/* Audio Sound FX Toggle */}
             <button
               onClick={toggleSound}
               title={soundEnabled ? 'Mute Sound FX' : 'Enable Sound FX'}
-              className="p-2 rounded-xl border border-zinc-200/80 dark:border-white/[0.08] bg-zinc-100/60 dark:bg-white/[0.04] hover:bg-zinc-100 dark:hover:bg-white/[0.08] text-zinc-700 dark:text-zinc-300 transition-all"
+              className="p-2 rounded-xl border border-zinc-200/80 dark:border-white/[0.08] bg-zinc-100/60 dark:bg-white/[0.04] hover:bg-zinc-100 dark:hover:bg-white/[0.08] text-zinc-700 dark:text-zinc-300 transition-all cursor-pointer"
             >
               {soundEnabled ? (
                 <Volume2 className="w-3.5 h-3.5 text-emerald-500" />
               ) : (
                 <VolumeX className="w-3.5 h-3.5 text-zinc-400" />
+              )}
+            </button>
+
+            {/* Conversational Voice Assistant Toggle */}
+            <button
+              onClick={toggleVoice}
+              title={
+                voiceEnabled
+                  ? `Conversational Voice Active (${voiceProfile}) - Click to mute narration`
+                  : 'Enable Conversational Voice'
+              }
+              className={`p-2 rounded-xl border transition-all flex items-center gap-1 cursor-pointer ${
+                voiceEnabled
+                  ? 'border-violet-500/40 bg-violet-500/10 text-violet-600 dark:text-violet-300 ring-1 ring-violet-500/20'
+                  : 'border-zinc-200/80 dark:border-white/[0.08] bg-zinc-100/60 dark:bg-white/[0.04] text-zinc-400'
+              }`}
+            >
+              {voiceEnabled ? (
+                <div className="flex items-center gap-1">
+                  <Mic className="w-3.5 h-3.5 text-violet-500" />
+                  {isSpeaking && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-ping" />
+                  )}
+                </div>
+              ) : (
+                <MicOff className="w-3.5 h-3.5 text-zinc-400" />
               )}
             </button>
 

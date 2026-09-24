@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '@/lib/store';
 import { sound } from '@/lib/audio';
 import { dbSimulator } from '@/lib/db-engine';
+import { voiceEngine } from '@/lib/voice-engine';
 import {
   BookOpen,
   CheckCircle,
@@ -32,6 +33,8 @@ import {
   GraduationCap,
   Trophy,
   Lightbulb,
+  Volume2,
+  Square,
 } from 'lucide-react';
 
 import { SearchEngineLab } from './labs/SearchEngineLab';
@@ -139,6 +142,28 @@ export const LearnRoadmap: React.FC = () => {
   const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
   const [quizCompleted, setQuizCompleted] = useState<Record<number, boolean>>({});
   const [showCertificate, setShowCertificate] = useState(false);
+  const [speakingText, setSpeakingText] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsub = voiceEngine.subscribe((st) => {
+      if (!st.isSpeaking) {
+        setSpeakingText(null);
+      }
+    });
+    return unsub;
+  }, []);
+
+  const handleToggleSpeak = (text: string) => {
+    if (speakingText === text) {
+      voiceEngine.stop();
+      setSpeakingText(null);
+    } else {
+      setSpeakingText(text);
+      voiceEngine.speak(text, {
+        onComplete: () => setSpeakingText(null),
+      });
+    }
+  };
 
   const runSql = () => {
     const res = dbSimulator.executeCustomSql(sqlQuery);
@@ -368,16 +393,36 @@ export const LearnRoadmap: React.FC = () => {
             {/* Scientifically Clean Dual-Layer Data Definition */}
             <div className="mt-4 space-y-3">
               <div className="p-3.5 bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-900 rounded-2xl space-y-2">
-                <div className="flex items-start gap-2.5">
-                  <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                  <div className="space-y-1 text-xs">
-                    <p className="text-pink-950 dark:text-pink-100 font-medium">
-                      <strong>Data</strong> means information that we record so that we can store it, study it, change it, or use it later.
-                    </p>
-                    <p className="text-pink-800 dark:text-pink-300 text-[11px]">
-                      A computer normally represents digital data using tiny electrical or magnetic values called <strong>bits</strong>. A bit can have one of two values: <code className="bg-pink-100 dark:bg-pink-900 px-1 py-0.5 rounded font-mono">0</code> or <code className="bg-pink-100 dark:bg-pink-900 px-1 py-0.5 rounded font-mono">1</code>.
-                    </p>
+                <div className="flex items-start justify-between gap-2.5">
+                  <div className="flex items-start gap-2.5">
+                    <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <div className="space-y-1 text-xs">
+                      <p className="text-pink-950 dark:text-pink-100 font-medium">
+                        <strong>Data</strong> means information that we record so that we can store it, study it, change it, or use it later.
+                      </p>
+                      <p className="text-pink-800 dark:text-pink-300 text-[11px]">
+                        A computer normally represents digital data using tiny electrical or magnetic values called <strong>bits</strong>. A bit can have one of two values: <code className="bg-pink-100 dark:bg-pink-900 px-1 py-0.5 rounded font-mono">0</code> or <code className="bg-pink-100 dark:bg-pink-900 px-1 py-0.5 rounded font-mono">1</code>.
+                      </p>
+                    </div>
                   </div>
+
+                  <button
+                    onClick={() => handleToggleSpeak("Data means information that we record so that we can store it, study it, change it, or use it later. A computer normally represents digital data using tiny values called bits. A bit can have one of two values: 0 or 1. Real-world fact: Frank's age 38 is recorded as data, stored in memory, and represented as bits 00100110.")}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-pink-100 hover:bg-pink-200 dark:bg-pink-900/60 dark:hover:bg-pink-800 text-pink-700 dark:text-pink-300 text-[10px] font-bold transition-all shrink-0 cursor-pointer shadow-xs"
+                    title="Listen to conversational voice explanation"
+                  >
+                    {speakingText?.startsWith("Data means") ? (
+                      <>
+                        <Square className="w-2.5 h-2.5 fill-current" />
+                        <span>Stop</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-3 h-3" />
+                        <span>Listen</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 {/* Concrete Chain of Learning */}
@@ -671,27 +716,53 @@ export const LearnRoadmap: React.FC = () => {
                 <span className="text-xs font-black uppercase tracking-wider text-pink-400 flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" /> Dual-Layer Learning Explainer
                 </span>
-                <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-[10px]">
+                <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setExplanationMode('simple')}
-                    className={`px-2 py-0.5 rounded-lg font-bold transition-all ${
-                      explanationMode === 'simple'
-                        ? 'bg-amber-400 text-slate-950 shadow-xs'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
+                    onClick={() => {
+                      const text =
+                        explanationMode === 'simple'
+                          ? "A Primary Key is a value that uniquely identifies one row. Think of it like a student's unique school number. A Foreign Key is a link in one table that points to the Primary Key in another table. Think of it like writing your student number on your library book loan."
+                          : "A Primary Key is a candidate key selected to enforce entity integrity and uniquely identify tuples within a relation. A Foreign Key is a referential constraint referencing a candidate key in a parent relation, enforcing relational integrity across tables.";
+                      handleToggleSpeak(text);
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-pink-900/60 hover:bg-pink-800 text-pink-300 text-[10px] font-bold transition-all cursor-pointer shadow-xs"
+                    title="Listen to conversational explanation"
                   >
-                    🧸 Simple Mode
+                    {speakingText?.startsWith("A Primary Key") ? (
+                      <>
+                        <Square className="w-2.5 h-2.5 fill-current" />
+                        <span>Stop</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-3 h-3" />
+                        <span>Listen</span>
+                      </>
+                    )}
                   </button>
-                  <button
-                    onClick={() => setExplanationMode('engineer')}
-                    className={`px-2 py-0.5 rounded-lg font-bold transition-all ${
-                      explanationMode === 'engineer'
-                        ? 'bg-indigo-500 text-white shadow-xs'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    ⚙️ Engineer Mode
-                  </button>
+
+                  <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-[10px]">
+                    <button
+                      onClick={() => setExplanationMode('simple')}
+                      className={`px-2 py-0.5 rounded-lg font-bold transition-all ${
+                        explanationMode === 'simple'
+                          ? 'bg-amber-400 text-slate-950 shadow-xs'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      🧸 Simple Mode
+                    </button>
+                    <button
+                      onClick={() => setExplanationMode('engineer')}
+                      className={`px-2 py-0.5 rounded-lg font-bold transition-all ${
+                        explanationMode === 'engineer'
+                          ? 'bg-indigo-500 text-white shadow-xs'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      ⚙️ Engineer Mode
+                    </button>
+                  </div>
                 </div>
               </div>
 

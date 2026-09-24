@@ -22,7 +22,10 @@ import {
   ShieldAlert,
   ShieldCheck,
   RefreshCw,
+  Volume2,
+  Square,
 } from 'lucide-react';
+import { voiceEngine } from '@/lib/voice-engine';
 
 interface CampusService {
   id: string;
@@ -146,13 +149,37 @@ export const DigitalUniversitySimulation: React.FC = () => {
     );
   };
 
+  const [isSpeakingIncident, setIsSpeakingIncident] = useState(false);
+
+  useEffect(() => {
+    const unsub = voiceEngine.subscribe((st) => setIsSpeakingIncident(st.isSpeaking));
+    return unsub;
+  }, []);
+
+  const handleDispatchAudio = () => {
+    if (!activeIncident) return;
+    if (isSpeakingIncident) {
+      voiceEngine.stop();
+      setIsSpeakingIncident(false);
+    } else {
+      const msg = `Attention campus control center. Critical incident detected in ${activeIncident.department}. ${activeIncident.title}. Symptom: ${activeIncident.symptom}. Simple explanation: ${activeIncident.simpleExplanation}. Architectural root cause: ${activeIncident.technicalExplanation}. Please select an architectural repair strategy.`;
+      voiceEngine.speak(msg, {
+        profile: 'lecturer',
+        onComplete: () => setIsSpeakingIncident(false),
+      });
+    }
+  };
+
   const handleMitigate = (option: { label: string; action: string; isCorrect: boolean }) => {
     if (option.isCorrect) {
+      voiceEngine.stop();
+      setIsSpeakingIncident(false);
       awardXp(100, `Resolved Chaos Incident: ${activeIncident?.title}`);
       unlockCompetency('comp_enterprise_architect');
       setServices((prev) =>
         prev.map((s) => ({ ...s, status: 'healthy', latencyMs: Math.round((Math.random() * 2 + 1) * 10) / 10 }))
       );
+      voiceEngine.speak("Incident successfully mitigated! System telemetry restored to healthy state.", { profile: 'mentor' });
       setActiveIncident(null);
     } else {
       alert('Incorrect Architectural Mitigation! That action increases system vulnerability.');
@@ -218,7 +245,27 @@ export const DigitalUniversitySimulation: React.FC = () => {
                 <h3 className="text-base font-black text-white mt-0.5">{activeIncident.title}</h3>
               </div>
             </div>
-            <span className="text-xs font-mono font-bold text-rose-300">Reward: +100 XP</span>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleDispatchAudio}
+                className="flex items-center gap-1.5 px-3 py-1 bg-rose-900/80 hover:bg-rose-800 text-rose-200 border border-rose-700/80 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                title="Dispatch Audio Broadcast"
+              >
+                {isSpeakingIncident ? (
+                  <>
+                    <Square className="w-3 h-3 fill-current text-rose-400" />
+                    <span>Stop Broadcast</span>
+                  </>
+                ) : (
+                  <>
+                    <Volume2 className="w-3.5 h-3.5 text-rose-300" />
+                    <span>Audio Dispatch</span>
+                  </>
+                )}
+              </button>
+              <span className="text-xs font-mono font-bold text-rose-300">Reward: +100 XP</span>
+            </div>
           </div>
 
           <div className="space-y-2 text-xs">

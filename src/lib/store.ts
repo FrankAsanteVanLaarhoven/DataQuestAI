@@ -17,6 +17,7 @@ import { SupportedLanguage } from './i18n';
 import { DECLARATIVE_MISSIONS } from './missions/declarative-missions';
 import { tutorEngine } from './tutor-engine';
 import { telemetryService } from './telemetry';
+import { voiceEngine, VoiceProfileId } from './voice-engine';
 
 export interface CompetencyBadge {
   id: string;
@@ -128,6 +129,12 @@ interface AppState {
   setAuthModalOpen: (open: boolean) => void;
   soundEnabled: boolean;
   toggleSound: () => void;
+  voiceEnabled: boolean;
+  toggleVoice: () => void;
+  voiceProfile: VoiceProfileId;
+  setVoiceProfile: (profile: VoiceProfileId) => void;
+  speakCoachMessage: () => void;
+  stopSpeaking: () => void;
   toggleRole: () => void;
   awardXp: (amount: number, reason: string) => void;
 
@@ -820,6 +827,28 @@ export const useAppStore = create<AppState>((set, get) => {
       const next = !get().soundEnabled;
       sound.setMuted(!next);
       set({ soundEnabled: next });
+    },
+
+    voiceEnabled: true,
+    toggleVoice: () => {
+      sound.playClick();
+      const next = !get().voiceEnabled;
+      voiceEngine.setMuted(!next);
+      set({ voiceEnabled: next });
+    },
+    voiceProfile: 'mentor',
+    setVoiceProfile: (profile) => {
+      sound.playClick();
+      voiceEngine.setProfile(profile);
+      set({ voiceProfile: profile });
+    },
+    speakCoachMessage: () => {
+      const text = get().aiCoachText;
+      if (!text || !get().voiceEnabled) return;
+      voiceEngine.speak(text, { profile: get().voiceProfile });
+    },
+    stopSpeaking: () => {
+      voiceEngine.stop();
     },
 
     toggleRole: () => {

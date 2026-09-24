@@ -158,4 +158,41 @@ test('12. SQL Lab Engine: UPDATE Constraints Enforcement', () => {
   assert.match(resUpdateFk.message, /FOREIGN KEY constraint failed/i);
 });
 
+test('13. Conversational Voice Engine: Text Normalization and Phrasing', async () => {
+  const { voiceEngine } = await import('../src/lib/voice-engine.ts');
+
+  const rawText = "In **3NF**, every non-key column must depend solely on the `PK` and not on another `FK`. Run `SELECT *` in SQL!";
+  const prepared = voiceEngine.prepareConversationalText(rawText);
+
+  assert.ok(!prepared.includes('**'));
+  assert.ok(!prepared.includes('`'));
+  assert.ok(prepared.includes('Primary Key'));
+  assert.ok(prepared.includes('Foreign Key'));
+  assert.ok(prepared.includes('Third Normal Form'));
+  assert.ok(prepared.includes('S-Q-L'));
+
+  const chunks = voiceEngine.chunkSentences("First sentence about tables. Second sentence about indexes! Third question?");
+  assert.equal(chunks.length, 3);
+  assert.equal(chunks[0], "First sentence about tables.");
+});
+
+test('14. Conversational Voice Engine: Voice Profiles and State Telemetry', async () => {
+  const { voiceEngine, VOICE_PROFILES } = await import('../src/lib/voice-engine.ts');
+
+  voiceEngine.setProfile('lecturer');
+  const st1 = voiceEngine.getState();
+  assert.equal(st1.profile, 'lecturer');
+  assert.equal(st1.rate, VOICE_PROFILES.lecturer.rate);
+
+  voiceEngine.setProfile('coach');
+  const st2 = voiceEngine.getState();
+  assert.equal(st2.profile, 'coach');
+  assert.equal(st2.rate, VOICE_PROFILES.coach.rate);
+
+  voiceEngine.setMuted(true);
+  assert.equal(voiceEngine.getState().isMuted, true);
+  voiceEngine.setMuted(false);
+  assert.equal(voiceEngine.getState().isMuted, false);
+});
+
 
