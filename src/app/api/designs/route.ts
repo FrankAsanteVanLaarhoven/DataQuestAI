@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPlatformDb } from '@/lib/platform-db';
+import { extractBearerToken, validateSessionToken } from '@/lib/auth';
 
 export async function GET() {
   try {
@@ -101,11 +102,21 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const db = getPlatformDb();
+    const token = extractBearerToken(request);
+    const authCheck = validateSessionToken(token, db);
+
+    if (!authCheck.valid || !authCheck.user) {
+      return NextResponse.json(
+        { error: 'Authentication required. Please log in to publish architectures to the community.' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
-    const { id, user_id, title, domain, description, reasoning, nodes, edges, tags } = body;
+    const { id, title, domain, description, reasoning, nodes, edges, tags } = body;
 
     const designId = id || 'des_' + Math.random().toString(36).substring(2, 9);
-    const userId = user_id || 'usr_guest';
+    const userId = authCheck.user.id;
 
     db.prepare(`
       INSERT INTO designs (id, user_id, title, domain, description, reasoning, nodes_json, edges_json, tags_json, upvotes, forks)

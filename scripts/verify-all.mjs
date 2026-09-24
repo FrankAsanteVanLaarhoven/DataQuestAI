@@ -66,7 +66,17 @@ async function runAllTests() {
   const bookB001 = engine.getTableRows('Books').find((b) => b.BookID === 'B001');
   assert(bookB001.Copies === 5, 'Physical row Copies updated to 5');
 
-  // 6. SQL Engine: DELETE
+  // UPDATE constraint checks
+  const resUpdateNull = engine.execute("UPDATE Books SET Title = NULL WHERE BookID = 'B001'");
+  assert(resUpdateNull.success === false, 'UPDATE rejected setting NOT NULL column to NULL');
+
+  const resUpdateFk = engine.execute("UPDATE Loans SET StudentID = 'NONEXISTENT' WHERE LoanID = 'L101'");
+  assert(resUpdateFk.success === false, 'UPDATE rejected setting invalid Foreign Key');
+
+  // 6. SQL Engine: DELETE with referential integrity check
+  const resDeleteReferenced = engine.execute("DELETE FROM Students WHERE StudentID = 'S001'");
+  assert(resDeleteReferenced.success === false, 'DELETE blocked by FOREIGN KEY constraint (active child loans exist)');
+
   const resDelete = engine.execute("DELETE FROM Cart WHERE CartID = 'CR01'");
   assert(resDelete.success === true, 'DELETE query executed');
   assert(resDelete.metrics.rowsAffected === 1, 'DELETE affected 1 row');

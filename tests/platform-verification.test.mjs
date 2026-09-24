@@ -130,3 +130,32 @@ test('10. Auth: Role-Based Access Control Hierarchy', () => {
   assert.equal(hasPermission('admin', 'teacher'), true);
 });
 
+test('11. SQL Lab Engine: Referential Integrity on DELETE', () => {
+  const engine = new SqlLabEngine();
+
+  // Student S001 has active loans in Loans table; deleting S001 must fail
+  const resDeleteReferenced = engine.execute("DELETE FROM Students WHERE StudentID = 'S001'");
+  assert.equal(resDeleteReferenced.success, false);
+  assert.match(resDeleteReferenced.message, /FOREIGN KEY constraint failed.*cannot delete row from 'Students'/i);
+
+  // Deleting unreferenced student (e.g. S003 has no loans in seed)
+  const resDeleteUnreferenced = engine.execute("DELETE FROM Students WHERE StudentID = 'S003'");
+  assert.equal(resDeleteUnreferenced.success, true);
+  assert.equal(resDeleteUnreferenced.metrics.rowsAffected, 1);
+});
+
+test('12. SQL Lab Engine: UPDATE Constraints Enforcement', () => {
+  const engine = new SqlLabEngine();
+
+  // UPDATE setting NOT NULL column to NULL must fail
+  const resUpdateNull = engine.execute("UPDATE Books SET Title = NULL WHERE BookID = 'B001'");
+  assert.equal(resUpdateNull.success, false);
+  assert.match(resUpdateNull.message, /NOT NULL constraint failed/i);
+
+  // UPDATE setting invalid Foreign Key must fail
+  const resUpdateFk = engine.execute("UPDATE Loans SET StudentID = 'INVALID_STUDENT' WHERE LoanID = 'L101'");
+  assert.equal(resUpdateFk.success, false);
+  assert.match(resUpdateFk.message, /FOREIGN KEY constraint failed/i);
+});
+
+

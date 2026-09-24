@@ -617,6 +617,43 @@ export class SqlLabEngine {
     let rowsAffected = 0;
     let rowsScanned = rows.length;
 
+    // 1. Validate constraints across all prospective row updates
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!whereClause || this.evaluateCondition(row, whereClause)) {
+        for (const { col, val, isIncrement, incCol, incVal } of assignments) {
+          const colDef = schema.columns.find((c) => c.name.toLowerCase() === col.toLowerCase());
+          const finalVal = isIncrement && incCol ? (Number(row[incCol]) || 0) + incVal : val;
+
+          // NOT NULL constraint
+          if (colDef?.notNull && (finalVal === null || finalVal === undefined || finalVal === 'NULL')) {
+            throw new Error(`NOT NULL constraint failed: '${tableName}.${colDef.name}' cannot be updated to NULL.`);
+          }
+
+          // Foreign Key referential integrity
+          if (colDef?.foreignKey && finalVal !== null && finalVal !== undefined && finalVal !== '') {
+            const targetTable = colDef.foreignKey.table;
+            const targetCol = colDef.foreignKey.column;
+            const targetRows = this.tables.get(targetTable.toLowerCase());
+            if (!targetRows || !targetRows.some((r) => String(r[targetCol]) === String(finalVal))) {
+              throw new Error(
+                `FOREIGN KEY constraint failed: '${tableName}.${colDef.name}' references non-existent '${targetTable}.${targetCol}' ('${finalVal}').`
+              );
+            }
+          }
+
+          // Primary Key uniqueness
+          if (colDef?.primaryKey) {
+            const duplicate = rows.some((otherRow, otherIdx) => otherIdx !== i && String(otherRow[colDef.name]) === String(finalVal));
+            if (duplicate) {
+              throw new Error(`PRIMARY KEY constraint failed: '${colDef.name}' value '${finalVal}' already exists in '${tableName}'.`);
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Apply modifications
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       if (!whereClause || this.evaluateCondition(row, whereClause)) {
@@ -673,6 +710,29 @@ export class SqlLabEngine {
 
     if (!rows) {
       throw new Error(`Table '${tableName}' does not exist.`);
+    }
+
+    // Check referential integrity: prevent deleting rows referenced by foreign keys in child tables
+    const toDelete = whereClause ? rows.filter((r) => this.evaluateCondition(r, whereClause)) : [...rows];
+
+    for (const [, otherSchema] of this.schemas.entries()) {
+      for (const col of otherSchema.columns) {
+        if (col.foreignKey && col.foreignKey.table.toLowerCase() === tableName.toLowerCase()) {
+          const childTable = otherSchema.name;
+          const childRows = this.tables.get(childTable.toLowerCase()) || [];
+          const referencedCol = col.foreignKey.column;
+
+          for (const deletedRow of toDelete) {
+            const parentVal = deletedRow[referencedCol];
+            const hasChild = childRows.some((childRow) => String(childRow[col.name]) === String(parentVal));
+            if (hasChild) {
+              throw new Error(
+                `FOREIGN KEY constraint failed: cannot delete row from '${tableName}' because child table '${childTable}' references '${referencedCol}' ('${parentVal}').`
+              );
+            }
+          }
+        }
+      }
     }
 
     const initialLen = rows.length;
