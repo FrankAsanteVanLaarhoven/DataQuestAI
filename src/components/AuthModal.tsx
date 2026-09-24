@@ -43,6 +43,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [name, setName] = useState('');
   const [role, setRole] = useState<'student' | 'teacher' | 'architect'>('student');
   const [selectedAvatar, setSelectedAvatar] = useState('👩‍💻');
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([
+    'Relational Data Modeling & ERDs',
+    'SQL Query Mastery & Complex Joins',
+  ]);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -63,8 +67,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const avatars = ['👩‍💻', '👨‍🏫', '🏛️', '🚀', '⚡', '🔬', '👾', '🌸'];
 
+  const availableInterests = [
+    'Relational Data Modeling & ERDs',
+    'SQL Query Mastery & Complex Joins',
+    'Database Normalization (1NF–BCNF)',
+    'B-Tree Indexes & Query Optimization',
+    'ACID Transactions & Financial Ledgers',
+    'Search Engines & Inverted Postings',
+    'Distributed Systems & Cloud Scaling',
+    'AI Vector Databases & RAG',
+    'CSC1033 University Exam Prep',
+  ];
+
   // Demo accounts for fast evaluation
   const demoAccounts = [
+    {
+      label: 'Super Admin',
+      icon: '👑',
+      name: 'Frank Asante-Van Laarhoven',
+      email: 'frank@dataquest.ai',
+      password: 'DataQuest2026!',
+      role: 'super_admin' as const,
+      avatar: '👑',
+    },
     {
       label: 'Student',
       icon: '⚡',
@@ -187,6 +212,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           name: mode === 'signup' ? finalName : undefined,
           role: mode === 'signup' ? role : undefined,
           avatar: mode === 'signup' ? selectedAvatar : undefined,
+          interests: mode === 'signup' ? selectedInterests : undefined,
         }),
       });
 
@@ -550,6 +576,45 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   >
                     <Camera className="w-3.5 h-3.5" />
                   </button>
+                </div>
+              </div>
+
+              {/* Interest-Based Registration */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                    <span>Learning Goals &amp; Interests</span>
+                  </label>
+                  <span className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold">
+                    {selectedInterests.length} Selected
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {availableInterests.map((interest) => {
+                    const isSelected = selectedInterests.includes(interest);
+                    return (
+                      <button
+                        key={interest}
+                        type="button"
+                        onClick={() => {
+                          setSelectedInterests((prev) =>
+                            prev.includes(interest)
+                              ? prev.filter((i) => i !== interest)
+                              : [...prev, interest]
+                          );
+                        }}
+                        className={`px-2.5 py-1 rounded-xl text-[11px] font-medium transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-purple-600 text-white shadow-xs font-semibold'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {isSelected ? '✓ ' : '+ '}
+                        {interest}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </>

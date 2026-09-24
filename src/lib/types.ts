@@ -130,7 +130,7 @@ export interface LeaderboardUser {
   rank: number;
   name: string;
   avatar: string;
-  role: 'student' | 'teacher' | 'architect' | 'admin';
+  role: 'student' | 'teacher' | 'architect' | 'admin' | 'super_admin';
   level: number;
   xp: number;
   streak: number;

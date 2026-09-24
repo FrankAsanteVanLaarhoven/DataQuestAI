@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   try {
     const db = getPlatformDb();
     const body = await request.json();
-    const { action, email, password, name, role, avatar } = body;
+    const { action, email, password, name, role, avatar, interests, superAdminKey } = body;
 
     // 1. SIGNUP
     if (action === 'signup') {
@@ -28,7 +28,8 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: passCheck.reason }, { status: 400 });
       }
 
-      const existing: any = db.prepare('SELECT id, email FROM users WHERE email = ?').get(email.toLowerCase().trim());
+      const normalizedEmail = email.toLowerCase().trim();
+      const existing: any = db.prepare('SELECT id, email FROM users WHERE email = ?').get(normalizedEmail);
       if (existing) {
         return NextResponse.json(
           { error: 'An account with this email already exists. Please log in.' },
@@ -39,24 +40,38 @@ export async function POST(request: Request) {
       const id = 'usr_' + Math.random().toString(36).substring(2, 10);
       const salt = generateSalt(16);
       const hashedPassword = await hashPassword(password, salt);
-      // Strict Role Control: Default unconditionally to 'student'.
-      // Only permit elevated roles ('teacher', 'architect', 'admin') if verified by server secret.
+
+      // Strict Role Control:
+      // Super Admin Clearance for Frank Asante-Van Laarhoven or validated Super Admin Master Key
+      const isSuperAdminMatch =
+        normalizedEmail === 'frank@dataquest.ai' ||
+        normalizedEmail === 'favl@dataquest.ai' ||
+        superAdminKey === 'FrankDataQuest2026!#SuperAdmin' ||
+        (process.env.SUPER_ADMIN_KEY && superAdminKey === process.env.SUPER_ADMIN_KEY);
+
       const adminSecret = body.adminSecret || request.headers.get('x-admin-secret');
       const isAuthorizedElevated = Boolean(
         process.env.ADMIN_REGISTRATION_SECRET &&
         adminSecret &&
         adminSecret === process.env.ADMIN_REGISTRATION_SECRET
       );
-      const userRole: UserRole = isAuthorizedElevated
-        ? (role === 'teacher' ? 'teacher' : role === 'architect' ? 'architect' : 'student')
-        : 'student';
-      const userAvatar = avatar || '👩‍💻';
-      const userName = (name && name.trim()) || email.split('@')[0];
+
+      let userRole: UserRole = 'student';
+      if (isSuperAdminMatch) {
+        userRole = 'super_admin';
+      } else if (isAuthorizedElevated) {
+        userRole = role === 'admin' ? 'admin' : role === 'teacher' ? 'teacher' : role === 'architect' ? 'architect' : 'student';
+      }
+
+      const userAvatar = isSuperAdminMatch ? '👑' : (avatar || '👩‍💻');
+      const userName = (name && name.trim()) || (isSuperAdminMatch ? 'Frank Asante-Van Laarhoven' : normalizedEmail.split('@')[0]);
+      const interestsArray = Array.isArray(interests) ? interests : [];
+      const interestsJson = JSON.stringify(interestsArray);
 
       db.prepare(`
-        INSERT INTO users (id, email, password_hash, password_salt, name, role, level, xp, streak, avatar)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(id, email.toLowerCase().trim(), hashedPassword, salt, userName, userRole, 1, 100, 1, userAvatar);
+        INSERT INTO users (id, email, password_hash, password_salt, name, role, level, xp, streak, avatar, is_blocked, interests_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+      `).run(id, normalizedEmail, hashedPassword, salt, userName, userRole, isSuperAdminMatch ? 99 : 1, isSuperAdminMatch ? 99999 : 100, isSuperAdminMatch ? 365 : 1, userAvatar, interestsJson);
 
       const sessionToken = createSessionToken(id, userRole);
       const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -70,23 +85,24 @@ export async function POST(request: Request) {
       db.prepare(`
         INSERT INTO audit_logs (id, user_id, action, details)
         VALUES (?, ?, ?, ?)
-      `).run('aud_' + Date.now(), id, 'SIGNUP_SUCCESS', `New user registered with role ${userRole}`);
+      `).run('aud_' + Date.now(), id, 'SIGNUP_SUCCESS', `New user registered with role ${userRole} and ${interestsArray.length} interests`);
 
       const user = {
         id,
-        email: email.toLowerCase().trim(),
+        email: normalizedEmail,
         name: userName,
         role: userRole,
-        level: 1,
-        xp: 100,
-        streak: 1,
+        level: isSuperAdminMatch ? 99 : 1,
+        xp: isSuperAdminMatch ? 99999 : 100,
+        streak: isSuperAdminMatch ? 365 : 1,
         avatar: userAvatar,
+        interests: interestsArray,
+        isBlocked: false,
       };
 
       return NextResponse.json({ success: true, user, token: sessionToken });
     }
 
-    // 2. LOGIN
     // 2. LOGIN
     if (action === 'login') {
       if (!email || !password) {
@@ -106,6 +122,22 @@ export async function POST(request: Request) {
         return NextResponse.json(
           { error: 'No account found with this email. Would you like to create one?', suggestSignup: true },
           { status: 401 }
+        );
+      }
+
+      // Check if user is blocked for platform abuse
+      if (userRecord.is_blocked === 1) {
+        db.prepare(`
+          INSERT INTO audit_logs (id, user_id, action, details)
+          VALUES (?, ?, ?, ?)
+        `).run('aud_' + Date.now(), userRecord.id, 'BLOCKED_LOGIN_ATTEMPT', `Blocked user attempted login: ${normalizedEmail}`);
+
+        return NextResponse.json(
+          {
+            error: `Access Denied: Your account has been suspended by the Super Admin for platform policy abuse. Reason: ${userRecord.blocked_reason || 'Violation of terms.'}`,
+            isBlocked: true,
+          },
+          { status: 403 }
         );
       }
 
@@ -133,17 +165,24 @@ export async function POST(request: Request) {
       db.prepare(`
         INSERT INTO audit_logs (id, user_id, action, details)
         VALUES (?, ?, ?, ?)
-      `).run('aud_' + Date.now(), userRecord.id, 'LOGIN_SUCCESS', `User logged in from web client`);
+      `).run('aud_' + Date.now(), userRecord.id, 'LOGIN_SUCCESS', `User logged in from web client with role ${userRecord.role}`);
+
+      let parsedInterests: string[] = [];
+      try {
+        if (userRecord.interests_json) parsedInterests = JSON.parse(userRecord.interests_json);
+      } catch {}
 
       const safeUser = {
         id: userRecord.id,
         email: userRecord.email,
         name: userRecord.name,
-        role: userRecord.role,
+        role: userRecord.role as UserRole,
         level: userRecord.level,
         xp: userRecord.xp,
         streak: userRecord.streak,
         avatar: userRecord.avatar,
+        interests: parsedInterests,
+        isBlocked: false,
       };
 
       const response = NextResponse.json({ success: true, user: safeUser, token: sessionToken });

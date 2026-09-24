@@ -5,6 +5,8 @@ import { useAppStore } from '@/lib/store';
 import { sound } from '@/lib/audio';
 import { languages, translations, SupportedLanguage } from '@/lib/i18n';
 import { AuthModal } from './AuthModal';
+import { RatingModal } from './RatingModal';
+import { ShareModal } from './ShareModal';
 import { UserAvatar } from './UserAvatar';
 import {
   Database,
@@ -34,6 +36,8 @@ import {
   Mic,
   MicOff,
   Check,
+  Heart,
+  Share2,
 } from 'lucide-react';
 import { voiceEngine } from '@/lib/voice-engine';
 
@@ -53,6 +57,13 @@ export const Header: React.FC = () => {
     voiceProfile,
     isAuthModalOpen,
     setAuthModalOpen,
+    setRatingModalOpen,
+    setShareModalOpen,
+    onlineStudentsCount,
+    setOnlineStudentsCount,
+    platformLikesCount,
+    incrementPlatformLikes,
+    platformAverageRating,
     setUser,
     explanationMode,
     toggleExplanationMode,
@@ -69,6 +80,37 @@ export const Header: React.FC = () => {
     const unsub = voiceEngine.subscribe((st) => setIsSpeaking(st.isSpeaking));
     return unsub;
   }, []);
+
+  // Active Presence Heartbeat for Concurrent Online Learners
+  useEffect(() => {
+    const sendHeartbeat = async () => {
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('dataquest_session_token') : null;
+        const res = await fetch('/api/telemetry', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            eventType: 'HEARTBEAT',
+            userId: user?.id,
+            userName: user?.name,
+            userRole: user?.role,
+            path: typeof window !== 'undefined' ? window.location.pathname : '/',
+          }),
+        });
+        const data = await res.json();
+        if (data?.onlineStudents) {
+          setOnlineStudentsCount(data.onlineStudents);
+        }
+      } catch {}
+    };
+
+    sendHeartbeat();
+    const interval = setInterval(sendHeartbeat, 25000);
+    return () => clearInterval(interval);
+  }, [user?.id, user?.name, user?.role, setOnlineStudentsCount]);
 
   const t = translations[language] || translations.en;
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
@@ -282,10 +324,77 @@ export const Header: React.FC = () => {
                 </span>
               )}
             </button>
+            <button
+              onClick={() => setActiveTab('super_admin')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'super_admin'
+                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-xs font-semibold'
+                  : user?.role === 'super_admin'
+                  ? 'text-amber-400 hover:text-amber-300 font-semibold'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-white'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+              <span>Super Admin</span>
+              {user?.role === 'super_admin' ? (
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/30 text-amber-300 font-bold border border-amber-500/40 font-mono">
+                  👑 Frank
+                </span>
+              ) : (
+                <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-500 font-mono">
+                  🔒
+                </span>
+              )}
+            </button>
           </nav>
 
-          {/* User Profile, XP, Streaks & Controls */}
+          {/* User Profile, XP, Streaks & Virality Controls */}
           <div className="flex items-center gap-2">
+            {/* Live Presence Pulse Indicator */}
+            <div className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-medium shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>{onlineStudentsCount} Online</span>
+            </div>
+
+            {/* Platform 5-Star Rating Trigger */}
+            <button
+              onClick={() => setRatingModalOpen(true)}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+              title="Rate DataQuestAI Platform"
+            >
+              <Star className="w-3.5 h-3.5 fill-amber-400" />
+              <span>{platformAverageRating}★</span>
+            </button>
+
+            {/* Like Platform Trigger */}
+            <button
+              onClick={async () => {
+                incrementPlatformLikes();
+                try {
+                  fetch('/api/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'like' }),
+                  });
+                } catch {}
+              }}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 text-xs font-semibold transition-all active:scale-110 cursor-pointer shadow-2xs"
+              title="Like Platform & Capstones"
+            >
+              <Heart className="w-3.5 h-3.5 fill-rose-400" />
+              <span className="font-mono text-[11px]">{platformLikesCount}</span>
+            </button>
+
+            {/* Share / Invite Friends Trigger */}
+            <button
+              onClick={() => setShareModalOpen(true)}
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-purple-600/15 hover:bg-purple-600/25 border border-purple-500/30 text-purple-300 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+              title="Invite Classmates & Friends"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Invite</span>
+            </button>
+
             {/* Language Selector Dropdown */}
             <div className="relative">
               <button
@@ -720,6 +829,12 @@ export const Header: React.FC = () => {
         initialMode={authModalMode}
         onClose={() => setAuthModalOpen(false)}
       />
+
+      {/* Community Rating & Review Modal */}
+      <RatingModal />
+
+      {/* Classmate Referral & Viral Share Modal */}
+      <ShareModal />
     </>
   );
 };

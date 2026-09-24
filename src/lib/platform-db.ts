@@ -192,6 +192,9 @@ export function getPlatformDb(): any {
         xp INTEGER DEFAULT 100,
         streak INTEGER DEFAULT 1,
         avatar TEXT DEFAULT '👩‍💻',
+        is_blocked INTEGER DEFAULT 0,
+        blocked_reason TEXT DEFAULT NULL,
+        interests_json TEXT DEFAULT '[]',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
@@ -203,6 +206,41 @@ export function getPlatformDb(): any {
         expires_at INTEGER NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE IF NOT EXISTS active_heartbeats (
+        id TEXT PRIMARY KEY,
+        session_id TEXT,
+        user_id TEXT NOT NULL,
+        user_name TEXT,
+        user_role TEXT,
+        path TEXT,
+        last_seen_ms INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS platform_ratings (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        user_name TEXT,
+        user_avatar TEXT,
+        rating INTEGER NOT NULL,
+        comment TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS platform_likes (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        source TEXT DEFAULT 'web',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS platform_referrals (
+        id TEXT PRIMARY KEY,
+        referrer_id TEXT NOT NULL,
+        invite_code TEXT NOT NULL,
+        status TEXT DEFAULT 'pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
       CREATE TABLE IF NOT EXISTS missions (
@@ -274,26 +312,70 @@ export function getPlatformDb(): any {
       );
     `);
 
-    // Seed verified accounts if database is empty
+    // Idempotent column migrations for existing SQLite database
+    try {
+      dbInstance.exec('ALTER TABLE users ADD COLUMN is_blocked INTEGER DEFAULT 0;');
+    } catch {}
+    try {
+      dbInstance.exec('ALTER TABLE users ADD COLUMN blocked_reason TEXT DEFAULT NULL;');
+    } catch {}
+    try {
+      dbInstance.exec("ALTER TABLE users ADD COLUMN interests_json TEXT DEFAULT '[]';");
+    } catch {}
+
+    // Seed verified accounts if database is empty or ensure Super Admin exists
     ensureDefaultPlatformUsers(dbInstance);
   }
 
   return dbInstance;
 }
 
-// Initial default verified platform users (Student, Teacher, Architect)
+// Initial default verified platform users (Founder/Super Admin, Student, Teacher, Architect)
 function ensureDefaultPlatformUsers(db: any) {
   try {
-    const countRow: any = db.prepare('SELECT COUNT(*) as count FROM users').get();
-    if (countRow && countRow.count === 0) {
-      // Precomputed PBKDF2 (100k iters, SHA-256) for 'DataQuest2026!'
-      const salt = 'd9e03f1b4c7a6e2d1f8a9b0c3d4e5f6a';
-      const defaultHash = '9fe9c84479cbb10ca56a71ba56890ea2474c9bdb5c92c812d0fc7236b3872371';
+    // Precomputed PBKDF2 (100k iters, SHA-256) for 'DataQuest2026!'
+    const salt = 'd9e03f1b4c7a6e2d1f8a9b0c3d4e5f6a';
+    const defaultHash = '9fe9c84479cbb10ca56a71ba56890ea2474c9bdb5c92c812d0fc7236b3872371';
 
+    // 0. Ensure Frank Asante-Van Laarhoven (Founder & Super Admin) exists
+    const superAdminRow = db.prepare('SELECT id, email, role FROM users WHERE email = ? OR role = ?').get('frank@dataquest.ai', 'super_admin');
+    if (!superAdminRow) {
+      db.prepare(`
+        INSERT INTO users (id, email, password_hash, password_salt, name, role, level, xp, streak, avatar, is_blocked, interests_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+      `).run(
+        'usr_frank_superadmin',
+        'frank@dataquest.ai',
+        defaultHash,
+        salt,
+        'Frank Asante-Van Laarhoven',
+        'super_admin',
+        99,
+        99999,
+        365,
+        '👑',
+        JSON.stringify([
+          'Relational Database Internals',
+          'Query Optimization & B-Trees',
+          'Distributed Cloud Scalability',
+          'Information Retrieval Engines',
+          'AI Vector Databases & RAG',
+        ])
+      );
+
+      // Also create an audit log
+      db.prepare(`
+        INSERT INTO audit_logs (id, user_id, action, details)
+        VALUES (?, ?, ?, ?)
+      `).run('aud_seed_superadmin', 'usr_frank_superadmin', 'SUPER_ADMIN_INIT', 'Founder & Super Admin account initialized');
+    }
+
+    const countRow: any = db.prepare('SELECT COUNT(*) as count FROM users').get();
+    if (countRow && countRow.count <= 1) {
       // 1. Alex Mercer (Student)
       db.prepare(`
-        INSERT INTO users (id, email, password_hash, password_salt, name, role, level, xp, streak, avatar)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR IGNORE INTO users (id, email, password_hash, password_salt, name, role, level, xp, streak, avatar, interests_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         'usr_alex_student',
         'alex@dataquest.org',
@@ -304,13 +386,14 @@ function ensureDefaultPlatformUsers(db: any) {
         5,
         2350,
         12,
-        '👩‍💻'
+        '👩‍💻',
+        JSON.stringify(['SQL Query Mastery & Complex Joins', 'Database Normalization', 'CSC1033 Exam Prep'])
       );
 
       // 2. Prof. Marcus Vance (Instructor / Teacher)
       db.prepare(`
-        INSERT INTO users (id, email, password_hash, password_salt, name, role, level, xp, streak, avatar)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR IGNORE INTO users (id, email, password_hash, password_salt, name, role, level, xp, streak, avatar, interests_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         'usr_marcus_teacher',
         'instructor@dataquest.org',
@@ -321,13 +404,14 @@ function ensureDefaultPlatformUsers(db: any) {
         10,
         5400,
         45,
-        '👨‍🏫'
+        '👨‍🏫',
+        JSON.stringify(['Curriculum Authoring', 'Relational Algebra', 'ACID Transactions'])
       );
 
       // 3. Elena Rostova (Enterprise Data Architect)
       db.prepare(`
-        INSERT INTO users (id, email, password_hash, password_salt, name, role, level, xp, streak, avatar)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR IGNORE INTO users (id, email, password_hash, password_salt, name, role, level, xp, streak, avatar, interests_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         'usr_elena_architect',
         'architect@dataquest.org',
@@ -338,8 +422,26 @@ function ensureDefaultPlatformUsers(db: any) {
         8,
         4200,
         30,
-        '🏛️'
+        '🏛️',
+        JSON.stringify(['Cloud Distributed Scalability', 'B-Tree Indexes', 'Vector Databases'])
       );
+    }
+
+    // Seed initial platform ratings and likes if none exist
+    const ratingsCount: any = db.prepare('SELECT COUNT(*) as count FROM platform_ratings').get();
+    if (ratingsCount && ratingsCount.count === 0) {
+      db.prepare(`
+        INSERT INTO platform_ratings (id, user_id, user_name, user_avatar, rating, comment)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run('rat_1', 'usr_alex_student', 'Alex Mercer', '👩‍💻', 5, 'The 12-week CSC1033 capstones and live EXPLAIN join visualizers are phenomenal. Acing my database exams!');
+      db.prepare(`
+        INSERT INTO platform_ratings (id, user_id, user_name, user_avatar, rating, comment)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run('rat_2', 'usr_elena_architect', 'Elena Rostova', '🏛️', 5, 'Exceptional enterprise architecture. The B-Tree seek vs table scan lab and transaction WAL simulator are world class.');
+      db.prepare(`
+        INSERT INTO platform_ratings (id, user_id, user_name, user_avatar, rating, comment)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run('rat_3', 'usr_marcus_teacher', 'Prof. Marcus Vance', '👨‍🏫', 5, 'Teaching relational database theory and Codd 1970 algebra has never been this engaging. My students love it.');
     }
   } catch (err: any) {
     console.warn('Initial platform user seeding skipped:', err.message);

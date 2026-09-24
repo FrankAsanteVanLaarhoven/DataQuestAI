@@ -15,6 +15,7 @@ import { LeaderboardView } from '@/components/LeaderboardView';
 import { MissionsView } from '@/components/MissionsView';
 import { AnalyticsView } from '@/components/AnalyticsView';
 import { TeacherStudio } from '@/components/TeacherStudio';
+import { SuperAdminConsole } from '@/components/SuperAdminConsole';
 import { DigitalUniversitySimulation } from '@/components/DigitalUniversitySimulation';
 import { EnterpriseSplashScreen } from '@/components/EnterpriseSplashScreen';
 import { translations, languages } from '@/lib/i18n';
@@ -179,6 +180,7 @@ export default function HomePage() {
         {activeTab === 'community' && <CommunityGallery />}
         {activeTab === 'leaderboard' && <LeaderboardView />}
         {activeTab === 'teacher' && <TeacherStudio />}
+        {activeTab === 'super_admin' && <SuperAdminConsole />}
         {activeTab === 'university' && <DigitalUniversitySimulation />}
       </main>
     </div>

@@ -106,7 +106,7 @@ export const INITIAL_COMPETENCIES: CompetencyBadge[] = [
 
 interface AppState {
   // Navigation & User
-  activeTab: 'capstone' | 'missions' | 'learn' | 'analytics' | 'community' | 'leaderboard' | 'teacher' | 'university';
+  activeTab: 'capstone' | 'missions' | 'learn' | 'analytics' | 'community' | 'leaderboard' | 'teacher' | 'university' | 'super_admin';
   setActiveTab: (tab: AppState['activeTab']) => void;
   hintCount?: number;
   user: {
@@ -118,7 +118,10 @@ interface AppState {
     xp: number;
     nextLevelXp: number;
     streak: number;
-    role: 'student' | 'teacher' | 'architect' | 'admin';
+    role: 'student' | 'teacher' | 'architect' | 'admin' | 'super_admin';
+    isBlocked?: boolean;
+    blockedReason?: string | null;
+    interests?: string[];
   };
   setUser: (user: Partial<AppState['user']>) => void;
   theme: 'vibrant' | 'dark' | 'system';
@@ -127,6 +130,17 @@ interface AppState {
   setLanguage: (lang: SupportedLanguage) => void;
   isAuthModalOpen: boolean;
   setAuthModalOpen: (open: boolean) => void;
+  isRatingModalOpen: boolean;
+  setRatingModalOpen: (open: boolean) => void;
+  isShareModalOpen: boolean;
+  setShareModalOpen: (open: boolean) => void;
+  onlineStudentsCount: number;
+  setOnlineStudentsCount: (count: number) => void;
+  platformLikesCount: number;
+  setPlatformLikesCount: (count: number) => void;
+  incrementPlatformLikes: () => void;
+  platformAverageRating: string;
+  setPlatformAverageRating: (rating: string) => void;
   hasEnteredConsole: boolean;
   setHasEnteredConsole: (open: boolean) => void;
   soundEnabled: boolean;
@@ -823,6 +837,25 @@ export const useAppStore = create<AppState>((set, get) => {
 
     isAuthModalOpen: false,
     setAuthModalOpen: (open) => set({ isAuthModalOpen: open }),
+
+    isRatingModalOpen: false,
+    setRatingModalOpen: (open) => set({ isRatingModalOpen: open }),
+
+    isShareModalOpen: false,
+    setShareModalOpen: (open) => set({ isShareModalOpen: open }),
+
+    onlineStudentsCount: 28,
+    setOnlineStudentsCount: (count) => set({ onlineStudentsCount: count }),
+
+    platformLikesCount: 1284,
+    setPlatformLikesCount: (count) => set({ platformLikesCount: count }),
+    incrementPlatformLikes: () => {
+      sound.playSuccess();
+      set((st) => ({ platformLikesCount: st.platformLikesCount + 1 }));
+    },
+
+    platformAverageRating: '4.95',
+    setPlatformAverageRating: (rating) => set({ platformAverageRating: rating }),
 
     hasEnteredConsole: false,
     setHasEnteredConsole: (open) => {

@@ -54,6 +54,10 @@ export const EnterpriseSplashScreen: React.FC = () => {
   const [name, setName] = useState('');
   const [role, setRole] = useState<'student' | 'teacher' | 'architect'>('student');
   const [selectedAvatar, setSelectedAvatar] = useState('👩‍💻');
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([
+    'Relational Data Modeling & ERDs',
+    'SQL Query Mastery & Complex Joins',
+  ]);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -71,7 +75,30 @@ export const EnterpriseSplashScreen: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
+  const availableInterests = [
+    'Relational Data Modeling & ERDs',
+    'SQL Query Mastery & Complex Joins',
+    'Database Normalization (1NF–BCNF)',
+    'B-Tree Indexes & Query Optimization',
+    'ACID Transactions & Financial Ledgers',
+    'Search Engines & Inverted Postings',
+    'Distributed Systems & Cloud Scaling',
+    'AI Vector Databases & RAG',
+    'CSC1033 University Exam Prep',
+  ];
+
   const demoAccounts = [
+    {
+      label: 'Super Admin',
+      badge: 'Tier-0 Frank',
+      name: 'Frank Asante-Van Laarhoven',
+      email: 'frank@dataquest.ai',
+      password: 'DataQuest2026!',
+      role: 'super_admin' as const,
+      avatar: '👑',
+      icon: '👑',
+      accent: 'border-amber-500/40 hover:border-amber-400 bg-amber-500/10 text-amber-300',
+    },
     {
       label: 'Student',
       badge: 'Level 5',
@@ -175,6 +202,7 @@ export const EnterpriseSplashScreen: React.FC = () => {
           name: mode === 'signup' ? finalName : undefined,
           role: mode === 'signup' ? role : undefined,
           avatar: mode === 'signup' ? selectedAvatar : undefined,
+          interests: mode === 'signup' ? selectedInterests : undefined,
         }),
       });
 
@@ -669,6 +697,47 @@ export const EnterpriseSplashScreen: React.FC = () => {
                         <Building2 className="w-4 h-4 mx-auto mb-1 text-blue-400" />
                         <span className="text-[10px] font-bold block">Architect</span>
                       </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Interest-Based Learning Goals */}
+                {mode === 'signup' && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[11px] font-mono uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                        <span>Curriculum Interests &amp; Focus</span>
+                      </label>
+                      <span className="text-[10px] text-purple-400 font-mono">
+                        {selectedInterests.length} selected
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {availableInterests.map((interest) => {
+                        const isSelected = selectedInterests.includes(interest);
+                        return (
+                          <button
+                            key={interest}
+                            type="button"
+                            onClick={() => {
+                              setSelectedInterests((prev) =>
+                                prev.includes(interest)
+                                  ? prev.filter((i) => i !== interest)
+                                  : [...prev, interest]
+                              );
+                            }}
+                            className={`px-2.5 py-1 rounded-xl text-[10px] font-medium transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-purple-600 text-white border border-purple-400 font-bold'
+                                : 'bg-black/40 text-slate-400 border border-white/10 hover:text-white hover:border-white/20'
+                            }`}
+                          >
+                            {isSelected ? '✓ ' : '+ '}
+                            {interest}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

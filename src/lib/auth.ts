@@ -4,7 +4,7 @@
  * Implements role-based access control (RBAC), signed sessions, and audit logging.
  */
 
-export type UserRole = 'student' | 'teacher' | 'architect' | 'admin';
+export type UserRole = 'student' | 'teacher' | 'architect' | 'admin' | 'super_admin';
 
 export interface AuthSession {
   token: string;
@@ -25,6 +25,9 @@ export interface AuthUser {
   streak: number;
   avatar: string;
   createdAt: string;
+  isBlocked?: boolean;
+  blockedReason?: string | null;
+  interests?: string[];
 }
 
 // Cryptographic Salt Generation
@@ -92,10 +95,11 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
   architect: 2,
   teacher: 3,
   admin: 4,
+  super_admin: 5,
 };
 
 export function hasPermission(userRole: UserRole, requiredRole: UserRole): boolean {
-  return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[requiredRole];
+  return (ROLE_HIERARCHY[userRole] || 0) >= (ROLE_HIERARCHY[requiredRole] || 0);
 }
 
 export function validatePasswordStrength(password: string): { valid: boolean; reason?: string } {
@@ -156,9 +160,22 @@ export function validateSessionToken(
       return { valid: false, error: 'Session has expired. Please log in again.', statusCode: 401 };
     }
 
-    const userRow = db.prepare('SELECT id, email, name, role, level, xp, streak, avatar, created_at FROM users WHERE id = ?').get(sessionRow.user_id);
+    const userRow: any = db.prepare('SELECT id, email, name, role, level, xp, streak, avatar, created_at, is_blocked, blocked_reason, interests_json FROM users WHERE id = ?').get(sessionRow.user_id);
     if (!userRow) {
       return { valid: false, error: 'User account no longer exists.', statusCode: 401 };
+    }
+
+    // Immediate Abusive User Block Enforcement
+    if (userRow.is_blocked === 1) {
+      // Invalidate session immediately
+      try {
+        db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+      } catch {}
+      return {
+        valid: false,
+        error: `Account Suspended: Platform access has been revoked by the Super Admin for policy violations. Reason: ${userRow.blocked_reason || 'Abuse of platform resources.'}`,
+        statusCode: 403,
+      };
     }
 
     if (requiredRole && !hasPermission(userRow.role as UserRole, requiredRole)) {
@@ -169,9 +186,31 @@ export function validateSessionToken(
       };
     }
 
+    let parsedInterests: string[] = [];
+    try {
+      if (userRow.interests_json) {
+        parsedInterests = JSON.parse(userRow.interests_json);
+      }
+    } catch {}
+
+    const authUser: AuthUser = {
+      id: userRow.id,
+      email: userRow.email,
+      name: userRow.name,
+      role: userRow.role as UserRole,
+      level: userRow.level,
+      xp: userRow.xp,
+      streak: userRow.streak,
+      avatar: userRow.avatar,
+      createdAt: userRow.created_at,
+      isBlocked: Boolean(userRow.is_blocked),
+      blockedReason: userRow.blocked_reason || null,
+      interests: parsedInterests,
+    };
+
     return {
       valid: true,
-      user: userRow as AuthUser,
+      user: authUser,
       role: userRow.role as UserRole,
     };
   } catch (err: any) {
