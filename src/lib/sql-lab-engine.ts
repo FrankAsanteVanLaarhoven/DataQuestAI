@@ -520,7 +520,17 @@ export class SqlLabEngine {
       newRow[columnNames[i]] = parsedValues[i];
     }
 
-    // Verify Primary Key constraint
+    // 1. Verify NOT NULL constraints
+    for (const col of schema.columns) {
+      if (col.notNull) {
+        const val = newRow[col.name];
+        if (val === undefined || val === null || val === 'NULL') {
+          throw new Error(`NOT NULL constraint failed: '${tableName}.${col.name}' cannot be NULL.`);
+        }
+      }
+    }
+
+    // 2. Verify Primary Key constraint
     const pkCol = schema.columns.find((c) => c.primaryKey);
     if (pkCol) {
       const pkVal = newRow[pkCol.name];
@@ -530,6 +540,27 @@ export class SqlLabEngine {
       const existing = rows.find((r) => r[pkCol.name] === pkVal);
       if (existing) {
         throw new Error(`PRIMARY KEY constraint failed: '${pkCol.name}' value '${pkVal}' already exists.`);
+      }
+    }
+
+    // 3. Verify Foreign Key referential integrity
+    for (const col of schema.columns) {
+      if (col.foreignKey) {
+        const val = newRow[col.name];
+        if (val !== undefined && val !== null && val !== '') {
+          const targetTable = col.foreignKey.table;
+          const targetCol = col.foreignKey.column;
+          const targetRows = this.tables.get(targetTable.toLowerCase());
+          if (!targetRows) {
+            throw new Error(`FOREIGN KEY constraint failed: Referenced table '${targetTable}' does not exist.`);
+          }
+          const exists = targetRows.some((r) => String(r[targetCol]) === String(val));
+          if (!exists) {
+            throw new Error(
+              `FOREIGN KEY constraint failed: '${tableName}.${col.name}' references non-existent '${targetTable}.${targetCol}' ('${val}').`
+            );
+          }
+        }
       }
     }
 

@@ -3,13 +3,24 @@
  * Tests:
  * 1. SQL Execution & Parsing (SELECT, INSERT, UPDATE, DELETE, EXPLAIN)
  * 2. Primary Key constraints & Unique validation
- * 3. Query Plan Generation (Index Seek vs Table Scan)
- * 4. Cryptographic PBKDF2 Password Hashing & Verification
- * 5. Adaptive Tutor & Misconception Engine
+ * 3. NOT NULL constraints validation
+ * 4. Foreign Key referential integrity validation
+ * 5. Query Plan Generation (Index Seek vs Table Scan)
+ * 6. Cryptographic PBKDF2 Password Hashing & Verification
+ * 7. RBAC permissions hierarchy and session validation
+ * 8. Platform storage configuration inspectability
  */
 
 import { SqlLabEngine } from '../src/lib/sql-lab-engine.ts';
-import { hashPassword, verifyPassword, generateSalt, createSessionToken, validatePasswordStrength } from '../src/lib/auth.ts';
+import {
+  hashPassword,
+  verifyPassword,
+  generateSalt,
+  createSessionToken,
+  validatePasswordStrength,
+  hasPermission,
+} from '../src/lib/auth.ts';
+import { getPlatformStorageInfo } from '../src/lib/platform-db.ts';
 
 async function runAllTests() {
   console.log('🧪 Starting DataQuestAI Production V2 Automated Verification...\n');
@@ -40,19 +51,27 @@ async function runAllTests() {
   const resDuplicate = engine.execute("INSERT INTO Books (BookID, Title, Copies, Category) VALUES ('B888', 'Duplicate', 1, 'Tech')");
   assert(resDuplicate.success === false, 'Duplicate PRIMARY KEY insertion rejected');
 
-  // 3. SQL Engine: UPDATE with arithmetic
+  // 3. SQL Engine: NOT NULL constraint check
+  const resNullTitle = engine.execute("INSERT INTO Books (BookID, Title, Copies, Category) VALUES ('B889', NULL, 1, 'Tech')");
+  assert(resNullTitle.success === false, 'NOT NULL constraint failed on NULL Title');
+
+  // 4. SQL Engine: Foreign Key referential integrity check
+  const resInvalidFk = engine.execute("INSERT INTO Loans (LoanID, StudentID, BookID, BorrowDate, DueDate, Status) VALUES ('L999', 'S999_NONEXISTENT', 'B001', '2026-09-24', '2026-10-08', 'Active')");
+  assert(resInvalidFk.success === false, 'FOREIGN KEY constraint failed on invalid StudentID reference');
+
+  // 5. SQL Engine: UPDATE with arithmetic
   const resUpdate = engine.execute("UPDATE Books SET Copies = 5 WHERE BookID = 'B001'");
   assert(resUpdate.success === true, 'UPDATE query executed');
   assert(resUpdate.metrics.rowsAffected === 1, 'UPDATE affected 1 row');
   const bookB001 = engine.getTableRows('Books').find((b) => b.BookID === 'B001');
   assert(bookB001.Copies === 5, 'Physical row Copies updated to 5');
 
-  // 4. SQL Engine: DELETE
+  // 6. SQL Engine: DELETE
   const resDelete = engine.execute("DELETE FROM Cart WHERE CartID = 'CR01'");
   assert(resDelete.success === true, 'DELETE query executed');
   assert(resDelete.metrics.rowsAffected === 1, 'DELETE affected 1 row');
 
-  // 5. SQL Engine: EXPLAIN Query Plans
+  // 7. SQL Engine: EXPLAIN Query Plans
   const explainIndex = engine.execute("EXPLAIN SELECT * FROM Orders WHERE CustomerID = 'C001'");
   assert(explainIndex.commandType === 'EXPLAIN', 'EXPLAIN query recognized');
   assert(explainIndex.metrics.queryPlan[0].operation === 'INDEX_SEEK', 'EXPLAIN verified INDEX_SEEK on indexed CustomerID');
@@ -60,7 +79,7 @@ async function runAllTests() {
   const explainScan = engine.execute("EXPLAIN SELECT * FROM Orders WHERE Status = 'Delivered'");
   assert(explainScan.metrics.queryPlan[0].operation === 'TABLE_SCAN', 'EXPLAIN verified TABLE_SCAN on unindexed Status');
 
-  // 6. Cryptographic Auth
+  // 8. Cryptographic Auth
   const salt = generateSalt(16);
   const password = 'SecretPassword123!';
   const hash = await hashPassword(password, salt);
@@ -74,6 +93,16 @@ async function runAllTests() {
 
   const sessionToken = createSessionToken('usr_alex', 'student');
   assert(sessionToken.startsWith('dqs_usr_alex_student_'), 'Session token generated with prefix and role');
+
+  // 9. RBAC Hierarchy
+  assert(hasPermission('student', 'teacher') === false, 'Student cannot access teacher privileges');
+  assert(hasPermission('teacher', 'student') === true, 'Teacher has student level access');
+  assert(hasPermission('admin', 'teacher') === true, 'Admin has teacher level access');
+
+  // 10. Platform Storage Info
+  const storageInfo = getPlatformStorageInfo();
+  assert(typeof storageInfo.engine === 'string', 'Platform storage engine inspectable');
+  assert(typeof storageInfo.storageTarget === 'string', 'Platform storage target path inspectable');
 
   console.log(`\n📊 Verification Complete: ${passed} passed, ${failed} failed.\n`);
   if (failed > 0) process.exit(1);

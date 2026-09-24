@@ -6,6 +6,8 @@ import {
   generateSalt,
   createSessionToken,
   validatePasswordStrength,
+  extractBearerToken,
+  validateSessionToken,
   UserRole,
 } from '@/lib/auth';
 
@@ -37,7 +39,17 @@ export async function POST(request: Request) {
       const id = 'usr_' + Math.random().toString(36).substring(2, 10);
       const salt = generateSalt(16);
       const hashedPassword = await hashPassword(password, salt);
-      const userRole: UserRole = role === 'teacher' ? 'teacher' : role === 'architect' ? 'architect' : 'student';
+      // Strict Role Control: Default unconditionally to 'student'.
+      // Only permit elevated roles ('teacher', 'architect', 'admin') if verified by server secret.
+      const adminSecret = body.adminSecret || request.headers.get('x-admin-secret');
+      const isAuthorizedElevated = Boolean(
+        process.env.ADMIN_REGISTRATION_SECRET &&
+        adminSecret &&
+        adminSecret === process.env.ADMIN_REGISTRATION_SECRET
+      );
+      const userRole: UserRole = isAuthorizedElevated
+        ? (role === 'teacher' ? 'teacher' : role === 'architect' ? 'architect' : 'student')
+        : 'student';
       const userAvatar = avatar || '👩‍💻';
       const userName = (name && name.trim()) || email.split('@')[0];
 
@@ -133,32 +145,53 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, user: safeUser, token: sessionToken });
     }
 
-    // 3. GUEST ACCESS
+    // 3. GUEST ACCESS (Issues real time-limited session with student role)
     if (action === 'guest') {
-      const userRecord: any = db.prepare('SELECT * FROM users ORDER BY xp DESC LIMIT 1').get();
+      const userRecord: any = db.prepare('SELECT * FROM users WHERE role = ? ORDER BY xp DESC LIMIT 1').get('student');
+      const guestId = userRecord?.id || 'usr_guest_demo';
       const safeUser = userRecord
         ? {
             id: userRecord.id,
             email: userRecord.email,
             name: userRecord.name,
-            role: userRecord.role,
+            role: 'student' as UserRole,
             level: userRecord.level,
             xp: userRecord.xp,
             streak: userRecord.streak,
             avatar: userRecord.avatar,
           }
         : {
-            id: 'usr_guest_demo',
-            email: 'guest@dataquest.org',
-            name: 'Alex Mercer',
-            role: 'student',
-            level: 5,
-            xp: 2350,
-            streak: 12,
+            id: guestId,
+            email: 'guest@dataquest.internal',
+            name: 'Demo Student',
+            role: 'student' as UserRole,
+            level: 1,
+            xp: 150,
+            streak: 1,
             avatar: '👩‍💻',
           };
 
-      return NextResponse.json({ success: true, user: safeUser, token: 'dqs_guest_token' });
+      // Create a genuine time-limited session in the database
+      const guestToken = createSessionToken(guestId, 'student');
+      const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24-hour guest session
+      try {
+        db.prepare(`
+          INSERT INTO sessions (token, user_id, role, expires_at)
+          VALUES (?, ?, ?, ?)
+        `).run(guestToken, guestId, 'student', expiresAt);
+      } catch {}
+
+      return NextResponse.json({ success: true, user: safeUser, token: guestToken });
+    }
+
+    // 4. VERIFY ACTIVE SESSION
+    if (action === 'verify_session') {
+      const token = body.token || extractBearerToken(request);
+      const authCheck = validateSessionToken(token, db);
+      if (!authCheck.valid) {
+        return NextResponse.json({ valid: false, error: authCheck.error }, { status: authCheck.statusCode || 401 });
+      }
+      return NextResponse.json({ valid: true, user: authCheck.user, role: authCheck.role });
     }
 
     return NextResponse.json({ error: 'Invalid authentication action specified.' }, { status: 400 });
@@ -167,9 +200,20 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+// Privileged Roster Endpoint: Strict Role-Based Access Control (Teacher/Admin only)
+export async function GET(request: Request) {
   try {
     const db = getPlatformDb();
+    const token = extractBearerToken(request);
+    const authCheck = validateSessionToken(token, db, 'teacher');
+
+    if (!authCheck.valid) {
+      return NextResponse.json(
+        { error: authCheck.error || 'Lecturer or administrator privileges required to access student roster.' },
+        { status: authCheck.statusCode || 401 }
+      );
+    }
+
     const users = db.prepare('SELECT id, email, name, role, level, xp, streak, avatar, created_at FROM users').all();
     return NextResponse.json({ success: true, users });
   } catch (err: any) {

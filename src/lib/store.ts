@@ -32,7 +32,7 @@ interface AppState {
     xp: number;
     nextLevelXp: number;
     streak: number;
-    role: 'student' | 'teacher' | 'architect';
+    role: 'student' | 'teacher' | 'architect' | 'admin';
   };
   setUser: (user: Partial<AppState['user']>) => void;
   theme: 'vibrant' | 'dark' | 'system';

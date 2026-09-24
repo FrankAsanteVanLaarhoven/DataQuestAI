@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SqlLabEngine } from '../src/lib/sql-lab-engine.ts';
-import { hashPassword, verifyPassword, generateSalt, createSessionToken, validatePasswordStrength } from '../src/lib/auth.ts';
+import { hashPassword, verifyPassword, generateSalt, createSessionToken, validatePasswordStrength, hasPermission } from '../src/lib/auth.ts';
 import { TutorEngine } from '../src/lib/tutor-engine.ts';
 
 test('1. SQL Lab Engine: SELECT and Filtering', () => {
@@ -108,3 +108,25 @@ test('8. Adaptive Tutor & Misconception Engine: Entity vs Attribute Diagnosis', 
   const hint1 = tutor.generateTutorMessage(mockNodes, mockEdges, undefined, 'hint', 1);
   assert.match(hint1, /Date of Birth/i);
 });
+
+test('9. SQL Lab Engine: NOT NULL and Foreign Key Constraints Enforcement', () => {
+  const engine = new SqlLabEngine();
+
+  // NOT NULL constraint
+  const resNull = engine.execute("INSERT INTO Books (BookID, Title, Copies, Category) VALUES ('B998', NULL, 3, 'Tech')");
+  assert.equal(resNull.success, false);
+  assert.match(resNull.message, /NOT NULL constraint failed/i);
+
+  // Foreign Key constraint
+  const resFk = engine.execute("INSERT INTO Loans (LoanID, StudentID, BookID, BorrowDate, DueDate, Status) VALUES ('L888', 'NON_EXISTENT_STUDENT', 'B001', '2026-09-24', '2026-10-08', 'Active')");
+  assert.equal(resFk.success, false);
+  assert.match(resFk.message, /FOREIGN KEY constraint failed/i);
+});
+
+test('10. Auth: Role-Based Access Control Hierarchy', () => {
+  assert.equal(hasPermission('student', 'teacher'), false);
+  assert.equal(hasPermission('student', 'admin'), false);
+  assert.equal(hasPermission('teacher', 'student'), true);
+  assert.equal(hasPermission('admin', 'teacher'), true);
+});
+

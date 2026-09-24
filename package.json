@@ -7,12 +7,16 @@
     "build": "next build --webpack",
     "start": "next start -p 3008",
     "lint": "next lint",
-    "test": "node --experimental-strip-types scripts/verify-all.mjs"
+    "test": "node --experimental-strip-types scripts/verify-all.mjs && node --test --experimental-strip-types tests/platform-verification.test.mjs",
+    "test:unit": "node --test --experimental-strip-types tests/platform-verification.test.mjs",
+    "test:harness": "node --experimental-strip-types scripts/verify-all.mjs"
   },
   "dependencies": {
+    "@types/pg": "^8.23.1",
     "framer-motion": "^12.34.0",
     "lucide-react": "^0.507.0",
     "next": "16.2.2",
+    "pg": "^8.23.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zustand": "^5.0.3"

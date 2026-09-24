@@ -653,7 +653,7 @@ export const LearnRoadmap: React.FC = () => {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Code2 className="w-4 h-4 text-pink-500" />
-                <span className="text-xs font-bold text-slate-300">Live SQL Query Sandbox (SQLite Engine)</span>
+                <span className="text-xs font-bold text-slate-300">Live SQL Lab Sandbox (In-Memory AST Relational Engine)</span>
               </div>
               <button
                 onClick={runSql}

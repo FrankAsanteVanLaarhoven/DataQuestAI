@@ -129,7 +129,7 @@ export const SearchEngineLab: React.FC = () => {
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-black uppercase text-indigo-400 tracking-wider">Step 3: Stemming</span>
             <span className="text-[10px] bg-indigo-950 text-indigo-300 px-1.5 py-0.5 rounded font-mono font-bold">
-              Porter Algorithm
+              Simplified Educational Stemmer (Suffix Rules)
             </span>
           </div>
           <p className="text-[11px] text-slate-400">Reduces morphological variants to common base roots.</p>

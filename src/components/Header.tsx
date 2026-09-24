@@ -192,6 +192,13 @@ export const Header: React.FC = () => {
             >
               <GraduationCap className="w-3.5 h-3.5 opacity-80" />
               <span>Teacher</span>
+              {user?.role === 'teacher' || user?.role === 'admin' ? (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-emerald-400/30" title="Lecturer Session Active" />
+              ) : (
+                <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-500 font-mono">
+                  🔒
+                </span>
+              )}
             </button>
           </nav>
 

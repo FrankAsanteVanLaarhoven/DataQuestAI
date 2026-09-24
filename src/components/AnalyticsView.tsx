@@ -176,7 +176,12 @@ export const AnalyticsView: React.FC = () => {
           {/* Current Execution Plan */}
           <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-slate-300">Execution Plan Output:</span>
+              <div>
+                <span className="font-bold text-slate-300">Execution Plan Output</span>
+                <span className="ml-2 text-[10px] text-amber-400 font-mono bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-800/40">
+                  Simulated Benchmark Scenario
+                </span>
+              </div>
               <span className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] ${
                 benchmarkResult.op === 'INDEX_SEEK' ? 'bg-emerald-950 text-emerald-300' : 'bg-rose-950 text-rose-300'
               }`}>

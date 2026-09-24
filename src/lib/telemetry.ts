@@ -176,12 +176,17 @@ class TelemetryService {
       },
     ];
 
+    // Genuine measured index seek efficiency ratio
+    const indexSeekRatio = total > 0 ? Math.round((indexSeeks / total) * 1000) / 10 : 0;
+    // Genuine in-memory telemetry buffer memory footprint in megabytes
+    const bufferSizeMb = Math.round((JSON.stringify(this.records).length / (1024 * 1024)) * 1000) / 1000;
+
     return {
-      totalQueries: total + 148280, // Real stream + baseline
-      avgLatencyMs: avgLatencyMs || 1.45,
-      p95LatencyMs: p95LatencyMs || 2.14,
-      cacheHitRatio,
-      storageMb: Math.round((28.4 + total * 0.05) * 10) / 10,
+      totalQueries: total,
+      avgLatencyMs,
+      p95LatencyMs,
+      cacheHitRatio: indexSeekRatio,
+      storageMb: bufferSizeMb || 0.01,
       indexSeeks,
       tableScans,
       records: [...this.records],

@@ -6,7 +6,7 @@ import { Shield, ShieldAlert, ShieldCheck, Lock, CheckCircle2, AlertTriangle, Ey
 interface StudentField {
   id: string;
   name: string;
-  sensitivity: 'Low' | 'Medium' | 'Special Category (High)';
+  sensitivity: 'Low' | 'Medium' | 'Special Category (Article 9)' | 'High-Risk Identity Data';
   description: string;
   isNecessaryForCafeteria: boolean;
 }
@@ -16,9 +16,9 @@ const SCHEMA_FIELDS: StudentField[] = [
   { id: 'Name', name: 'Name', sensitivity: 'Low', description: 'Preferred student name for customer greeting', isNecessaryForCafeteria: true },
   { id: 'Email', name: 'Email', sensitivity: 'Medium', description: 'Contact address for receiving the lunch promotion voucher', isNecessaryForCafeteria: true },
   { id: 'HomeAddress', name: 'HomeAddress', sensitivity: 'Medium', description: 'Permanent residential address', isNecessaryForCafeteria: false },
-  { id: 'Religion', name: 'Religion', sensitivity: 'Special Category (High)', description: 'Religious affiliation (GDPR Special Category Data)', isNecessaryForCafeteria: false },
-  { id: 'MedicalCondition', name: 'MedicalCondition', sensitivity: 'Special Category (High)', description: 'Confidential clinical health notes & diagnoses', isNecessaryForCafeteria: false },
-  { id: 'PassportNumber', name: 'PassportNumber', sensitivity: 'Special Category (High)', description: 'Government travel identity document', isNecessaryForCafeteria: false },
+  { id: 'Religion', name: 'Religion', sensitivity: 'Special Category (Article 9)', description: 'Religious affiliation (UK GDPR Article 9 Special Category Data)', isNecessaryForCafeteria: false },
+  { id: 'MedicalCondition', name: 'MedicalCondition', sensitivity: 'Special Category (Article 9)', description: 'Confidential clinical health notes & diagnoses (UK GDPR Article 9)', isNecessaryForCafeteria: false },
+  { id: 'PassportNumber', name: 'PassportNumber', sensitivity: 'High-Risk Identity Data', description: 'Government travel identity document (Sensitive personal identifier requiring strict data minimisation)', isNecessaryForCafeteria: false },
   { id: 'Attendance', name: 'Attendance', sensitivity: 'Medium', description: 'Lecture attendance records', isNecessaryForCafeteria: false },
 ];
 
@@ -38,11 +38,12 @@ export const DataEthicsLab: React.FC = () => {
     }
   };
 
-  // Evaluate compliance
-  const hasSpecialCategory = grantedFields.some((f) => ['Religion', 'MedicalCondition', 'PassportNumber'].includes(f));
+  // Evaluate compliance with UK GDPR Article 5(1)(c) and Article 9
+  const hasSpecialCategory = grantedFields.some((f) => ['Religion', 'MedicalCondition'].includes(f));
+  const hasHighRiskIdentity = grantedFields.includes('PassportNumber');
   const hasUnnecessaryMedium = grantedFields.some((f) => ['HomeAddress', 'Attendance'].includes(f));
   const missingCore = !grantedFields.includes('Email') || !grantedFields.includes('StudentID');
-  const isFullyCompliant = !hasSpecialCategory && !hasUnnecessaryMedium && !missingCore;
+  const isFullyCompliant = !hasSpecialCategory && !hasHighRiskIdentity && !hasUnnecessaryMedium && !missingCore;
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-white space-y-6 shadow-xl">
@@ -77,7 +78,7 @@ export const DataEthicsLab: React.FC = () => {
           <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
             {SCHEMA_FIELDS.map((f) => {
               const isGranted = grantedFields.includes(f.id);
-              const isHighRisk = f.sensitivity.includes('Special Category');
+              const isHighRisk = f.sensitivity.includes('Special Category') || f.sensitivity.includes('High-Risk');
 
               return (
                 <div
@@ -158,7 +159,13 @@ export const DataEthicsLab: React.FC = () => {
 
               {hasSpecialCategory && (
                 <p className="text-[11px] text-rose-300">
-                  ❌ <strong>Severe Violation:</strong> Special Category Data (Medical conditions, Religion, Passports) is exposed to cafeteria staff. This violates UK GDPR Article 9.
+                  ❌ <strong>UK GDPR Article 9 Breach:</strong> Special Category Data (Medical health data, Religious beliefs) is exposed to cafeteria staff. Article 9 strictly prohibits processing without explicit legal derogation.
+                </p>
+              )}
+
+              {hasHighRiskIdentity && (
+                <p className="text-[11px] text-rose-300">
+                  ❌ <strong>High-Risk Identifier Exposure:</strong> Government passport numbers are confidential identifiers completely disproportionate for cafeteria vouchers, breaching UK GDPR Article 5(1)(c) Data Minimisation.
                 </p>
               )}
 

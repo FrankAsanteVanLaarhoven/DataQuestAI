@@ -4,8 +4,8 @@
  * provides multi-tier Socratic scaffolding, and logs diagnostic learning telemetry.
  */
 
-import { CanvasNode, CanvasEdge, Mission } from './types';
-import { telemetryService } from './telemetry';
+import type { CanvasNode, CanvasEdge, Mission } from './types.ts';
+import { telemetryService } from './telemetry.ts';
 
 export interface DiagnosedMisconception {
   id: string;

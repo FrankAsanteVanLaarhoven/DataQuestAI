@@ -81,6 +81,57 @@ export const TeacherStudio: React.FC = () => {
     { name: 'Elena Rostova', email: 'elena@dataquest.org', completed: 6, score: '96%', hintsUsed: 1, topMisconception: 'None (Mastered)' },
   ];
 
+  const isAuthorized = user?.role === 'teacher' || user?.role === 'admin';
+
+  if (!isAuthorized) {
+    return (
+      <div className="max-w-2xl mx-auto my-12 p-8 bg-slate-900/90 border border-amber-500/30 rounded-3xl text-white shadow-2xl backdrop-blur-xl space-y-6">
+        <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+          <GraduationCap className="w-7 h-7" />
+        </div>
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold uppercase tracking-wider">
+            🔒 Lecturer Authorization Required
+          </div>
+          <h2 className="text-2xl font-black tracking-tight text-white">Teacher Studio Access Restricted</h2>
+          <p className="text-sm text-slate-300 leading-relaxed">
+            The Teacher Studio provides declarative mission authoring, class misconception distribution telemetry, and student gradebook management. Access is strictly restricted to accounts with verified educator roles (<code className="text-amber-300">teacher</code> or <code className="text-amber-300">admin</code>).
+          </p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 text-xs space-y-2">
+          <div className="flex justify-between text-slate-400">
+            <span>Current Identity:</span>
+            <span className="font-mono text-white">{user?.name || 'Guest Student'}</span>
+          </div>
+          <div className="flex justify-between text-slate-400">
+            <span>Assigned Role:</span>
+            <span className="font-mono uppercase font-bold text-amber-400">{user?.role || 'student'}</span>
+          </div>
+          <div className="flex justify-between text-slate-400">
+            <span>Privilege Level:</span>
+            <span className="text-rose-400 font-semibold">Insufficient Privileges</span>
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-slate-800/80 flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => {
+              const modalBtn = document.getElementById('login-modal-trigger') || document.querySelector('[data-auth-trigger]');
+              if (modalBtn) (modalBtn as HTMLElement).click();
+            }}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg transition-all"
+          >
+            Sign In with Lecturer Credentials
+          </button>
+          <div className="text-[11px] text-slate-400 self-center">
+            Course convenors can request elevated credentials from the department administrator.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto p-2 sm:p-4 text-white">
       {/* Teacher Studio Hero Banner */}

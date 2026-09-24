@@ -31,25 +31,26 @@ Learners follow the **7-Stage Pedagogical Loop**:
 
 ## 🛠️ Production V2 Architecture & Core Enhancements
 
-### 1. ⚙️ Real Isolated SQL Execution Engine (`SqlLabEngine`)
-Replaced pattern-matching simulations with an in-memory SQL execution engine:
+### 1. ⚙️ In-Memory SQL Lab Engine (`SqlLabEngine`)
+A dedicated educational in-memory AST relational interpreter:
 - **Full Query Parsing**: `SELECT` with `WHERE`, `ORDER BY`, and `LIMIT`; `INSERT` with column validation; `UPDATE` with arithmetic increments; `DELETE` with conditional filters; `CREATE TABLE`; and `CREATE INDEX`.
-- **Constraint Enforcement**: Validates `PRIMARY KEY` uniqueness and `NOT NULL` rules. Duplicate keys are strictly rejected.
-- **`EXPLAIN QUERY PLAN` Generator**: Generates physical query plans distinguishing between high-speed `INDEX_SEEK` ($O(\log N)$ on B-Trees) and sequential `TABLE_SCAN` ($O(N)$).
-- **Physical Row Mutation**: Running `UPDATE Books SET Copies = 5 WHERE BookID = 'B001'` physically changes the storage record, with instant visual consequence.
+- **Constraint Enforcement & Referential Integrity**: Validates `PRIMARY KEY` uniqueness, `NOT NULL` rules, and `FOREIGN KEY` references across tables. Non-existent foreign references and duplicate keys are strictly rejected.
+- **Pedagogical `EXPLAIN QUERY PLAN` Generator**: Generates physical query plans distinguishing between high-speed `INDEX_SEEK` ($O(\log N)$ on B-Trees) and sequential `TABLE_SCAN` ($O(N)$).
+- **Physical Row Mutation**: Running `UPDATE Books SET Copies = 5 WHERE BookID = 'B001'` physically changes the underlying memory state, with instant visual consequences on the canvas.
 
-### 2. 🔐 Production Authentication & Persistent Platform Database
+### 2. 🔐 Hardened Authentication & Persistent Platform Database
 - **PBKDF2 Password Hashing**: Cryptographic password derivation with 100,000 iterations of SHA-256 and unique 16-byte random salts.
 - **Constant-Time Verification**: Mitigates side-channel timing attacks.
-- **Strict Login Validation**: No silent account creation on bad logins; invalid credentials return HTTP 401.
-- **Session Tokens & RBAC**: Signed session tokens with expiration and Role-Based Access Control (`student`, `teacher`, `architect`, `admin`).
-- **Audit Logging**: Write-only audit trail logging security actions, logins, and schema mutations.
-- **PostgreSQL / WAL Storage**: Platform database supports PostgreSQL via `DATABASE_URL` with local file persistence and SQLite WAL mode (`PRAGMA journal_mode = WAL`).
+- **Strict Role Control**: All public signups default strictly to `student`. Elevated roles (`teacher`, `architect`, `admin`) cannot be self-assigned without administrative server secrets.
+- **Authoritative Session Store & RBAC**: High-entropy 256-bit cryptographic session tokens validated against the authoritative database session store with absolute expiry timestamps.
+- **Protected Privileged Routes**: API routes (e.g., `GET /api/auth`) require active educator session tokens; unprivileged callers receive HTTP 401/403.
+- **Zero Production Credential Leakage**: No hard-coded lecturer or student passwords in production paths. Local sandbox demo seeding is isolated to explicit opt-in (`DATAQUEST_ENABLE_DEMO_SEED=true`).
+- **PostgreSQL Connection Pool & SQLite WAL**: Persistent dual-engine platform database architecture. Automatically connects to PostgreSQL clusters via `DATABASE_URL` / `POSTGRES_URL` using `pg.Pool`, with transparent fallback to local SQLite WAL mode (`PRAGMA journal_mode = WAL;`) for offline local development.
 
-### 3. 📊 Genuine Execution Telemetry & Observability
-- Student queries emit structured telemetry records capturing `durationMs`, `rowsScanned`, `rowsReturned`, `rowsAffected`, and `indexUsed`.
-- Live KPI computation: `totalQueries`, real-time `p95LatencyMs`, cache / index seek ratio, and storage utilization.
-- Interactive Query Plan Benchmarker in the Analytics tab comparing sequential table scans (100,000 rows, 18.4ms) against B-Tree index seeks (1 row, 0.8ms).
+### 3. 📊 Measured Telemetry & Observability
+- Student queries emit structured telemetry records capturing `durationMs`, `rowsScanned`, `rowsReturned`, `rowsAffected`, and `indexUsed` using high-resolution browser timers (`performance.now()`).
+- Measured KPI computation: Strictly measured `totalQueries`, `p95LatencyMs`, index seek efficiency ratio, and actual buffer memory utilization without artificial baseline offsets.
+- Pedagogical Query Plan Benchmarker in the Analytics tab contrasting sequential table scans (100,000-row simulated scale demonstration) with B-Tree index seeks.
 
 ### 4. 🤖 Grounded Adaptive AI Tutor & Misconception Engine
 Replaced canned string hints with a dynamic diagnostic engine:
@@ -64,14 +65,14 @@ Replaced canned string hints with a dynamic diagnostic engine:
 
 ### 5. 🔬 Expanded CSC1033 Information Retrieval & Cloud Curriculum
 Dedicated interactive laboratories:
-- **Search Engine Pipeline Lab**: Interactive Document Ingestion → Tokenizer → Stop-word Filter → Porter Stemmer → Inverted Index Postings → Ranked Query Search.
-- **Query Expansion Lab**: Lexical ontology synsets testing the fundamental precision vs. recall tradeoff (e.g., *car* expanding to *automobile, vehicle, motorcar*).
+- **Search Engine Pipeline Lab**: Interactive Document Ingestion → Tokenizer → Stop-word Filter → Simplified Educational Suffix Stemmer → Inverted Index Postings → Ranked Query Search.
+- **Query Expansion Lab**: Educational synonym graph inspired by WordNet synsets testing the fundamental precision vs. recall tradeoff (e.g., *car* expanding to *automobile, vehicle*).
 - **Semantic Web & Linked Data Lab**: Interactive W3C RDF Triple constructor (`Subject` ── `Predicate` ──▶ `Object`) with transitivity inference.
 - **Metadata Lab**: Physical separation of raw image pixel payload data from Dublin Core & EXIF descriptive/administrative metadata attributes.
 - **Faceted Search Lab**: S.R. Ranganathan multi-attribute faceted classification with dynamic population pruning across brand, price range, color, and storage.
 - **Cloud Computing Scalability Lab**: Concurrency slider (100 to 100,000 users) simulating thread contention, allowing students to provision Load Balancers, Read Replicas, Redis Caches, and Message Queues.
 - **Vector Database & LLM RAG Lab**: High-dimensional vector embeddings, cosine similarity search, and deliberate retrieval failure injection causing hallucinations.
-- **Consequential Data Ethics Lab**: GDPR Article 5 data minimisation challenge: pruning special category medical, religious, and passport records from student promotion views.
+- **Consequential Data Ethics Lab**: UK GDPR compliance lab distinguishing Article 9 Special Category data (Religion, Health notes) from High-Risk Personal Identifiers (Passport numbers) under Article 5(1)(c) Data Minimisation.
 
 ### 6. 🎓 Teacher Studio
 - **Declarative Mission Builder**: Instructors can author custom database challenges without touching code, specifying allowed components, expected relationships, XP rewards, and diagnostic hints.

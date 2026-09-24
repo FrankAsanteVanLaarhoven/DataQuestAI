@@ -104,3 +104,71 @@ export function validatePasswordStrength(password: string): { valid: boolean; re
   }
   return { valid: true };
 }
+
+// Server-side session validation with database verification and RBAC
+export interface SessionValidationResult {
+  valid: boolean;
+  user?: AuthUser;
+  role?: UserRole;
+  error?: string;
+  statusCode?: number;
+}
+
+export function extractBearerToken(request: Request): string | null {
+  const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.substring(7).trim();
+  }
+  const customHeader = request.headers.get('x-session-token');
+  if (customHeader) {
+    return customHeader.trim();
+  }
+  return null;
+}
+
+export function validateSessionToken(
+  token: string | null,
+  db: any,
+  requiredRole?: UserRole
+): SessionValidationResult {
+  if (!token) {
+    return { valid: false, error: 'Authentication required. Missing session token.', statusCode: 401 };
+  }
+
+  try {
+    const sessionRow = db.prepare('SELECT token, user_id, role, expires_at FROM sessions WHERE token = ?').get(token);
+    if (!sessionRow) {
+      return { valid: false, error: 'Invalid or expired session. Please log in again.', statusCode: 401 };
+    }
+
+    if (Date.now() > sessionRow.expires_at) {
+      // Clean up expired session
+      try {
+        db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+      } catch {}
+      return { valid: false, error: 'Session has expired. Please log in again.', statusCode: 401 };
+    }
+
+    const userRow = db.prepare('SELECT id, email, name, role, level, xp, streak, avatar, created_at FROM users WHERE id = ?').get(sessionRow.user_id);
+    if (!userRow) {
+      return { valid: false, error: 'User account no longer exists.', statusCode: 401 };
+    }
+
+    if (requiredRole && !hasPermission(userRow.role as UserRole, requiredRole)) {
+      return {
+        valid: false,
+        error: `Forbidden: Access requires '${requiredRole}' privileges. Current role is '${userRow.role}'.`,
+        statusCode: 403,
+      };
+    }
+
+    return {
+      valid: true,
+      user: userRow as AuthUser,
+      role: userRow.role as UserRole,
+    };
+  } catch (err: any) {
+    return { valid: false, error: 'Failed to validate session token: ' + (err.message || 'database error'), statusCode: 500 };
+  }
+}
+

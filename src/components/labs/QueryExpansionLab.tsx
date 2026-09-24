@@ -113,7 +113,7 @@ export const QueryExpansionLab: React.FC = () => {
         {/* Ontology Synset Graph */}
         <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
           <span className="text-[10px] font-black uppercase text-violet-400 tracking-wider">
-            Semantic Synset Graph (WordNet Ontology)
+            Educational Synonym Graph (Inspired by WordNet Synsets)
           </span>
           <div className="font-mono text-xs bg-slate-900 p-3 rounded-xl border border-slate-800 leading-relaxed text-slate-300">
             <div className="text-cyan-400 font-bold">query: &quot;car&quot;</div>

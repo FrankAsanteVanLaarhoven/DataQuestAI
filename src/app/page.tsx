@@ -138,8 +138,8 @@ export default function HomePage() {
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       Engine Active
                     </div>
-                    <p className="text-xs font-mono font-bold text-slate-900 dark:text-white mt-0.5">SQLite 3.45 • WASM</p>
-                    <span className="text-[10px] text-zinc-400 font-mono">3NF Verified • ACID On</span>
+                    <p className="text-xs font-mono font-bold text-slate-900 dark:text-white mt-0.5">DataQuest SQL • In-Memory AST</p>
+                    <span className="text-[10px] text-zinc-400 font-mono">Relational Engine • 3NF &amp; PK Enforced</span>
                   </div>
                 </div>
               </div>
