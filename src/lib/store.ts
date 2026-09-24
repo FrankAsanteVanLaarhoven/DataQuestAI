@@ -14,11 +14,15 @@ import {
 import { sound } from './audio';
 import { dbSimulator } from './db-engine';
 import { SupportedLanguage } from './i18n';
+import { DECLARATIVE_MISSIONS } from './missions/declarative-missions';
+import { tutorEngine } from './tutor-engine';
+import { telemetryService } from './telemetry';
 
 interface AppState {
   // Navigation & User
-  activeTab: 'capstone' | 'missions' | 'learn' | 'analytics' | 'community' | 'leaderboard';
+  activeTab: 'capstone' | 'missions' | 'learn' | 'analytics' | 'community' | 'leaderboard' | 'teacher' | 'university';
   setActiveTab: (tab: AppState['activeTab']) => void;
+  hintCount?: number;
   user: {
     id?: string;
     email?: string;
@@ -103,7 +107,9 @@ interface AppState {
   leaderboard: LeaderboardUser[];
 }
 
-export const initialMissions: Mission[] = [
+export const initialMissions: Mission[] = DECLARATIVE_MISSIONS;
+
+export const legacyMissions: Mission[] = [
   {
     id: 'mission-1',
     number: 1,
@@ -972,11 +978,16 @@ export const useAppStore = create<AppState>((set, get) => {
       } else {
         sound.playError();
         get().addActivity(`Found ${wrong} schema issue(s) in ${mission?.title}`, undefined, 'error');
+        const diagnosis = tutorEngine.diagnoseCanvas(updated, get().edges, mission);
+        const feedbackMsg = diagnosis
+          ? `❌ Verification Incomplete: ${diagnosis.studentMistake}\n\n💡 Remediation: ${diagnosis.remediationRule}`
+          : `Architectural review found ${wrong} item(s) to fix: ${issues.slice(0, 2).join('; ')}. Check the highlighted red cards on your canvas!`;
+
         set((state) => ({
           missions: state.missions.map((m) =>
             m.id === state.activeMissionId ? { ...m, progress: progressPercent } : m
           ),
-          aiCoachText: `Architectural review found ${wrong} item(s) to fix: ${issues.slice(0, 2).join('; ')}. Check the highlighted red cards on your canvas!`,
+          aiCoachText: feedbackMsg,
         }));
       }
 
@@ -1007,6 +1018,19 @@ export const useAppStore = create<AppState>((set, get) => {
       if (res.event) {
         get().addFeedEvent(res.event);
       }
+      if (res.executionResult) {
+        telemetryService.logExecution({
+          eventType: res.executionResult.commandType as any,
+          queryText: op.sql,
+          tableName: op.table,
+          durationMs: res.executionResult.metrics.durationMs,
+          rowsScanned: res.executionResult.metrics.rowsScanned,
+          rowsReturned: res.executionResult.metrics.rowsReturned,
+          rowsAffected: res.executionResult.metrics.rowsAffected,
+          indexUsed: res.executionResult.metrics.indexUsed,
+          success: res.success,
+        });
+      }
       get().awardXp(10, `Executed CRUD: ${op.title}`);
     },
 
@@ -1018,6 +1042,14 @@ export const useAppStore = create<AppState>((set, get) => {
       };
       set((state) => ({ crudOperations: [...state.crudOperations, newOp] }));
       get().awardXp(15, `Created custom operation: ${op.title}`);
+
+      // Safety check: warn if mutation lacks WHERE clause
+      if ((op.type === 'U' || op.type === 'D') && !op.sql.toUpperCase().includes('WHERE')) {
+        telemetryService.recordMisconception('missing_where_clause');
+        set({
+          aiCoachText: `⚠️ Database Safety Warning: Your ${op.type === 'U' ? 'UPDATE' : 'DELETE'} statement has no WHERE clause! This will mutate EVERY row in the ${op.table} table. In production systems, always specify target primary keys.`,
+        });
+      }
     },
 
     isLiveFeedRunning: true,
@@ -1036,7 +1068,7 @@ export const useAppStore = create<AppState>((set, get) => {
 
     activityTimeline: [
       { id: 'act-1', time: '10:24', message: 'You placed: Customer in the correct spot!', xpAward: 10, type: 'success' },
-      { id: 'act-2', time: '10:22', message: 'Hint used: What is an attribute?', type: 'hint' },
+      { id: 'act-2', time: '10:22', message: 'Hint used: Moving attributes', type: 'hint' },
       { id: 'act-3', time: '10:18', message: 'You fixed the relationship!', xpAward: 10, type: 'success' },
       { id: 'act-4', time: '10:12', message: 'New badge unlocked: Data Modeler', type: 'badge' },
     ],
@@ -1061,27 +1093,22 @@ export const useAppStore = create<AppState>((set, get) => {
 
     coachAction: (actionType) => {
       sound.playClick();
+      const currentHintCount = get().hintCount || 0;
+      const nextHintCount = actionType === 'hint' ? currentHintCount + 1 : currentHintCount;
+      const activeMission = get().missions.find((m) => m.id === get().activeMissionId);
+      const tutorMsg = tutorEngine.generateTutorMessage(
+        get().nodes,
+        get().edges,
+        activeMission,
+        actionType,
+        nextHintCount
+      );
+
       if (actionType === 'hint') {
-        get().addActivity('Hint used: Moving attributes', undefined, 'hint');
-        set({
-          aiCoachText:
-            '💡 Hint: Click on the "Date of Birth" card on the canvas or open its type selector, then change its category to "Attribute"!',
-        });
-      } else if (actionType === 'explain') {
-        set({
-          aiCoachText:
-            '📖 Concept Breakdown:\n• Entity: A real-world noun (Student, Order, Book) that has an independent existence.\n• Attribute: A specific property or field that describes an entity (e.g., Title, Price, Date of Birth).\n• Relationship: How two entities interact (e.g., Customer PLACES Order).',
-        });
-      } else if (actionType === 'example') {
-        set({
-          aiCoachText:
-            '</> Real-World Example:\nIn Amazon\'s database:\n- "Customer" is an Entity (has customer_id, name, email).\n- "Order" is an Entity (has order_id, order_date, total).\n- "Places" is the Relationship linking them (1 Customer to Many Orders).',
-        });
-      } else if (actionType === 'next') {
-        set({
-          aiCoachText:
-            '➡️ Next Step: Once "Date of Birth" is placed as an Attribute, link it to the Customer entity, then click "Check Solution" to verify your architecture!',
-        });
+        get().addActivity(`Hint used (Tier ${nextHintCount})`, undefined, 'hint');
+        set({ aiCoachText: tutorMsg, hintCount: nextHintCount });
+      } else {
+        set({ aiCoachText: tutorMsg });
       }
     },
 

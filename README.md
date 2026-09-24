@@ -1,118 +1,141 @@
-# DataQuestAI 🚀
+# DataQuestAI 🚀 — Production & Pedagogy V2
 
-> **a data-base course end to end with illustrations, and gamification**
+> **An interactive data-systems laboratory where a learner can learn a concept, construct it, execute it, break it, diagnose it, repair it, observe its behaviour, and prove mastery using real database operations.**
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FFrankAsanteVanLaarhoven%2FDataQuestAI)
 [![Live Demo](https://img.shields.io/badge/Vercel-db--quest.vercel.app-success?logo=vercel&style=for-the-badge)](https://db-quest.vercel.app)
 [![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-blue?logo=github&style=for-the-badge)](https://github.com/FrankAsanteVanLaarhoven/DataQuestAI)
+[![Automated Tests](https://img.shields.io/badge/Tests-17%20Passing-emerald?style=for-the-badge)](scripts/verify-all.mjs)
 
 - **Recommended Short Production Domain**: [https://db-quest.vercel.app](https://db-quest.vercel.app)
 - **Ultra-Short Domain Option**: [https://dq-db.vercel.app](https://dq-db.vercel.app)
-- **Vercel Domains Settings**: [frank-asante-van-laarhovens-projects/data-quest-ai/settings/domains](https://vercel.com/frank-asante-van-laarhovens-projects/data-quest-ai/settings/domains)
-
-**DataQuestAI** is a complete, production-ready, interactive **database course end to end with illustrations, and gamification**. Built for computer science students (CSC1033), university lecturers, and enterprise software engineers, it teaches foundational data concepts through to high-scale enterprise architectures using hands-on interactive visual diagrams, live SQLite code execution, and gamified challenges.
 
 ---
 
-## 📚 End-to-End Course Curriculum (Illustrated & Gamified)
+## 🌟 What is DataQuestAI V2?
 
-1. **Chapter 1: What Data Is & How Computers Store It**
-   - *Visual Illustrations*: Structured (Relational Grid) vs Semi-Structured (JSON/XML Tree) vs Unstructured (Vector Embeddings/BLOBs) + CPU Storage Latency Hierarchy.
-   - *Gamification*: +50 XP Chapter Knowledge Check Quiz.
-2. **Chapter 2: Database Building Blocks & ERD Modeling**
-   - *Visual Illustrations*: Crow’s Foot Relational ERD Diagram (Entities, Attributes, Primary Keys 🔑, Foreign Keys 🔗, 1:1, 1:N, and M:N Junction Tables).
-   - *Gamification*: +50 XP Referential Integrity Quiz.
-3. **Chapter 3: Relational DBs, SQL Mastery & 3NF Normalisation**
-   - *Visual Illustrations*: Normalisation Pipeline (1NF Atomic Values → 2NF Full Functional Dependency → 3NF Transitive Dependency Removal).
-   - *Interactive Sandbox*: Live interactive SQL console with real SQLite execution.
-   - *Gamification*: +50 XP Normalisation Quiz.
-4. **Chapter 4: Search Systems, B-Tree Indexes & Retrieval**
-   - *Visual Illustrations*: B-Tree Index Hierarchy Diagram ($O(\log N)$ seeks vs $O(N)$ sequential scans) and Inverted Indexes for full-text search.
-   - *Gamification*: +50 XP Indexing Optimization Quiz.
-5. **Chapter 5: Transactions, ACID & OLTP vs OLAP**
-   - *Visual Illustrations*: ACID Quadrant (Atomicity, Consistency, Isolation, Durability) and Row-Store (OLTP) vs Columnar-Store (OLAP) memory layouts.
-   - *Gamification*: +50 XP Transactional Isolation Quiz.
-6. **Chapter 6: Big Data, AI Vector DBs & Enterprise Ethics**
-   - *Visual Illustrations*: CAP Theorem Triangle (Consistency, Availability, Partition Tolerance) and AI Vector Similarity Space (Cosine similarity for RAG).
-   - *Gamification*: +50 XP Distributed Systems Quiz + Certified Database Architect Graduation Credential.
+DataQuestAI transforms the traditional database course from passive reading and simulated buttons into an **empirically observable, instrumented data-systems laboratory**. 
 
-## 🌟 Key Features
-
-- **🎮 Capstone Game: Build a Mini Data Enterprise**:
-  - Drag-and-drop Lucid-style canvas for entity-relationship and system topology design.
-  - Interactive wire dragging to connect entities, attributes, primary/foreign keys, cache layers, and queues.
-  - Live visual feedback: green glowing bubbles for valid architecture rules, red halos with auto-recommendations for anomalies.
-  - Instant deletion via click (❌ button), double-click/double-tap, or right-click context menu.
-  - Auto-layout button to organize messy diagrams into structured grids.
-  - Export DDL to generate clean standard SQL `CREATE TABLE` and constraint statements.
-- **⚡ Live Data Streaming & Transaction Feed**:
-  - In-memory ACID relational database simulator executing live `INSERT`, `SELECT`, `UPDATE`, and `DELETE` queries.
-  - Real-time event log with duration telemetry and detailed transaction inspector.
-- **🤖 AI Learning Coach**:
-  - Context-aware guidance assistant providing hints, concept breakdowns, SQL code examples, and step-by-step next actions.
-- **🔒 Clerk-Style Authentication & SQLite Persistence**:
-  - One-click Google and GitHub social logins, guest demo mode, and email/password sign-in.
-  - **Custom Avatar Import**: Upload personal profile photos (for LinkedIn, university ID, etc.) or choose from custom avatars.
-  - Role selection for **Students**, **Teachers**, and **Enterprise Architects**.
-  - Persistent SQLite storage (`dataquest.sqlite`) powered by native `node:sqlite`.
-- **🌐 7-Language Internationalization (i18n)**:
-  - English (`en`), Español (`es`), Français (`fr`), Deutsch (`de`), 中文 (`zh`), 日本語 (`ja`), and العربية (`ar` with bidirectional `dir="rtl"` layout).
-- **🌍 Community Enterprise Showcase**:
-  - Publish custom canvas architectures with architectural reasoning and trade-off justifications (+100 XP).
-  - Fork community schemas directly into your canvas or upvote designs.
-- **🏆 Global Leaderboard & Badges**:
-  - Real-time ranking podium and level progression tracking with day streaks and XP milestones.
-- **📚 Interactive CSC1033 Curriculum Roadmap**:
-  - 6 chapters covering Relational Theory, ERD Modeling, Normalization (1NF–3NF), SQL Query Engine, Indexing & Performance, and NoSQL / NewSQL Architectures.
+Learners follow the **7-Stage Pedagogical Loop**:
+```text
+  1. EXPLAIN   ──> Plain words & conceptual definition
+  2. SHOW IT   ──> Illustrated animated diagrams
+  3. BUILD IT  ──> Drag-and-drop schema architecture
+  4. RUN IT    ──> Isolated real SQL execution engine
+  5. BREAK IT  ──> Deliberate error & bottleneck injection
+  6. FIX IT    ──> Socratic diagnosis & root-cause remediation
+  7. PROVE IT  ──> Capstone verification & mastery telemetry
+```
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Production V2 Architecture & Core Enhancements
 
-- **Framework**: Next.js 16 (App Router) + React 19 + TypeScript
-- **Styling**: Tailwind CSS + Custom Lucid Grid & Glow Animations
-- **Database**: SQLite (`node:sqlite` Native Engine)
-- **State Management**: Zustand with `localStorage` rehydration
-- **Icons**: Lucide React
-- **Audio Synthesizer**: Native Web Audio API (zero audio file dependencies)
+### 1. ⚙️ Real Isolated SQL Execution Engine (`SqlLabEngine`)
+Replaced pattern-matching simulations with an in-memory SQL execution engine:
+- **Full Query Parsing**: `SELECT` with `WHERE`, `ORDER BY`, and `LIMIT`; `INSERT` with column validation; `UPDATE` with arithmetic increments; `DELETE` with conditional filters; `CREATE TABLE`; and `CREATE INDEX`.
+- **Constraint Enforcement**: Validates `PRIMARY KEY` uniqueness and `NOT NULL` rules. Duplicate keys are strictly rejected.
+- **`EXPLAIN QUERY PLAN` Generator**: Generates physical query plans distinguishing between high-speed `INDEX_SEEK` ($O(\log N)$ on B-Trees) and sequential `TABLE_SCAN` ($O(N)$).
+- **Physical Row Mutation**: Running `UPDATE Books SET Copies = 5 WHERE BookID = 'B001'` physically changes the storage record, with instant visual consequence.
+
+### 2. 🔐 Production Authentication & Persistent Platform Database
+- **PBKDF2 Password Hashing**: Cryptographic password derivation with 100,000 iterations of SHA-256 and unique 16-byte random salts.
+- **Constant-Time Verification**: Mitigates side-channel timing attacks.
+- **Strict Login Validation**: No silent account creation on bad logins; invalid credentials return HTTP 401.
+- **Session Tokens & RBAC**: Signed session tokens with expiration and Role-Based Access Control (`student`, `teacher`, `architect`, `admin`).
+- **Audit Logging**: Write-only audit trail logging security actions, logins, and schema mutations.
+- **PostgreSQL / WAL Storage**: Platform database supports PostgreSQL via `DATABASE_URL` with local file persistence and SQLite WAL mode (`PRAGMA journal_mode = WAL`).
+
+### 3. 📊 Genuine Execution Telemetry & Observability
+- Student queries emit structured telemetry records capturing `durationMs`, `rowsScanned`, `rowsReturned`, `rowsAffected`, and `indexUsed`.
+- Live KPI computation: `totalQueries`, real-time `p95LatencyMs`, cache / index seek ratio, and storage utilization.
+- Interactive Query Plan Benchmarker in the Analytics tab comparing sequential table scans (100,000 rows, 18.4ms) against B-Tree index seeks (1 row, 0.8ms).
+
+### 4. 🤖 Grounded Adaptive AI Tutor & Misconception Engine
+Replaced canned string hints with a dynamic diagnostic engine:
+- **Misconception Taxonomy**:
+  - `Entity vs Attribute Confusion`: Diagnoses when learners classify descriptive properties (e.g. *Date of Birth*) as entities; applies the **Independent Existence Test**.
+  - `Primary vs Foreign Key Inversion`: Flags pointers placed on the wrong side of relationships.
+  - `Direct M:N Relationship`: Diagnoses missing junction/associative entities (e.g., *Student ↔ Loan ↔ Book*).
+  - `Missing WHERE Clause`: Warns before unbounded `UPDATE`/`DELETE` queries mutate all rows.
+  - `Normalization Violations`: Flags 1NF, 2NF, and 3NF transitive dependencies.
+- **Multi-Tiered Socratic Scaffolding**: Tier 1 (Nudge) → Tier 2 (Targeted Hint) → Worked Industry Example → Deep Conceptual Explanation.
+- Records error frequencies to the instructor's class telemetry dashboard.
+
+### 5. 🔬 Expanded CSC1033 Information Retrieval & Cloud Curriculum
+Dedicated interactive laboratories:
+- **Search Engine Pipeline Lab**: Interactive Document Ingestion → Tokenizer → Stop-word Filter → Porter Stemmer → Inverted Index Postings → Ranked Query Search.
+- **Query Expansion Lab**: Lexical ontology synsets testing the fundamental precision vs. recall tradeoff (e.g., *car* expanding to *automobile, vehicle, motorcar*).
+- **Semantic Web & Linked Data Lab**: Interactive W3C RDF Triple constructor (`Subject` ── `Predicate` ──▶ `Object`) with transitivity inference.
+- **Metadata Lab**: Physical separation of raw image pixel payload data from Dublin Core & EXIF descriptive/administrative metadata attributes.
+- **Faceted Search Lab**: S.R. Ranganathan multi-attribute faceted classification with dynamic population pruning across brand, price range, color, and storage.
+- **Cloud Computing Scalability Lab**: Concurrency slider (100 to 100,000 users) simulating thread contention, allowing students to provision Load Balancers, Read Replicas, Redis Caches, and Message Queues.
+- **Vector Database & LLM RAG Lab**: High-dimensional vector embeddings, cosine similarity search, and deliberate retrieval failure injection causing hallucinations.
+- **Consequential Data Ethics Lab**: GDPR Article 5 data minimisation challenge: pruning special category medical, religious, and passport records from student promotion views.
+
+### 6. 🎓 Teacher Studio
+- **Declarative Mission Builder**: Instructors can author custom database challenges without touching code, specifying allowed components, expected relationships, XP rewards, and diagnostic hints.
+- **Class Misconception Analytics**: Visual distribution charts showing cohort error rates across Entity/Attribute confusion (31%), PK/FK (22%), M:N junctions (19%), and missing WHERE clauses (13%).
+- **Student Mastery Gradebook**: Real-time tracking of completions, scores, hint dependency, and individual misconception traps.
+
+### 7. 🏛️ Digital University Final Capstone & Chaos Mode
+- Unified campus simulation connecting all 10 departments: Admissions, Student SIS, Courses, Library, Payments, Accommodation, Search, OLAP Warehouse, AI RAG, and Privacy Governance.
+- **RUN UNIVERSITY**: Streams live student requests through the system.
+- **Chaos Mode**: Injects real-world operational incidents:
+  - *10,000 students registering simultaneously* (scale with replicas).
+  - *Search engine returning noise* (reindex with stop-word filter).
+  - *GDPR medical data leak* (enforce column-level security projection).
+
+---
+
+## 🧪 Automated Verification Suite
+
+Run the automated test suite verifying the SQL engine, indexing, authentication, and misconception rules:
+
+```bash
+npm test
+```
+
+Output:
+```text
+🧪 Starting DataQuestAI Production V2 Automated Verification...
+
+  ✓ PASS: SELECT query executed successfully
+  ✓ PASS: SELECT returned filtered Science books
+  ✓ PASS: INSERT query added new row
+  ✓ PASS: INSERT recorded 1 row affected
+  ✓ PASS: Duplicate PRIMARY KEY insertion rejected
+  ✓ PASS: UPDATE query executed
+  ✓ PASS: UPDATE affected 1 row
+  ✓ PASS: Physical row Copies updated to 5
+  ✓ PASS: DELETE query executed
+  ✓ PASS: DELETE affected 1 row
+  ✓ PASS: EXPLAIN query recognized
+  ✓ PASS: EXPLAIN verified INDEX_SEEK on indexed CustomerID
+  ✓ PASS: EXPLAIN verified TABLE_SCAN on unindexed Status
+  ✓ PASS: PBKDF2 generated 256-bit SHA-256 hash
+  ✓ PASS: Constant-time password verification succeeded
+  ✓ PASS: Invalid password correctly rejected
+  ✓ PASS: Session token generated with prefix and role
+
+📊 Verification Complete: 17 passed, 0 failed.
+```
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-
 - Node.js 20+ (Node 22+ recommended for native `node:sqlite`)
 - npm or yarn
 
-### Installation & Local Setup
-
+### Local Setup
 ```bash
-# Clone the repository
 git clone https://github.com/FrankAsanteVanLaarhoven/DataQuestAI.git
 cd DataQuestAI
-
-# Install dependencies
 npm install
-
-# Run the development server
+npm test
 npm run dev
-
-# Open http://localhost:3000 in your browser
 ```
 
----
-
-## ☁️ Deployment (Vercel)
-
-DataQuestAI is configured for Vercel deployment with `/tmp` database path fallback for serverless execution:
-
-```bash
-npx vercel --prod
-```
-
----
-
-## 📄 License
-
-MIT © 2026 Frank Asante Van Laarhoven
+Visit `http://localhost:3008` in your browser.

@@ -27,6 +27,7 @@ export const CrudBuilder: React.FC = () => {
   const [customTable, setCustomTable] = useState('Customers');
   const [customSql, setCustomSql] = useState('');
   const [activeExecutedId, setActiveExecutedId] = useState<string | null>(null);
+  const [lastFeedback, setLastFeedback] = useState<string | null>(null);
 
   const handleOpenAdd = (type: 'C' | 'R' | 'U' | 'D') => {
     setModalType(type);
@@ -59,7 +60,9 @@ export const CrudBuilder: React.FC = () => {
   const runOperation = (op: CrudOperation) => {
     executeCrud(op);
     setActiveExecutedId(op.id);
+    setLastFeedback(`✓ Executed: ${op.sql}`);
     setTimeout(() => setActiveExecutedId(null), 1200);
+    setTimeout(() => setLastFeedback(null), 4000);
   };
 
   const columns: Array<{ type: 'C' | 'R' | 'U' | 'D'; label: string; icon: any; color: string; badgeBg: string }> = [
@@ -84,9 +87,16 @@ export const CrudBuilder: React.FC = () => {
             </p>
           </div>
         </div>
-        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-          Live Transaction Engine
-        </span>
+        <div className="flex items-center gap-2">
+          {lastFeedback && (
+            <span className="text-[10px] font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700 px-2 py-0.5 rounded-full animate-in fade-in">
+              {lastFeedback}
+            </span>
+          )}
+          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+            Live Transaction Engine
+          </span>
+        </div>
       </div>
 
       {/* 4 CRUD Columns */}

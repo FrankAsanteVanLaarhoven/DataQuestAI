@@ -34,6 +34,15 @@ import {
   Lightbulb,
 } from 'lucide-react';
 
+import { SearchEngineLab } from './labs/SearchEngineLab';
+import { QueryExpansionLab } from './labs/QueryExpansionLab';
+import { SemanticWebLab } from './labs/SemanticWebLab';
+import { MetadataLab } from './labs/MetadataLab';
+import { FacetedSearchLab } from './labs/FacetedSearchLab';
+import { CloudScalingLab } from './labs/CloudScalingLab';
+import { VectorAiLab } from './labs/VectorAiLab';
+import { DataEthicsLab } from './labs/DataEthicsLab';
+
 interface QuizQuestion {
   question: string;
   options: string[];
@@ -780,6 +789,21 @@ export const LearnRoadmap: React.FC = () => {
             </div>
           </div>
 
+          {/* Interactive Search Engine Laboratory */}
+          <SearchEngineLab />
+
+          {/* Interactive Query Expansion Laboratory */}
+          <QueryExpansionLab />
+
+          {/* Interactive Semantic Web & Linked Data Laboratory */}
+          <SemanticWebLab />
+
+          {/* Interactive Metadata Architecture Laboratory */}
+          <MetadataLab />
+
+          {/* Interactive Faceted Search Laboratory */}
+          <FacetedSearchLab />
+
           {/* Gamified Knowledge Check Quiz */}
           <QuizCheckpoint
             chapterNum={4}
@@ -978,6 +1002,15 @@ export const LearnRoadmap: React.FC = () => {
               </ul>
             </div>
           </div>
+
+          {/* Cloud Computing Scalability Simulation */}
+          <CloudScalingLab />
+
+          {/* AI Vector Database & RAG Failure Diagnosis */}
+          <VectorAiLab />
+
+          {/* Consequential Data Ethics & GDPR Minimisation */}
+          <DataEthicsLab />
 
           {/* Gamified Knowledge Check Quiz */}
           <QuizCheckpoint

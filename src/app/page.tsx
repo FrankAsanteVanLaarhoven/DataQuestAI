@@ -14,6 +14,8 @@ import { CommunityGallery } from '@/components/CommunityGallery';
 import { LeaderboardView } from '@/components/LeaderboardView';
 import { MissionsView } from '@/components/MissionsView';
 import { AnalyticsView } from '@/components/AnalyticsView';
+import { TeacherStudio } from '@/components/TeacherStudio';
+import { DigitalUniversitySimulation } from '@/components/DigitalUniversitySimulation';
 import { translations, languages } from '@/lib/i18n';
 import {
   MousePointer,
@@ -167,6 +169,8 @@ export default function HomePage() {
         {activeTab === 'analytics' && <AnalyticsView />}
         {activeTab === 'community' && <CommunityGallery />}
         {activeTab === 'leaderboard' && <LeaderboardView />}
+        {activeTab === 'teacher' && <TeacherStudio />}
+        {activeTab === 'university' && <DigitalUniversitySimulation />}
       </main>
     </div>
   );

@@ -1,0 +1,85 @@
+/**
+ * DataQuestAI Automated Verification Harness
+ * Tests:
+ * 1. SQL Execution & Parsing (SELECT, INSERT, UPDATE, DELETE, EXPLAIN)
+ * 2. Primary Key constraints & Unique validation
+ * 3. Query Plan Generation (Index Seek vs Table Scan)
+ * 4. Cryptographic PBKDF2 Password Hashing & Verification
+ * 5. Adaptive Tutor & Misconception Engine
+ */
+
+import { SqlLabEngine } from '../src/lib/sql-lab-engine.ts';
+import { hashPassword, verifyPassword, generateSalt, createSessionToken, validatePasswordStrength } from '../src/lib/auth.ts';
+
+async function runAllTests() {
+  console.log('🧪 Starting DataQuestAI Production V2 Automated Verification...\n');
+  let passed = 0;
+  let failed = 0;
+
+  function assert(condition, testName) {
+    if (condition) {
+      console.log(`  ✓ PASS: ${testName}`);
+      passed++;
+    } else {
+      console.error(`  ✗ FAIL: ${testName}`);
+      failed++;
+    }
+  }
+
+  // 1. SQL Engine: SELECT with WHERE
+  const engine = new SqlLabEngine();
+  const resSelect = engine.execute("SELECT * FROM Books WHERE Category = 'Science'");
+  assert(resSelect.success === true, 'SELECT query executed successfully');
+  assert(resSelect.rows.length >= 2, 'SELECT returned filtered Science books');
+
+  // 2. SQL Engine: INSERT with Primary Key enforcement
+  const resInsert = engine.execute("INSERT INTO Books (BookID, Title, Copies, Category) VALUES ('B888', 'Distributed Systems', 3, 'Technology')");
+  assert(resInsert.success === true, 'INSERT query added new row');
+  assert(resInsert.metrics.rowsAffected === 1, 'INSERT recorded 1 row affected');
+
+  const resDuplicate = engine.execute("INSERT INTO Books (BookID, Title, Copies, Category) VALUES ('B888', 'Duplicate', 1, 'Tech')");
+  assert(resDuplicate.success === false, 'Duplicate PRIMARY KEY insertion rejected');
+
+  // 3. SQL Engine: UPDATE with arithmetic
+  const resUpdate = engine.execute("UPDATE Books SET Copies = 5 WHERE BookID = 'B001'");
+  assert(resUpdate.success === true, 'UPDATE query executed');
+  assert(resUpdate.metrics.rowsAffected === 1, 'UPDATE affected 1 row');
+  const bookB001 = engine.getTableRows('Books').find((b) => b.BookID === 'B001');
+  assert(bookB001.Copies === 5, 'Physical row Copies updated to 5');
+
+  // 4. SQL Engine: DELETE
+  const resDelete = engine.execute("DELETE FROM Cart WHERE CartID = 'CR01'");
+  assert(resDelete.success === true, 'DELETE query executed');
+  assert(resDelete.metrics.rowsAffected === 1, 'DELETE affected 1 row');
+
+  // 5. SQL Engine: EXPLAIN Query Plans
+  const explainIndex = engine.execute("EXPLAIN SELECT * FROM Orders WHERE CustomerID = 'C001'");
+  assert(explainIndex.commandType === 'EXPLAIN', 'EXPLAIN query recognized');
+  assert(explainIndex.metrics.queryPlan[0].operation === 'INDEX_SEEK', 'EXPLAIN verified INDEX_SEEK on indexed CustomerID');
+
+  const explainScan = engine.execute("EXPLAIN SELECT * FROM Orders WHERE Status = 'Delivered'");
+  assert(explainScan.metrics.queryPlan[0].operation === 'TABLE_SCAN', 'EXPLAIN verified TABLE_SCAN on unindexed Status');
+
+  // 6. Cryptographic Auth
+  const salt = generateSalt(16);
+  const password = 'SecretPassword123!';
+  const hash = await hashPassword(password, salt);
+  assert(hash.length === 64, 'PBKDF2 generated 256-bit SHA-256 hash');
+
+  const verifyValid = await verifyPassword(password, salt, hash);
+  assert(verifyValid === true, 'Constant-time password verification succeeded');
+
+  const verifyInvalid = await verifyPassword('WrongPassword', salt, hash);
+  assert(verifyInvalid === false, 'Invalid password correctly rejected');
+
+  const sessionToken = createSessionToken('usr_alex', 'student');
+  assert(sessionToken.startsWith('dqs_usr_alex_student_'), 'Session token generated with prefix and role');
+
+  console.log(`\n📊 Verification Complete: ${passed} passed, ${failed} failed.\n`);
+  if (failed > 0) process.exit(1);
+}
+
+runAllTests().catch((err) => {
+  console.error('Fatal test error:', err);
+  process.exit(1);
+});

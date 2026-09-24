@@ -541,14 +541,16 @@ export const SystemCanvas: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Status indicator icon */}
+                {/* Status indicator icon with accessible redundant label */}
                 {node.status === 'correct' ? (
-                  <div className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] shadow-xs shrink-0">
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 text-[9px] font-extrabold shadow-2xs shrink-0" aria-label="Verified Correct">
                     <Check className="w-2.5 h-2.5 stroke-[3]" />
+                    <span>✓ Correct</span>
                   </div>
                 ) : node.status === 'wrong' ? (
-                  <div className="w-4 h-4 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px] shadow-xs shrink-0">
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700 text-[9px] font-extrabold shadow-2xs shrink-0" aria-label="Incorrect, needs review">
                     <X className="w-2.5 h-2.5 stroke-[3]" />
+                    <span>✕ Review</span>
                   </div>
                 ) : null}
               </div>

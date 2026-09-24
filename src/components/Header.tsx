@@ -26,6 +26,8 @@ import {
   Laptop,
   Layers,
   ShieldCheck,
+  GraduationCap,
+  Building2,
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -165,6 +167,31 @@ export const Header: React.FC = () => {
             >
               <Award className="w-3.5 h-3.5 opacity-80" />
               {t.leaderboard}
+            </button>
+            <button
+              onClick={() => setActiveTab('university')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'university'
+                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white shadow-xs font-semibold'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-white'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5 opacity-80" />
+              <span>Campus Sim</span>
+              <span className="text-[9px] px-1 py-0.2 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold">
+                Live
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('teacher')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'teacher'
+                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white shadow-xs font-semibold'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-white'
+              }`}
+            >
+              <GraduationCap className="w-3.5 h-3.5 opacity-80" />
+              <span>Teacher</span>
             </button>
           </nav>
 

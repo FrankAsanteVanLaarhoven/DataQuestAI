@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getSqliteDb } from '@/lib/sqlite-db';
+import { getPlatformDb } from '@/lib/platform-db';
 
 export async function GET() {
   try {
-    const db = getSqliteDb();
+    const db = getPlatformDb();
 
     // Check count and seed initial 4 community designs if table empty
     const countRow: any = db.prepare('SELECT COUNT(*) as count FROM designs').get();
@@ -100,7 +100,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const db = getSqliteDb();
+    const db = getPlatformDb();
     const body = await request.json();
     const { id, user_id, title, domain, description, reasoning, nodes, edges, tags } = body;
 
@@ -139,7 +139,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const db = getSqliteDb();
+    const db = getPlatformDb();
     const body = await request.json();
     const { id, action } = body;
 
