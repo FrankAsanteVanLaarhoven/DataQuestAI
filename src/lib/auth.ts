@@ -123,6 +123,13 @@ export function extractBearerToken(request: Request): string | null {
   if (customHeader) {
     return customHeader.trim();
   }
+  const cookieHeader = request.headers.get('cookie');
+  if (cookieHeader) {
+    const match = cookieHeader.match(/(?:^|;\s*)dqs_token=([^;]+)/);
+    if (match) {
+      return decodeURIComponent(match[1]);
+    }
+  }
   return null;
 }
 

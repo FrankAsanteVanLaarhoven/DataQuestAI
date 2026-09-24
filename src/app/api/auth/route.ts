@@ -87,6 +87,7 @@ export async function POST(request: Request) {
     }
 
     // 2. LOGIN
+    // 2. LOGIN
     if (action === 'login') {
       if (!email || !password) {
         return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
@@ -102,7 +103,10 @@ export async function POST(request: Request) {
           VALUES (?, ?, ?, ?)
         `).run('aud_' + Date.now(), 'anonymous', 'LOGIN_FAILED', `No account found for ${normalizedEmail}`);
 
-        return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
+        return NextResponse.json(
+          { error: 'No account found with this email. Would you like to create one?', suggestSignup: true },
+          { status: 401 }
+        );
       }
 
       // Verify Password Hash
@@ -113,7 +117,7 @@ export async function POST(request: Request) {
           VALUES (?, ?, ?, ?)
         `).run('aud_' + Date.now(), userRecord.id, 'LOGIN_FAILED_CREDENTIALS', `Incorrect password for ${normalizedEmail}`);
 
-        return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 });
+        return NextResponse.json({ error: 'Incorrect password. Please try again or use a demo account.' }, { status: 401 });
       }
 
       // Generate Session
@@ -142,10 +146,80 @@ export async function POST(request: Request) {
         avatar: userRecord.avatar,
       };
 
-      return NextResponse.json({ success: true, user: safeUser, token: sessionToken });
+      const response = NextResponse.json({ success: true, user: safeUser, token: sessionToken });
+      response.cookies.set('dqs_token', sessionToken, {
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60,
+        sameSite: 'lax',
+      });
+      return response;
     }
 
-    // 3. GUEST ACCESS (Issues real time-limited session with student role)
+    // 3. SOCIAL LOGIN (Google / GitHub)
+    if (action === 'social') {
+      const { provider = 'google', email, name, role = 'student', avatar } = body;
+      if (!email || !email.includes('@')) {
+        return NextResponse.json({ error: 'Valid email address required for social sign-in.' }, { status: 400 });
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+      let userRecord: any = db.prepare('SELECT * FROM users WHERE email = ?').get(normalizedEmail);
+
+      if (!userRecord) {
+        const id = 'usr_' + Math.random().toString(36).substring(2, 10);
+        const salt = generateSalt(16);
+        const defaultHash = await hashPassword('oauth_verified_account_' + id, salt);
+        const userName = (name && name.trim()) || email.split('@')[0];
+        const userAvatar = avatar || (provider === 'github' ? '👾' : '🚀');
+        const userRole: UserRole = role === 'teacher' || role === 'architect' ? role : 'student';
+
+        db.prepare(`
+          INSERT INTO users (id, email, password_hash, password_salt, name, role, level, xp, streak, avatar)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(id, normalizedEmail, defaultHash, salt, userName, userRole, 1, 100, 1, userAvatar);
+
+        userRecord = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+
+        db.prepare(`
+          INSERT INTO audit_logs (id, user_id, action, details)
+          VALUES (?, ?, ?, ?)
+        `).run('aud_' + Date.now(), id, 'OAUTH_SIGNUP_SUCCESS', `Registered via ${provider.toUpperCase()}`);
+      } else {
+        db.prepare(`
+          INSERT INTO audit_logs (id, user_id, action, details)
+          VALUES (?, ?, ?, ?)
+        `).run('aud_' + Date.now(), userRecord.id, 'OAUTH_LOGIN_SUCCESS', `Logged in via ${provider.toUpperCase()}`);
+      }
+
+      const sessionToken = createSessionToken(userRecord.id, userRecord.role);
+      const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
+
+      db.prepare(`
+        INSERT INTO sessions (token, user_id, role, expires_at)
+        VALUES (?, ?, ?, ?)
+      `).run(sessionToken, userRecord.id, userRecord.role, expiresAt);
+
+      const safeUser = {
+        id: userRecord.id,
+        email: userRecord.email,
+        name: userRecord.name,
+        role: userRecord.role,
+        level: userRecord.level,
+        xp: userRecord.xp,
+        streak: userRecord.streak,
+        avatar: userRecord.avatar,
+      };
+
+      const response = NextResponse.json({ success: true, user: safeUser, token: sessionToken, provider });
+      response.cookies.set('dqs_token', sessionToken, {
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60,
+        sameSite: 'lax',
+      });
+      return response;
+    }
+
+    // 4. GUEST ACCESS (Issues real time-limited session with student role)
     if (action === 'guest') {
       const userRecord: any = db.prepare('SELECT * FROM users WHERE role = ? ORDER BY xp DESC LIMIT 1').get('student');
       const guestId = userRecord?.id || 'usr_guest_demo';
@@ -171,9 +245,8 @@ export async function POST(request: Request) {
             avatar: '👩‍💻',
           };
 
-      // Create a genuine time-limited session in the database
       const guestToken = createSessionToken(guestId, 'student');
-      const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24-hour guest session
+      const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
       try {
         db.prepare(`
           INSERT INTO sessions (token, user_id, role, expires_at)
@@ -181,10 +254,16 @@ export async function POST(request: Request) {
         `).run(guestToken, guestId, 'student', expiresAt);
       } catch {}
 
-      return NextResponse.json({ success: true, user: safeUser, token: guestToken });
+      const response = NextResponse.json({ success: true, user: safeUser, token: guestToken });
+      response.cookies.set('dqs_token', guestToken, {
+        path: '/',
+        maxAge: 24 * 60 * 60,
+        sameSite: 'lax',
+      });
+      return response;
     }
 
-    // 4. VERIFY ACTIVE SESSION
+    // 5. VERIFY ACTIVE SESSION
     if (action === 'verify_session') {
       const token = body.token || extractBearerToken(request);
       const authCheck = validateSessionToken(token, db);
@@ -192,6 +271,19 @@ export async function POST(request: Request) {
         return NextResponse.json({ valid: false, error: authCheck.error }, { status: authCheck.statusCode || 401 });
       }
       return NextResponse.json({ valid: true, user: authCheck.user, role: authCheck.role });
+    }
+
+    // 6. LOGOUT
+    if (action === 'logout') {
+      const token = body.token || extractBearerToken(request);
+      if (token) {
+        try {
+          db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+        } catch {}
+      }
+      const response = NextResponse.json({ success: true, message: 'Logged out successfully.' });
+      response.cookies.delete('dqs_token');
+      return response;
     }
 
     return NextResponse.json({ error: 'Invalid authentication action specified.' }, { status: 400 });

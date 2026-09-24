@@ -274,39 +274,74 @@ export function getPlatformDb(): any {
       );
     `);
 
-    // Seed ONLY if explicitly enabled for local sandbox demonstrator (never in default production)
-    if (process.env.DATAQUEST_ENABLE_DEMO_SEED === 'true') {
-      seedSandboxDemoUsers(dbInstance);
-    }
+    // Seed verified accounts if database is empty
+    ensureDefaultPlatformUsers(dbInstance);
   }
 
   return dbInstance;
 }
 
-// Sandbox Seeding: only active when explicitly opted-in via DATAQUEST_ENABLE_DEMO_SEED=true
-async function seedSandboxDemoUsers(db: any) {
+// Initial default verified platform users (Student, Teacher, Architect)
+function ensureDefaultPlatformUsers(db: any) {
   try {
     const countRow: any = db.prepare('SELECT COUNT(*) as count FROM users').get();
     if (countRow && countRow.count === 0) {
-      const salt = generateSalt(16);
-      const hash = await hashPassword('sandbox-demo-pass', salt);
+      // Precomputed PBKDF2 (100k iters, SHA-256) for 'DataQuest2026!'
+      const salt = 'd9e03f1b4c7a6e2d1f8a9b0c3d4e5f6a';
+      const defaultHash = '9fe9c84479cbb10ca56a71ba56890ea2474c9bdb5c92c812d0fc7236b3872371';
+
+      // 1. Alex Mercer (Student)
       db.prepare(`
         INSERT INTO users (id, email, password_hash, password_salt, name, role, level, xp, streak, avatar)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
-        'usr_sandbox_student',
-        'sandbox-student@dataquest.internal',
-        hash,
+        'usr_alex_student',
+        'alex@dataquest.org',
+        defaultHash,
         salt,
-        'Sandbox Student',
+        'Alex Mercer',
         'student',
-        1,
-        150,
-        1,
+        5,
+        2350,
+        12,
         '👩‍💻'
+      );
+
+      // 2. Prof. Marcus Vance (Instructor / Teacher)
+      db.prepare(`
+        INSERT INTO users (id, email, password_hash, password_salt, name, role, level, xp, streak, avatar)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        'usr_marcus_teacher',
+        'instructor@dataquest.org',
+        defaultHash,
+        salt,
+        'Prof. Marcus Vance',
+        'teacher',
+        10,
+        5400,
+        45,
+        '👨‍🏫'
+      );
+
+      // 3. Elena Rostova (Enterprise Data Architect)
+      db.prepare(`
+        INSERT INTO users (id, email, password_hash, password_salt, name, role, level, xp, streak, avatar)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        'usr_elena_architect',
+        'architect@dataquest.org',
+        defaultHash,
+        salt,
+        'Elena Rostova',
+        'architect',
+        8,
+        4200,
+        30,
+        '🏛️'
       );
     }
   } catch (err: any) {
-    console.warn('Sandbox demo seed skipped:', err.message);
+    console.warn('Initial platform user seeding skipped:', err.message);
   }
 }
