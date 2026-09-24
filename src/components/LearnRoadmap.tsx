@@ -126,7 +126,7 @@ const chapterQuizzes: Record<number, QuizQuestion> = {
 };
 
 export const LearnRoadmap: React.FC = () => {
-  const { awardXp } = useAppStore();
+  const { awardXp, explanationMode, setExplanationMode, competencies } = useAppStore();
   const [activeStep, setActiveStep] = useState(1);
   const [dataInspectorFormat, setDataInspectorFormat] = useState<'structured' | 'semi' | 'unstructured'>('structured');
   const [sqlQuery, setSqlQuery] = useState("SELECT * FROM Students WHERE Class = '10A'");
@@ -195,7 +195,7 @@ export const LearnRoadmap: React.FC = () => {
             A Complete Database Course: End-to-End with Illustrations & Gamification
           </h1>
           <p className="mt-2 text-sm sm:text-base text-pink-100 font-medium leading-relaxed">
-            CSC1033 Made Simple: Master data architecture from first principles to enterprise production — structured grids, Crow’s foot ERDs, 3NF normalisation, B-Tree indexes, ACID transactions, and Big Data AI vector stores.
+            CSC1033 Topics Made Simple: Master data architecture from first principles to enterprise production — structured grids, Entity–Relationship Diagrams (ERDs), Third Normal Form (3NF) normalisation, B-Tree indexes, ACID (Atomic, Consistent, Isolated, Durable) transactions, and Artificial Intelligence (AI) vector stores.
           </p>
 
           {/* Gamification Milestone Bar */}
@@ -212,7 +212,7 @@ export const LearnRoadmap: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-[11px] text-pink-100">
-                  Earn +50 XP per chapter quiz. Complete all 6 to claim your Certified Database Architect credentials!
+                  Earn +50 XP per chapter quiz. Complete all 6 to claim your DataQuestAI Database Architecture Completion Certificate!
                 </p>
               </div>
             </div>
@@ -239,12 +239,61 @@ export const LearnRoadmap: React.FC = () => {
               <BookOpen className="w-6 h-6" />
             </div>
             <span className="text-[10px] font-bold uppercase tracking-widest text-pink-100 block">
-              ARCHITECTURE SPEC
+              CURRICULUM SPEC
             </span>
             <span className="text-[9px] font-semibold text-amber-300 uppercase block tracking-wider mt-0.5">
-              CSC1033 ACCREDITED
+              Aligned to CSC1033 Topics
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* Competence-Based Progression Ladder (Beyond XP) */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm text-white space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-black text-amber-400 flex items-center gap-1.5">
+              👑 Competence-Based Mastery Ladder
+            </span>
+            <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-bold">
+              Skill Proofs Required • Beyond Points
+            </span>
+          </div>
+          <span className="text-[11px] text-slate-400">
+            Unlocked: <strong className="text-emerald-400 font-mono">{competencies.filter((c) => c.unlocked).length}</strong> / {competencies.length} Tiers
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+          {competencies.map((comp) => (
+            <div
+              key={comp.id}
+              className={`p-2.5 rounded-xl border text-center transition-all flex flex-col justify-between ${
+                comp.unlocked
+                  ? 'bg-slate-800/80 border-emerald-500/60 shadow-xs'
+                  : 'bg-slate-950/60 border-slate-800/80 opacity-60'
+              }`}
+              title={`Required Proof: ${comp.requiredSkillProof}`}
+            >
+              <div>
+                <span className="text-xl block mb-1">{comp.icon}</span>
+                <span className="text-[9px] font-black uppercase tracking-wider block text-slate-400">
+                  Tier {comp.tier}
+                </span>
+                <h4 className="text-[10px] font-black text-white leading-tight mt-0.5 truncate">
+                  {comp.title}
+                </h4>
+              </div>
+
+              <div className="mt-2 pt-1.5 border-t border-slate-800 text-[9px]">
+                {comp.unlocked ? (
+                  <span className="text-emerald-400 font-bold">✓ PROVEN</span>
+                ) : (
+                  <span className="text-amber-400 font-mono">🔒 LOCKED</span>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -315,11 +364,45 @@ export const LearnRoadmap: React.FC = () => {
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               From microscopic bits and bytes to high-performance relational tables and document hierarchies.
             </p>
-            <div className="mt-3 p-3 bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-900 rounded-2xl flex items-center gap-2">
-              <Lightbulb className="w-4 h-4 text-amber-500 shrink-0" />
-              <p className="text-xs text-pink-900 dark:text-pink-200 font-semibold">
-                <strong>Data</strong> = Pieces of factual information digitized into binary bits (<code className="bg-pink-100 dark:bg-pink-900 px-1 py-0.5 rounded text-[11px]">0</code> and <code className="bg-pink-100 dark:bg-pink-900 px-1 py-0.5 rounded text-[11px]">1</code>) that machines compute, query, and persist across storage tiers.
-              </p>
+
+            {/* Scientifically Clean Dual-Layer Data Definition */}
+            <div className="mt-4 space-y-3">
+              <div className="p-3.5 bg-pink-50 dark:bg-pink-950/40 border border-pink-200 dark:border-pink-900 rounded-2xl space-y-2">
+                <div className="flex items-start gap-2.5">
+                  <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <div className="space-y-1 text-xs">
+                    <p className="text-pink-950 dark:text-pink-100 font-medium">
+                      <strong>Data</strong> means information that we record so that we can store it, study it, change it, or use it later.
+                    </p>
+                    <p className="text-pink-800 dark:text-pink-300 text-[11px]">
+                      A computer normally represents digital data using tiny electrical or magnetic values called <strong>bits</strong>. A bit can have one of two values: <code className="bg-pink-100 dark:bg-pink-900 px-1 py-0.5 rounded font-mono">0</code> or <code className="bg-pink-100 dark:bg-pink-900 px-1 py-0.5 rounded font-mono">1</code>.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Concrete Chain of Learning */}
+                <div className="pt-2 border-t border-pink-200/60 dark:border-pink-900/60 flex items-center flex-wrap gap-2 text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                  <span className="px-2 py-1 bg-white dark:bg-slate-900 rounded-lg border border-pink-200 dark:border-pink-800">
+                    Real-world fact: Frank&apos;s age
+                  </span>
+                  <span className="text-pink-500">↓</span>
+                  <span className="px-2 py-1 bg-white dark:bg-slate-900 rounded-lg border border-pink-200 dark:border-pink-800 font-mono text-pink-600">
+                    Value: 38
+                  </span>
+                  <span className="text-pink-500">↓</span>
+                  <span className="px-2 py-1 bg-white dark:bg-slate-900 rounded-lg border border-pink-200 dark:border-pink-800 text-purple-600">
+                    Recorded data
+                  </span>
+                  <span className="text-pink-500">↓</span>
+                  <span className="px-2 py-1 bg-white dark:bg-slate-900 rounded-lg border border-pink-200 dark:border-pink-800 text-indigo-600">
+                    Stored in memory
+                  </span>
+                  <span className="text-pink-500">↓</span>
+                  <span className="px-2 py-1 bg-slate-950 text-emerald-400 rounded-lg font-mono text-[10px]">
+                    Bits: 00100110
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -343,7 +426,7 @@ export const LearnRoadmap: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="text-xs font-black text-slate-800 dark:text-slate-100">Structured Data</h4>
-                    <span className="text-[10px] text-pink-600 font-bold">Relational Tables & SQL</span>
+                    <span className="text-[10px] text-pink-600 font-bold">Relational Tables &amp; Structured Query Language (SQL)</span>
                   </div>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
@@ -386,11 +469,11 @@ export const LearnRoadmap: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="text-xs font-black text-slate-800 dark:text-slate-100">Semi-Structured Data</h4>
-                    <span className="text-[10px] text-purple-600 font-bold">JSON, YAML, XML</span>
+                    <span className="text-[10px] text-purple-600 font-bold">JSON, YAML, XML Hierarchies</span>
                   </div>
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
-                  Self-describing hierarchies. Flexible keys where each item can possess different properties without schema migrations.
+                  Self-describing hierarchies (JavaScript Object Notation / Extensible Markup Language). Flexible keys where each item can possess different properties without schema migrations.
                 </p>
 
                 {/* SVG Illustration: JSON Tree */}
@@ -580,6 +663,71 @@ export const LearnRoadmap: React.FC = () => {
 
             <div className="text-[11px] text-slate-400 text-center pt-2 border-t border-slate-800 flex items-center justify-center gap-2">
               <span className="text-pink-400">1 Student</span> can borrow <span className="text-purple-400">Many Books</span> through the junction table without data redundancy.
+            </div>
+
+            {/* Dual-Layer Concept Explainer: Simple Mode vs Engineer Mode */}
+            <div className="mt-4 p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-pink-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> Dual-Layer Learning Explainer
+                </span>
+                <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 text-[10px]">
+                  <button
+                    onClick={() => setExplanationMode('simple')}
+                    className={`px-2 py-0.5 rounded-lg font-bold transition-all ${
+                      explanationMode === 'simple'
+                        ? 'bg-amber-400 text-slate-950 shadow-xs'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    🧸 Simple Mode
+                  </button>
+                  <button
+                    onClick={() => setExplanationMode('engineer')}
+                    className={`px-2 py-0.5 rounded-lg font-bold transition-all ${
+                      explanationMode === 'engineer'
+                        ? 'bg-indigo-500 text-white shadow-xs'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    ⚙️ Engineer Mode
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Primary Key Concept */}
+                <div className={`p-3.5 rounded-xl border transition-all ${
+                  explanationMode === 'simple'
+                    ? 'bg-amber-950/30 border-amber-500/40 text-amber-200'
+                    : 'bg-indigo-950/30 border-indigo-500/40 text-indigo-200'
+                }`}>
+                  <span className="text-[10px] font-black uppercase tracking-wider block mb-1">
+                    {explanationMode === 'simple' ? '🧸 Primary Key (Simple)' : '⚙️ Primary Key (Formal CS)'}
+                  </span>
+                  <p className="text-xs leading-relaxed">
+                    {explanationMode === 'simple'
+                      ? '“A Primary Key is a value that uniquely identifies one row. Think of it like a student\'s unique school number.”'
+                      : '“A Primary Key is a candidate key selected to enforce entity integrity and uniquely identify tuples within a relation.”'}
+                  </p>
+                </div>
+
+                {/* Foreign Key Concept */}
+                <div className={`p-3.5 rounded-xl border transition-all ${
+                  explanationMode === 'simple'
+                    ? 'bg-amber-950/30 border-amber-500/40 text-amber-200'
+                    : 'bg-indigo-950/30 border-indigo-500/40 text-indigo-200'
+                }`}>
+                  <span className="text-[10px] font-black uppercase tracking-wider block mb-1">
+                    {explanationMode === 'simple' ? '🧸 Foreign Key (Simple)' : '⚙️ Foreign Key (Formal CS)'}
+                  </span>
+                  <p className="text-xs leading-relaxed">
+                    {explanationMode === 'simple'
+                      ? '“A Foreign Key is a link in one table that points to the Primary Key in another table. Think of it like writing your student number on your library book loan.”'
+                      : '“A Foreign Key is a referential constraint referencing a candidate key in a parent relation, enforcing relational integrity across tables.”'}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1042,7 +1190,7 @@ export const LearnRoadmap: React.FC = () => {
               Certificate of Completion
             </span>
             <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
-              Certified Database Architect
+              DataQuestAI Database Architecture Completion Certificate
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
               Awarded for mastering all 6 chapters of the End-to-End Database Course with Illustrations and Gamification.

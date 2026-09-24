@@ -18,6 +18,91 @@ import { DECLARATIVE_MISSIONS } from './missions/declarative-missions';
 import { tutorEngine } from './tutor-engine';
 import { telemetryService } from './telemetry';
 
+export interface CompetencyBadge {
+  id: string;
+  title: string;
+  tier: number;
+  description: string;
+  unlocked: boolean;
+  requiredSkillProof: string;
+  icon: string;
+}
+
+export const INITIAL_COMPETENCIES: CompetencyBadge[] = [
+  {
+    id: 'comp_data_explorer',
+    title: 'DATA EXPLORER',
+    tier: 1,
+    description: 'Differentiate structured relational tables, semi-structured JSON documents, and unstructured payloads.',
+    unlocked: true,
+    requiredSkillProof: 'Inspect structured vs unstructured data formats in Chapter 1.',
+    icon: '🧭',
+  },
+  {
+    id: 'comp_table_builder',
+    title: 'TABLE BUILDER',
+    tier: 2,
+    description: 'Model independent entities with primary keys and data types, passing the Independent Existence Test.',
+    unlocked: true,
+    requiredSkillProof: 'Construct an entity node with designated Primary Key in the Canvas.',
+    icon: '🏗️',
+  },
+  {
+    id: 'comp_relationship_builder',
+    title: 'RELATIONSHIP BUILDER',
+    tier: 3,
+    description: 'Resolve Many-to-Many cardinality traps by constructing associative junction tables with foreign keys.',
+    unlocked: true,
+    requiredSkillProof: 'Complete Mission 2 (University Course Registry Junction).',
+    icon: '🔗',
+  },
+  {
+    id: 'comp_sql_operator',
+    title: 'SQL OPERATOR',
+    tier: 4,
+    description: 'Execute genuine SELECT, INSERT, UPDATE, and DELETE queries modifying platform memory state.',
+    unlocked: true,
+    requiredSkillProof: 'Run physical mutation queries in the Live SQL Lab Sandbox.',
+    icon: '⚡',
+  },
+  {
+    id: 'comp_database_engineer',
+    title: 'DATABASE ENGINEER',
+    tier: 5,
+    description: 'Enforce relational constraints: NOT NULL columns, Primary Key uniqueness, and Foreign Key referential integrity.',
+    unlocked: false,
+    requiredSkillProof: 'Trigger and remediate a Foreign Key constraint rejection in SQL Lab.',
+    icon: '🛡️',
+  },
+  {
+    id: 'comp_query_optimiser',
+    title: 'QUERY OPTIMISER',
+    tier: 6,
+    description: 'Analyse execution plans and eliminate sequential table scans by engineering B-Tree indexes.',
+    unlocked: false,
+    requiredSkillProof: 'Execute CREATE INDEX and reduce a 100k-row scan to an index seek.',
+    icon: '🚀',
+  },
+  {
+    id: 'comp_data_architect',
+    title: 'DATA ARCHITECT',
+    tier: 7,
+    description: 'Design distributed architectures with Redis caching, read-replicas, and message queues under load.',
+    unlocked: false,
+    requiredSkillProof: 'Provision scaling tiers in the Cloud Scalability Simulation Lab.',
+    icon: '🏛️',
+  },
+  {
+    id: 'comp_enterprise_architect',
+    title: 'ENTERPRISE DATA ARCHITECT',
+    tier: 8,
+    description: 'Diagnose and remediate live architectural failures, privacy disclosures, and incidents in Chaos Mode.',
+    unlocked: false,
+    requiredSkillProof: 'Successfully mitigate an active incident in the Digital University simulation.',
+    icon: '👑',
+  },
+];
+
 interface AppState {
   // Navigation & User
   activeTab: 'capstone' | 'missions' | 'learn' | 'analytics' | 'community' | 'leaderboard' | 'teacher' | 'university';
@@ -45,6 +130,15 @@ interface AppState {
   toggleSound: () => void;
   toggleRole: () => void;
   awardXp: (amount: number, reason: string) => void;
+
+  // Dual-Layer Explanation Mode (Simple / Child-Friendly vs Engineer / Formal CS)
+  explanationMode: 'simple' | 'engineer';
+  setExplanationMode: (mode: 'simple' | 'engineer') => void;
+  toggleExplanationMode: () => void;
+
+  // Competency-Based Mastery Progression
+  competencies: CompetencyBadge[];
+  unlockCompetency: (id: string) => void;
 
   // Missions
   missions: Mission[];
@@ -756,6 +850,24 @@ export const useAppStore = create<AppState>((set, get) => {
         };
       });
       get().addActivity(reason, amount, 'success');
+    },
+
+    explanationMode: 'simple',
+    setExplanationMode: (mode) => {
+      sound.playClick();
+      set({ explanationMode: mode });
+    },
+    toggleExplanationMode: () => {
+      sound.playClick();
+      set((state) => ({ explanationMode: state.explanationMode === 'simple' ? 'engineer' : 'simple' }));
+    },
+
+    competencies: INITIAL_COMPETENCIES,
+    unlockCompetency: (id) => {
+      sound.playSuccess();
+      set((state) => ({
+        competencies: state.competencies.map((c) => (c.id === id ? { ...c, unlocked: true } : c)),
+      }));
     },
 
     missions: initialMissions,

@@ -21,9 +21,14 @@ import {
 } from 'lucide-react';
 
 export const AnalyticsView: React.FC = () => {
+  const { awardXp, unlockCompetency } = useAppStore();
   const [telemetry, setTelemetry] = useState<TelemetrySummary>(telemetryService.getSummary());
   const [benchmarkQuery, setBenchmarkQuery] = useState("SELECT * FROM Orders WHERE CustomerID = 'C001'");
   const [useIndexInBenchmark, setUseIndexInBenchmark] = useState(true);
+  const [showIndexChallenge, setShowIndexChallenge] = useState(false);
+  const [userIndexSql, setUserIndexSql] = useState("CREATE INDEX idx_orders_customer ON Orders(CustomerID);");
+  const [indexCreated, setIndexCreated] = useState(false);
+  const [challengeFeedback, setChallengeFeedback] = useState<string | null>(null);
   const [benchmarkResult, setBenchmarkResult] = useState<{
     op: 'INDEX_SEEK' | 'TABLE_SCAN';
     scanned: number;
@@ -47,10 +52,31 @@ export const AnalyticsView: React.FC = () => {
     return unsub;
   }, []);
 
+  const handleCreateIndexYourself = () => {
+    const trimmed = userIndexSql.trim();
+    if (/CREATE\s+INDEX\s+idx_orders_customer\s+ON\s+Orders\s*\(\s*CustomerID\s*\)/i.test(trimmed)) {
+      realSqlLabEngine.execute(trimmed);
+      setIndexCreated(true);
+      setUseIndexInBenchmark(true);
+      setBenchmarkResult({
+        op: 'INDEX_SEEK',
+        scanned: 1,
+        returned: 1,
+        durationMs: 0.6,
+        cost: 1.2,
+        detail: 'Index Seek on Orders using newly created idx_orders_customer (B-Tree path traversal)',
+      });
+      setChallengeFeedback('Index created successfully! The query plan transformed from a 100,000-row table scan to a 1-row index seek.');
+      awardXp(50, 'Mastered Indexing: Reduced 100k-row scan to 1-row seek');
+      unlockCompetency('comp_query_optimiser');
+    } else {
+      setChallengeFeedback('Syntax Error: Type "CREATE INDEX idx_orders_customer ON Orders(CustomerID);" to index the foreign key.');
+    }
+  };
+
   const runBenchmark = () => {
     if (useIndexInBenchmark) {
       const res = realSqlLabEngine.execute("EXPLAIN SELECT * FROM Orders WHERE CustomerID = 'C001'");
-      const step = res.metrics.queryPlan[0];
       setBenchmarkResult({
         op: 'INDEX_SEEK',
         scanned: 1,
@@ -114,8 +140,8 @@ export const AnalyticsView: React.FC = () => {
         {[
           { label: 'Total Queries Executed', val: telemetry.totalQueries.toLocaleString(), icon: Database, color: 'text-blue-400', trend: 'Live execution count' },
           { label: 'Avg Latency (p95)', val: `${telemetry.p95LatencyMs} ms`, icon: Zap, color: 'text-amber-400', trend: `${telemetry.avgLatencyMs} ms average` },
-          { label: 'Cache / Index Seek Ratio', val: `${telemetry.cacheHitRatio}%`, icon: Activity, color: 'text-emerald-400', trend: `${telemetry.indexSeeks} seeks vs ${telemetry.tableScans} scans` },
-          { label: 'Storage Utilized', val: `${telemetry.storageMb} MB`, icon: Layers, color: 'text-purple-400', trend: 'In-Memory SQLite WAL' },
+          { label: 'Index Seek Ratio', val: `${telemetry.cacheHitRatio}%`, icon: Activity, color: 'text-emerald-400', trend: `${telemetry.indexSeeks} seeks vs ${telemetry.tableScans} scans` },
+          { label: 'Storage Utilized', val: `${telemetry.storageMb} MB`, icon: Layers, color: 'text-purple-400', trend: 'Educational SQL Sandbox Memory' },
         ].map((kpi) => {
           const Icon = kpi.icon;
           return (
@@ -241,8 +267,74 @@ export const AnalyticsView: React.FC = () => {
               </p>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-slate-900 font-mono text-[10px] text-cyan-300 border border-slate-800">
-              CREATE INDEX idx_orders_customer ON Orders(CustomerID);
+            <div className="space-y-2 pt-2 border-t border-slate-800/80">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-400">Interactive Student Challenge:</span>
+                <button
+                  onClick={() => setShowIndexChallenge(!showIndexChallenge)}
+                  className="px-3 py-1 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs rounded-xl shadow-md transition-all active:scale-95"
+                >
+                  {showIndexChallenge ? 'Close Index Lab' : 'Create the index yourself'}
+                </button>
+              </div>
+
+              {showIndexChallenge && (
+                <div className="p-3 bg-slate-900 rounded-xl border border-cyan-500/40 space-y-2.5 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono text-cyan-400 font-bold">SQL Lab Query Input:</span>
+                    <span className="text-[9px] text-amber-300 font-bold bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-800/40">
+                      Proof: Query Optimiser Unlock
+                    </span>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={userIndexSql}
+                    onChange={(e) => setUserIndexSql(e.target.value)}
+                    className="w-full bg-slate-950 text-cyan-300 font-mono text-xs p-2 rounded-lg border border-slate-700 focus:border-cyan-400 outline-hidden"
+                  />
+
+                  <div className="flex items-center justify-between gap-2">
+                    <button
+                      onClick={handleCreateIndexYourself}
+                      className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-lg shadow-sm transition-all"
+                    >
+                      Execute CREATE INDEX
+                    </button>
+                    {indexCreated && (
+                      <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Index Active!
+                      </span>
+                    )}
+                  </div>
+
+                  {challengeFeedback && (
+                    <p className={`text-[11px] font-mono ${indexCreated ? 'text-emerald-300' : 'text-rose-400'}`}>
+                      {challengeFeedback}
+                    </p>
+                  )}
+
+                  {indexCreated && (
+                    <div className="p-2.5 bg-slate-950 rounded-lg border border-emerald-900/50 text-[10px] font-mono text-slate-300 flex items-center justify-around text-center">
+                      <div>
+                        <span className="text-rose-400 block font-bold">BEFORE</span>
+                        <span>100,000 scanned</span>
+                      </div>
+                      <span className="text-slate-500">↓ CREATE INDEX ↓</span>
+                      <div>
+                        <span className="text-emerald-400 block font-bold">AFTER</span>
+                        <span>1 indexed entry</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!showIndexChallenge && (
+                <div className="p-2.5 rounded-xl bg-slate-900 font-mono text-[10px] text-cyan-300 border border-slate-800">
+                  CREATE INDEX idx_orders_customer ON Orders(CustomerID);
+                </div>
+              )}
             </div>
           </div>
         </div>

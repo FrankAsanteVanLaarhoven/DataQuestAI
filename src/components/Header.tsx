@@ -44,6 +44,8 @@ export const Header: React.FC = () => {
     isAuthModalOpen,
     setAuthModalOpen,
     setUser,
+    explanationMode,
+    toggleExplanationMode,
   } = useAppStore();
 
   const t = translations[language] || translations.en;
@@ -84,11 +86,11 @@ export const Header: React.FC = () => {
                 <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
                   DataQuest
                 </span>
-                <span className="px-1.5 py-0.5 text-[9px] font-mono font-semibold uppercase tracking-wider rounded-md bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60">
-                  CSC1033
+                <span className="px-1.5 py-0.5 text-[9px] font-mono font-semibold uppercase tracking-wider rounded-md bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60" title="Aligned to CSC1033 Learning Topics">
+                  CSC1033 Topics
                 </span>
                 <span className="px-1.5 py-0.5 text-[9px] font-mono font-semibold rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
-                  SQLite
+                  SQL Lab
                 </span>
               </div>
               <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 -mt-0.5 line-clamp-1 max-w-[340px]">
@@ -281,6 +283,26 @@ export const Header: React.FC = () => {
               <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />
               <span className="font-mono">{user.streak}d</span>
             </div>
+
+            {/* Dual-Layer Mode: Simple vs Engineer Mode */}
+            <button
+              onClick={toggleExplanationMode}
+              title={`Active Pedagogy Mode: ${
+                explanationMode === 'simple'
+                  ? 'Simple Mode (Intuitive Analogies, Visual, Beginner & Child-Friendly)'
+                  : 'Engineer Mode (Formal Relational Algebra, Enterprise CS Terminology)'
+              } - Click to switch`}
+              className={`px-2.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer ${
+                explanationMode === 'simple'
+                  ? 'border-amber-400/50 bg-amber-500/10 text-amber-700 dark:text-amber-300 shadow-xs ring-1 ring-amber-400/20'
+                  : 'border-cyan-500/50 bg-cyan-950/30 text-cyan-700 dark:text-cyan-300 shadow-xs ring-1 ring-cyan-500/20'
+              }`}
+            >
+              <span className="text-xs">{explanationMode === 'simple' ? '🧸' : '⚙️'}</span>
+              <span className="hidden sm:inline font-mono text-[11px]">
+                {explanationMode === 'simple' ? 'Simple' : 'Engineer'}
+              </span>
+            </button>
 
             {/* Apple Theme Switcher (Dark / Light / System Theme) */}
             <button

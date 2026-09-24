@@ -40,30 +40,31 @@ interface ChaosIncident {
   title: string;
   department: string;
   symptom: string;
-  rootCause: string;
+  simpleExplanation: string;
+  technicalExplanation: string;
   mitigationOptions: { label: string; action: string; isCorrect: boolean }[];
   resolved: boolean;
 }
 
 export const DigitalUniversitySimulation: React.FC = () => {
-  const { awardXp } = useAppStore();
+  const { awardXp, unlockCompetency, explanationMode } = useAppStore();
   const [isRunning, setIsRunning] = useState(false);
   const [chaosMode, setChaosMode] = useState(false);
   const [activeIncident, setActiveIncident] = useState<ChaosIncident | null>(null);
   const [ticker, setTicker] = useState(0);
 
-  // 10 Campus Services
+  // 10 Campus Services with expanded acronyms on first use
   const [services, setServices] = useState<CampusService[]>([
-    { id: 'adm', name: 'Admissions & Enrollment', domain: 'Relational OLTP', icon: GraduationCap, status: 'healthy', qps: 142, latencyMs: 2.1, lastEvent: 'Enrolled student #S005 in CS101' },
-    { id: 'stu', name: 'Student Information System', domain: 'Normalized 3NF', icon: Users, status: 'healthy', qps: 210, latencyMs: 1.8, lastEvent: 'Updated address for #S002' },
-    { id: 'cou', name: 'Curriculum & Courses', domain: 'Catalog DB', icon: BookOpen, status: 'healthy', qps: 85, latencyMs: 1.4, lastEvent: 'Fetched syllabus for CSC1033' },
-    { id: 'lib', name: 'Library & Lending Engine', domain: 'M:N Junction', icon: BookOpen, status: 'healthy', qps: 94, latencyMs: 2.3, lastEvent: 'Loan #L104 issued to #S001' },
-    { id: 'pay', name: 'Student Tuition Payments', domain: 'ACID Ledger', icon: DollarSign, status: 'healthy', qps: 62, latencyMs: 3.2, lastEvent: 'Processed payment ref #PAY-882' },
-    { id: 'acc', name: 'Campus Accommodation', domain: 'Entity-Relational', icon: Building2, status: 'healthy', qps: 45, latencyMs: 2.0, lastEvent: 'Room allocated in Castle Leazes' },
-    { id: 'sea', name: 'Academic Search Engine', domain: 'Inverted Index', icon: Search, status: 'healthy', qps: 180, latencyMs: 4.5, lastEvent: 'Query: "database indexing"' },
-    { id: 'ana', name: 'University Executive OLAP', domain: 'Star Schema', icon: Activity, status: 'healthy', qps: 28, latencyMs: 8.4, lastEvent: 'Aggregated Q1 retention KPI' },
-    { id: 'ai', name: 'Campus AI Study Tutor', domain: 'Vector DB RAG', icon: Brain, status: 'healthy', qps: 115, latencyMs: 18.2, lastEvent: 'Synthesized 3NF explanation' },
-    { id: 'gov', name: 'Data Ethics & Privacy Gate', domain: 'RBAC Policy', icon: ShieldCheck, status: 'healthy', qps: 340, latencyMs: 0.8, lastEvent: 'Audit: Masked medical notes' },
+    { id: 'adm', name: 'Admissions & Enrollment', domain: 'Online Transaction Processing (OLTP)', icon: GraduationCap, status: 'healthy', qps: 142, latencyMs: 2.1, lastEvent: 'Enrolled student #S005 in CS101' },
+    { id: 'stu', name: 'Student Information System (SIS)', domain: 'Normalized Third Normal Form (3NF)', icon: Users, status: 'healthy', qps: 210, latencyMs: 1.8, lastEvent: 'Updated address for #S002' },
+    { id: 'cou', name: 'Curriculum & Courses', domain: 'Course Catalog Database (DB)', icon: BookOpen, status: 'healthy', qps: 85, latencyMs: 1.4, lastEvent: 'Fetched syllabus for CSC1033' },
+    { id: 'lib', name: 'Library & Lending Engine', domain: 'Many-to-Many (M:N) Junction', icon: BookOpen, status: 'healthy', qps: 94, latencyMs: 2.3, lastEvent: 'Loan #L104 issued to #S001' },
+    { id: 'pay', name: 'Student Tuition Payments', domain: 'ACID (Atomic, Consistent, Isolated, Durable) Ledger', icon: DollarSign, status: 'healthy', qps: 62, latencyMs: 3.2, lastEvent: 'Processed payment ref #PAY-882' },
+    { id: 'acc', name: 'Campus Accommodation', domain: 'Entity-Relational Mapping', icon: Building2, status: 'healthy', qps: 45, latencyMs: 2.0, lastEvent: 'Room allocated in Castle Leazes' },
+    { id: 'sea', name: 'Academic Search Engine', domain: 'Inverted Index & Tokenizer', icon: Search, status: 'healthy', qps: 180, latencyMs: 4.5, lastEvent: 'Query: "database indexing"' },
+    { id: 'ana', name: 'University Executive Analytics', domain: 'Online Analytical Processing (OLAP) Star Schema', icon: Activity, status: 'healthy', qps: 28, latencyMs: 8.4, lastEvent: 'Aggregated Q1 retention KPI' },
+    { id: 'ai', name: 'Campus AI Study Tutor', domain: 'Vector Database & Retrieval-Augmented Generation (RAG)', icon: Brain, status: 'healthy', qps: 115, latencyMs: 18.2, lastEvent: 'Synthesized 3NF explanation' },
+    { id: 'gov', name: 'Data Ethics & Privacy Gate', domain: 'Role-Based Access Control (RBAC) Policy', icon: ShieldCheck, status: 'healthy', qps: 340, latencyMs: 0.8, lastEvent: 'Audit: Masked student medical records' },
   ]);
 
   // Sim ticker
@@ -93,7 +94,8 @@ export const DigitalUniversitySimulation: React.FC = () => {
         title: 'Freshers Week Traffic Surge: 10,000 Students Registering Simultaneously',
         department: 'Admissions & Enrollment',
         symptom: 'Admissions database latency escalated to 85ms! Connection pool exhausted with thread contention.',
-        rootCause: 'Single master relational database handling both writes and read-heavy syllabus queries.',
+        simpleExplanation: 'Too many students tried to read course lists and sign up at the exact same second, overloading the computer.',
+        technicalExplanation: 'A single master relational database handled both transactional write locks and high-volume read queries without read-replicas or connection pooling.',
         mitigationOptions: [
           { label: 'Provision Read Replicas & Connection Pooling', action: 'replicas', isCorrect: true },
           { label: 'Delete Student Table to free up RAM', action: 'drop', isCorrect: false },
@@ -106,7 +108,8 @@ export const DigitalUniversitySimulation: React.FC = () => {
         title: 'Information Retrieval Degradation: Search Engine Returning Irrelevant Noise',
         department: 'Academic Search Engine',
         symptom: 'Query for "research" returns 90,000 documents including cafeteria menus and football flyers.',
-        rootCause: 'Stop-word filter was corrupted and Porter Stemmer was bypassed.',
+        simpleExplanation: 'The search box forgot how to ignore common useless words like "the" and "and", and mixed up word endings.',
+        technicalExplanation: 'Corrupted inverted index stop-word filter and bypassed Porter Stemmer caused vocabulary explosion and low precision in inverted index lookups.',
         mitigationOptions: [
           { label: 'Rebuild Inverted Index with Stop-Words & Porter Stemmer', action: 'reindex', isCorrect: true },
           { label: 'Switch from Inverted Index to Full Table Scan', action: 'scan', isCorrect: false },
@@ -116,10 +119,11 @@ export const DigitalUniversitySimulation: React.FC = () => {
       },
       {
         id: 'inc_3',
-        title: 'GDPR Breach Alert: Student Clinical Records Visible in Library Loans',
+        title: 'GDPR Privacy Breach: Student Clinical Records Visible in Library Loans',
         department: 'Data Ethics & Privacy Gate',
         symptom: 'Library desk terminal projected student medical diagnoses alongside borrowed book titles.',
-        rootCause: 'Unrestricted JOIN on Student master table without column-level security projection.',
+        simpleExplanation: 'The library asked the database for private medical information it did not need.',
+        technicalExplanation: 'An unrestricted Structured Query Language (SQL) JOIN exposed columns outside the library\'s permitted purpose without column-level security projection.',
         mitigationOptions: [
           { label: 'Enforce Column-Level Projection & Purpose Limitation (GDPR Art. 5)', action: 'masking', isCorrect: true },
           { label: 'Encrypt the database with password "admin123"', action: 'weak_enc', isCorrect: false },
@@ -145,6 +149,7 @@ export const DigitalUniversitySimulation: React.FC = () => {
   const handleMitigate = (option: { label: string; action: string; isCorrect: boolean }) => {
     if (option.isCorrect) {
       awardXp(100, `Resolved Chaos Incident: ${activeIncident?.title}`);
+      unlockCompetency('comp_enterprise_architect');
       setServices((prev) =>
         prev.map((s) => ({ ...s, status: 'healthy', latencyMs: Math.round((Math.random() * 2 + 1) * 10) / 10 }))
       );
@@ -216,10 +221,30 @@ export const DigitalUniversitySimulation: React.FC = () => {
             <span className="text-xs font-mono font-bold text-rose-300">Reward: +100 XP</span>
           </div>
 
-          <div className="p-3.5 bg-slate-950 rounded-xl border border-rose-900 text-xs text-rose-200 leading-relaxed font-mono">
-            <strong>Incident Telemetry:</strong> {activeIncident.symptom}
-            <div className="text-slate-400 text-[11px] mt-1 font-sans">
-              <strong>Architectural Root Cause:</strong> {activeIncident.rootCause}
+          <div className="space-y-2 text-xs">
+            <div className="p-3 bg-slate-950 rounded-xl border border-rose-900 font-mono text-rose-200">
+              <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider block mb-1">Live Telemetry Symptom</span>
+              {activeIncident.symptom}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="p-3 bg-amber-950/40 rounded-xl border border-amber-500/40 text-amber-200">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 block mb-1 flex items-center gap-1">
+                  🧸 Simple Explanation (Beginner / Learner)
+                </span>
+                <p className="text-xs leading-relaxed text-amber-100/90 font-sans">
+                  {activeIncident.simpleExplanation}
+                </p>
+              </div>
+
+              <div className="p-3 bg-indigo-950/40 rounded-xl border border-indigo-500/40 text-indigo-200">
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-400 block mb-1 flex items-center gap-1">
+                  ⚙️ Technical Explanation (Engineer / CS)
+                </span>
+                <p className="text-xs leading-relaxed text-indigo-100/90 font-sans">
+                  {activeIncident.technicalExplanation}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -276,7 +301,7 @@ export const DigitalUniversitySimulation: React.FC = () => {
               <div className="mt-4 pt-3 border-t border-slate-800/80 space-y-1 text-[11px] font-mono">
                 <div className="flex justify-between text-slate-400">
                   <span>Throughput:</span>
-                  <span className="text-white font-bold">{svc.qps} QPS</span>
+                  <span className="text-white font-bold">{svc.qps} Queries/Sec (QPS)</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
                   <span>Latency:</span>
