@@ -57,6 +57,7 @@ export const Header: React.FC = () => {
     explanationMode,
     toggleExplanationMode,
     toggleRole,
+    setHasEnteredConsole,
   } = useAppStore();
 
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -158,6 +159,19 @@ export const Header: React.FC = () => {
                 <span className="px-1.5 py-0.5 text-[9px] font-mono font-semibold rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
                   SQL Lab
                 </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    sound.playClick();
+                    setHasEnteredConsole(false);
+                  }}
+                  title="Return to Enterprise Splash Gateway & Authentication"
+                  className="px-2 py-0.5 text-[9px] font-mono font-bold rounded-md bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-400/40 flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                >
+                  <Sparkles className="w-2.5 h-2.5 text-indigo-500 dark:text-indigo-400" />
+                  <span>Gateway</span>
+                </button>
               </div>
               <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 -mt-0.5 line-clamp-1 max-w-[340px]">
                 {t.courseTagline || 'A database course end to end with illustrations, and gamification'}
@@ -526,6 +540,19 @@ export const Header: React.FC = () => {
 
                     <button
                       type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        sound.playClick();
+                        setHasEnteredConsole(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Return to Splash Gateway</span>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={async () => {
                         try {
                           sound.playClick();
@@ -551,6 +578,7 @@ export const Header: React.FC = () => {
                           role: 'student',
                         });
                         setUserMenuOpen(false);
+                        setHasEnteredConsole(false);
                       }}
                       className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                     >

@@ -127,6 +127,8 @@ interface AppState {
   setLanguage: (lang: SupportedLanguage) => void;
   isAuthModalOpen: boolean;
   setAuthModalOpen: (open: boolean) => void;
+  hasEnteredConsole: boolean;
+  setHasEnteredConsole: (open: boolean) => void;
   soundEnabled: boolean;
   toggleSound: () => void;
   voiceEnabled: boolean;
@@ -821,6 +823,11 @@ export const useAppStore = create<AppState>((set, get) => {
 
     isAuthModalOpen: false,
     setAuthModalOpen: (open) => set({ isAuthModalOpen: open }),
+
+    hasEnteredConsole: false,
+    setHasEnteredConsole: (open) => {
+      set({ hasEnteredConsole: open });
+    },
 
     soundEnabled: true,
     toggleSound: () => {

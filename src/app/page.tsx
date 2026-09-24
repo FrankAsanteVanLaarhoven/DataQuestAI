@@ -16,6 +16,7 @@ import { MissionsView } from '@/components/MissionsView';
 import { AnalyticsView } from '@/components/AnalyticsView';
 import { TeacherStudio } from '@/components/TeacherStudio';
 import { DigitalUniversitySimulation } from '@/components/DigitalUniversitySimulation';
+import { EnterpriseSplashScreen } from '@/components/EnterpriseSplashScreen';
 import { translations, languages } from '@/lib/i18n';
 import {
   MousePointer,
@@ -28,7 +29,7 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
-  const { activeTab, theme, setTheme, language } = useAppStore();
+  const { activeTab, theme, setTheme, language, hasEnteredConsole } = useAppStore();
   const t = translations[language] || translations.en;
   const currentLangMeta = languages.find((l) => l.code === language);
   const dir = currentLangMeta?.dir || 'ltr';
@@ -72,6 +73,14 @@ export default function HomePage() {
       document.body.style.color = '#1e293b';
     }
   }, [isDarkTheme]);
+
+  if (!hasEnteredConsole) {
+    return (
+      <div dir={dir} className="dark bg-[#05070e] text-slate-100 min-h-screen">
+        <EnterpriseSplashScreen />
+      </div>
+    );
+  }
 
   return (
     <div
