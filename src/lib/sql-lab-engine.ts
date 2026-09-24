@@ -20,7 +20,16 @@ export interface SqlTableSchema {
 
 export interface QueryPlanStep {
   id: number;
-  operation: 'TABLE_SCAN' | 'INDEX_SEEK' | 'FILTER' | 'INSERT_ROW' | 'UPDATE_ROW' | 'DELETE_ROW';
+  operation:
+    | 'TABLE_SCAN'
+    | 'INDEX_SEEK'
+    | 'FILTER'
+    | 'INSERT_ROW'
+    | 'UPDATE_ROW'
+    | 'DELETE_ROW'
+    | 'HASH_JOIN'
+    | 'NESTED_LOOP_JOIN'
+    | 'INDEX_JOIN';
   table: string;
   indexUsed?: string;
   condition?: string;
@@ -28,6 +37,27 @@ export interface QueryPlanStep {
   rowsScanned: number;
   rowsReturned: number;
   detail: string;
+}
+
+export type JoinType = 'INNER' | 'LEFT' | 'RIGHT' | 'FULL' | 'CROSS';
+
+export interface ParsedJoin {
+  type: JoinType;
+  tableName: string;
+  alias: string;
+  onCondition?: string;
+}
+
+export interface ParsedFromClause {
+  baseTable: string;
+  baseAlias: string;
+  joins: ParsedJoin[];
+}
+
+export interface ProjectedColumnExpr {
+  sourceExpr: string;
+  alias?: string;
+  displayName: string;
 }
 
 export interface SqlExecutionMetrics {
@@ -326,145 +356,240 @@ export class SqlLabEngine {
   }
 
   private executeSelect(sql: string, isExplain: boolean, start: number): SqlExecutionResult {
-    // SELECT [cols] FROM [table] [WHERE condition] [ORDER BY col [ASC|DESC]] [LIMIT n]
-    const selectMatch = sql.match(/^SELECT\s+(.+?)\s+FROM\s+([a-zA-Z0-9_]+)(?:\s+WHERE\s+(.+?))?(?:\s+ORDER\s+BY\s+(.+?))?(?:\s+LIMIT\s+(\d+))?;?$/i);
+    // Parse SELECT [cols] FROM [fromClause] [WHERE condition] [ORDER BY col [ASC|DESC]] [LIMIT n]
+    const parsedClauses = this.parseSelectClauses(sql);
+    const { colsStr, fromClause, whereClause, orderByClause, limitClause } = parsedClauses;
 
-    if (!selectMatch) {
-      throw new Error(`Malformed SELECT query. Format: SELECT [columns] FROM [table] [WHERE condition]`);
+    const parsedFrom = this.parseFromClause(fromClause);
+    const baseTableKey = parsedFrom.baseTable.toLowerCase();
+    const baseRows = this.tables.get(baseTableKey);
+
+    if (!baseRows) {
+      throw new Error(`Table '${parsedFrom.baseTable}' does not exist.`);
     }
 
-    const [, colsStr, tableName, whereClause, orderByClause, limitClause] = selectMatch;
-    const tableKey = tableName.toLowerCase();
-    const rows = this.tables.get(tableKey);
-
-    if (!rows) {
-      throw new Error(`Table '${tableName}' does not exist.`);
-    }
-
-    const schema = this.schemas.get(tableKey);
-    let rowsScanned = 0;
+    const baseSchema = this.schemas.get(baseTableKey);
+    let totalRowsScanned = 0;
     let indexUsed: string | undefined;
-    let queryPlanSteps: QueryPlanStep[] = [];
+    const queryPlanSteps: QueryPlanStep[] = [];
 
-    // Check if an index can be used for simple Equality WHERE: col = 'val'
-    let matchingRows: any[] = [];
-    let usedIndex = false;
+    // Step 1: Scan base table (or Index Seek if simple WHERE without joins)
+    let currentRows: any[] = [];
+    let usedBaseIndex = false;
 
-    if (whereClause) {
+    if (parsedFrom.joins.length === 0 && whereClause) {
       const eqMatch = whereClause.match(/^([a-zA-Z0-9_]+)\s*=\s*['"]?([^'"]+)['"]?$/i);
       if (eqMatch) {
         const colName = eqMatch[1];
         const val = this.parseValue(eqMatch[2]);
-        const indexKey = `${tableKey}.${colName.toLowerCase()}`;
+        const indexKey = `${baseTableKey}.${colName.toLowerCase()}`;
 
         if (this.indexes.has(indexKey)) {
-          usedIndex = true;
-          indexUsed = `idx_${tableKey}_${colName.toLowerCase()}`;
+          usedBaseIndex = true;
+          indexUsed = `idx_${baseTableKey}_${colName.toLowerCase()}`;
           const indexMap = this.indexes.get(indexKey)!;
           const found = indexMap.get(val) || [];
-          rowsScanned = found.length;
-          matchingRows = [...found];
+          const scanned = found.length;
+          totalRowsScanned += scanned;
+          currentRows = found.map((r) => this.wrapBaseRow(r, parsedFrom.baseTable, parsedFrom.baseAlias));
 
           queryPlanSteps.push({
             id: 1,
             operation: 'INDEX_SEEK',
-            table: tableName,
+            table: parsedFrom.baseTable,
             indexUsed,
             condition: `${colName} = ${JSON.stringify(val)}`,
             estimatedCost: 1.2,
-            rowsScanned,
-            rowsReturned: matchingRows.length,
-            detail: `Index Seek on ${tableName} using ${indexUsed} (scanned ${rowsScanned} indexed entries)`,
+            rowsScanned: scanned,
+            rowsReturned: currentRows.length,
+            detail: `Index Seek on ${parsedFrom.baseTable} using ${indexUsed} (scanned ${scanned} indexed entries)`,
           });
         }
       }
     }
 
-    if (!usedIndex) {
-      // Full Table Scan
-      rowsScanned = rows.length;
-      matchingRows = whereClause
-        ? rows.filter((r) => this.evaluateCondition(r, whereClause))
-        : [...rows];
+    if (!usedBaseIndex) {
+      const scanned = baseRows.length;
+      totalRowsScanned += scanned;
+      currentRows = baseRows.map((r) => this.wrapBaseRow(r, parsedFrom.baseTable, parsedFrom.baseAlias));
 
       queryPlanSteps.push({
         id: 1,
         operation: 'TABLE_SCAN',
-        table: tableName,
-        condition: whereClause || 'NONE',
-        estimatedCost: rowsScanned * 1.5,
-        rowsScanned,
-        rowsReturned: matchingRows.length,
-        detail: `Full Table Scan on ${tableName} (examined ${rowsScanned} rows)`,
+        table: parsedFrom.baseTable,
+        condition: parsedFrom.joins.length === 0 && whereClause ? whereClause : 'NONE',
+        estimatedCost: scanned * 1.5,
+        rowsScanned: scanned,
+        rowsReturned: currentRows.length,
+        detail: `Table Scan on ${parsedFrom.baseTable} (scanned ${scanned} rows)`,
       });
     }
 
-    // ORDER BY
+    // Step 2: Process JOINs sequentially
+    let cumulativeTableLabel = parsedFrom.baseTable;
+
+    for (let jIdx = 0; jIdx < parsedFrom.joins.length; jIdx++) {
+      const join = parsedFrom.joins[jIdx];
+      const targetTableKey = join.tableName.toLowerCase();
+      const targetRows = this.tables.get(targetTableKey);
+      const targetSchema = this.schemas.get(targetTableKey);
+
+      if (!targetRows) {
+        throw new Error(`Joined table '${join.tableName}' does not exist.`);
+      }
+
+      totalRowsScanned += targetRows.length;
+      const prevCount = currentRows.length;
+      const joinedRows = this.performJoin(currentRows, targetRows, join, targetSchema);
+      currentRows = joinedRows;
+
+      const isHashJoinPossible = join.onCondition && /=\s*/.test(join.onCondition);
+      const operation: 'HASH_JOIN' | 'NESTED_LOOP_JOIN' = isHashJoinPossible ? 'HASH_JOIN' : 'NESTED_LOOP_JOIN';
+      const joinLabel = `${cumulativeTableLabel} ⨝ ${join.tableName}`;
+      cumulativeTableLabel = `(${joinLabel})`;
+
+      queryPlanSteps.push({
+        id: queryPlanSteps.length + 1,
+        operation,
+        table: joinLabel,
+        condition: join.onCondition || 'CROSS JOIN',
+        estimatedCost: Math.round((prevCount + targetRows.length) * 1.6 * 10) / 10,
+        rowsScanned: prevCount + targetRows.length,
+        rowsReturned: currentRows.length,
+        detail: `${join.type} ${operation === 'HASH_JOIN' ? 'Hash Join' : 'Nested Loop Join'} on ${join.tableName} (${join.onCondition || 'CROSS PRODUCT'})`,
+      });
+    }
+
+    // Step 3: WHERE clause filtering
+    let matchingRows = currentRows;
+    if (whereClause && (parsedFrom.joins.length > 0 || !usedBaseIndex)) {
+      const beforeFilter = matchingRows.length;
+      matchingRows = matchingRows.filter((r) => this.evaluateCondition(r, whereClause));
+
+      if (parsedFrom.joins.length > 0) {
+        queryPlanSteps.push({
+          id: queryPlanSteps.length + 1,
+          operation: 'FILTER',
+          table: cumulativeTableLabel,
+          condition: whereClause,
+          estimatedCost: Math.round(beforeFilter * 0.8 * 10) / 10,
+          rowsScanned: beforeFilter,
+          rowsReturned: matchingRows.length,
+          detail: `Filter joined relation on WHERE condition (${whereClause})`,
+        });
+      }
+    }
+
+    // Step 4: ORDER BY
     if (orderByClause) {
       const parts = orderByClause.trim().split(/\s+/);
       const orderCol = parts[0];
       const isDesc = parts[1] && parts[1].toUpperCase() === 'DESC';
 
       matchingRows.sort((a, b) => {
-        const valA = a[orderCol];
-        const valB = b[orderCol];
+        const valA = this.resolveColumnValue(a, orderCol);
+        const valB = this.resolveColumnValue(b, orderCol);
         if (valA === valB) return 0;
+        if (valA === null || valA === undefined) return 1;
+        if (valB === null || valB === undefined) return -1;
         if (valA > valB) return isDesc ? -1 : 1;
         return isDesc ? 1 : -1;
       });
     }
 
-    // LIMIT
+    // Step 5: LIMIT
     if (limitClause) {
       const lim = parseInt(limitClause, 10);
       matchingRows = matchingRows.slice(0, lim);
     }
 
-    // Column projection
+    // Step 6: Column projection
     let finalColumns: string[] = [];
     let projectedRows: any[] = [];
 
     const isWildcard = colsStr.trim() === '*';
     if (isWildcard) {
-      finalColumns = schema ? schema.columns.map((c) => c.name) : Object.keys(matchingRows[0] || {});
-      projectedRows = matchingRows.map((r) => ({ ...r }));
+      if (parsedFrom.joins.length === 0 && baseSchema) {
+        finalColumns = baseSchema.columns.map((c) => c.name);
+        projectedRows = matchingRows.map((r) => {
+          const proj: any = {};
+          for (const col of finalColumns) {
+            proj[col] = this.resolveColumnValue(r, col) ?? null;
+          }
+          return proj;
+        });
+      } else {
+        const colSet: string[] = [];
+        if (baseSchema) {
+          for (const c of baseSchema.columns) colSet.push(c.name);
+        }
+        for (const j of parsedFrom.joins) {
+          const s = this.schemas.get(j.tableName.toLowerCase());
+          if (s) {
+            for (const c of s.columns) {
+              if (colSet.includes(c.name)) {
+                colSet.push(`${j.tableName}.${c.name}`);
+              } else {
+                colSet.push(c.name);
+              }
+            }
+          }
+        }
+        finalColumns = colSet.length > 0 ? colSet : Object.keys(matchingRows[0] || {});
+        projectedRows = matchingRows.map((r) => {
+          const proj: any = {};
+          for (const col of finalColumns) {
+            proj[col] = this.resolveColumnValue(r, col) ?? null;
+          }
+          return proj;
+        });
+      }
     } else {
-      finalColumns = colsStr.split(',').map((c) => c.trim().replace(/^['"`]|['"`]$/g, ''));
+      const colExprs = this.parseProjectionColumns(colsStr);
+      finalColumns = colExprs.map((e) => e.alias || e.displayName);
       projectedRows = matchingRows.map((r) => {
         const proj: any = {};
-        for (const col of finalColumns) {
-          proj[col] = r[col] !== undefined ? r[col] : null;
+        for (const expr of colExprs) {
+          const outKey = expr.alias || expr.displayName;
+          proj[outKey] = this.resolveColumnValue(r, expr.sourceExpr) ?? null;
         }
         return proj;
       });
     }
 
     const durationMs = Math.round((performance.now() - start) * 100) / 100;
+    const targetLabel = parsedFrom.joins.length > 0
+      ? `${parsedFrom.baseTable} JOIN ${parsedFrom.joins.map((j) => j.tableName).join(', ')}`
+      : parsedFrom.baseTable;
 
     if (isExplain) {
+      const explainSummary = parsedFrom.joins.length > 0
+        ? `EXPLAIN QUERY PLAN: Relational Join (${queryPlanSteps.filter((s) => s.operation.includes('JOIN')).length} join steps, ${matchingRows.length} rows)`
+        : `EXPLAIN QUERY PLAN: ${usedBaseIndex ? 'Used Index ' + indexUsed : 'Full Table Scan'} (${matchingRows.length} rows)`;
+
       return {
         success: true,
-        message: `EXPLAIN QUERY PLAN: ${usedIndex ? 'Used Index ' + indexUsed : 'Full Table Scan'} (${matchingRows.length} rows)`,
+        message: explainSummary,
         columns: ['id', 'operation', 'table', 'indexUsed', 'rowsScanned', 'rowsReturned', 'detail'],
         rows: queryPlanSteps.map((s) => ({
           id: s.id,
           operation: s.operation,
           table: s.table,
-          indexUsed: s.indexUsed || 'NONE (Table Scan)',
+          indexUsed: s.indexUsed || 'NONE',
           rowsScanned: s.rowsScanned,
           rowsReturned: s.rowsReturned,
           detail: s.detail,
         })),
         metrics: {
           durationMs,
-          rowsScanned,
+          rowsScanned: totalRowsScanned,
           rowsReturned: queryPlanSteps.length,
           rowsAffected: 0,
           indexUsed,
           queryPlan: queryPlanSteps,
         },
         commandType: 'EXPLAIN',
-        targetTable: tableName,
+        targetTable: targetLabel,
       };
     }
 
@@ -475,14 +600,14 @@ export class SqlLabEngine {
       rows: projectedRows,
       metrics: {
         durationMs,
-        rowsScanned,
+        rowsScanned: totalRowsScanned,
         rowsReturned: projectedRows.length,
         rowsAffected: 0,
         indexUsed,
         queryPlan: queryPlanSteps,
       },
       commandType: 'SELECT',
-      targetTable: tableName,
+      targetTable: targetLabel,
     };
   }
 
@@ -886,6 +1011,373 @@ export class SqlLabEngine {
     });
   }
 
+  // --- Helper parsers & Join Engine ---
+
+  private parseSelectClauses(sql: string): {
+    colsStr: string;
+    fromClause: string;
+    whereClause?: string;
+    orderByClause?: string;
+    limitClause?: string;
+  } {
+    const trimmed = sql.trim().replace(/;$/, '');
+    const selectPrefix = /^SELECT\s+/i;
+    if (!selectPrefix.test(trimmed)) {
+      throw new Error('Malformed SELECT query. Must start with SELECT');
+    }
+
+    const afterSelect = trimmed.replace(selectPrefix, '');
+
+    // Look for boundary keyword FROM outside quotes
+    const fromMatch = afterSelect.match(/\bFROM\b/i);
+    if (!fromMatch || fromMatch.index === undefined) {
+      throw new Error('Malformed SELECT query. Missing FROM clause.');
+    }
+
+    const colsStr = afterSelect.slice(0, fromMatch.index).trim();
+    const restAfterFrom = afterSelect.slice(fromMatch.index + fromMatch[0].length).trim();
+
+    // Find WHERE, ORDER BY, LIMIT in restAfterFrom
+    const whereMatch = restAfterFrom.match(/\bWHERE\b/i);
+    const orderMatch = restAfterFrom.match(/\bORDER\s+BY\b/i);
+    const limitMatch = restAfterFrom.match(/\bLIMIT\b/i);
+
+    const whereIdx = whereMatch && whereMatch.index !== undefined ? whereMatch.index : -1;
+    const orderIdx = orderMatch && orderMatch.index !== undefined ? orderMatch.index : -1;
+    const limitIdx = limitMatch && limitMatch.index !== undefined ? limitMatch.index : -1;
+
+    // Determine end of FROM clause
+    const stopIndices = [whereIdx, orderIdx, limitIdx].filter((i) => i >= 0);
+    const fromEndIdx = stopIndices.length > 0 ? Math.min(...stopIndices) : restAfterFrom.length;
+    const fromClause = restAfterFrom.slice(0, fromEndIdx).trim();
+
+    let whereClause: string | undefined;
+    let orderByClause: string | undefined;
+    let limitClause: string | undefined;
+
+    if (whereIdx >= 0) {
+      const whereStart = whereIdx + whereMatch![0].length;
+      const nextStops = [orderIdx, limitIdx].filter((i) => i > whereIdx);
+      const whereEnd = nextStops.length > 0 ? Math.min(...nextStops) : restAfterFrom.length;
+      whereClause = restAfterFrom.slice(whereStart, whereEnd).trim();
+    }
+
+    if (orderIdx >= 0) {
+      const orderStart = orderIdx + orderMatch![0].length;
+      const nextStops = [limitIdx].filter((i) => i > orderIdx);
+      const orderEnd = nextStops.length > 0 ? Math.min(...nextStops) : restAfterFrom.length;
+      orderByClause = restAfterFrom.slice(orderStart, orderEnd).trim();
+    }
+
+    if (limitIdx >= 0) {
+      const limitStart = limitIdx + limitMatch![0].length;
+      limitClause = restAfterFrom.slice(limitStart).trim();
+    }
+
+    return {
+      colsStr,
+      fromClause,
+      whereClause,
+      orderByClause,
+      limitClause,
+    };
+  }
+
+  private parseFromClause(fromStr: string): ParsedFromClause {
+    const joinKeywordRegex = /\b(?:(INNER|LEFT|RIGHT|FULL|CROSS)(?:\s+OUTER)?\s+)?JOIN\b/gi;
+    const joinPositions: Array<{ index: number; length: number; type: JoinType }> = [];
+    let match: RegExpExecArray | null;
+
+    while ((match = joinKeywordRegex.exec(fromStr)) !== null) {
+      const rawType = (match[1] || 'INNER').toUpperCase();
+      let type: JoinType = 'INNER';
+      if (rawType.includes('LEFT')) type = 'LEFT';
+      else if (rawType.includes('RIGHT')) type = 'RIGHT';
+      else if (rawType.includes('FULL')) type = 'FULL';
+      else if (rawType.includes('CROSS')) type = 'CROSS';
+      else type = 'INNER';
+
+      joinPositions.push({
+        index: match.index,
+        length: match[0].length,
+        type,
+      });
+    }
+
+    if (joinPositions.length === 0) {
+      const [baseTable, baseAlias] = this.extractTableAndAlias(fromStr.trim());
+      return {
+        baseTable,
+        baseAlias,
+        joins: [],
+      };
+    }
+
+    const baseTableChunk = fromStr.slice(0, joinPositions[0].index).trim();
+    const [baseTable, baseAlias] = this.extractTableAndAlias(baseTableChunk);
+
+    const joins: ParsedJoin[] = [];
+
+    for (let i = 0; i < joinPositions.length; i++) {
+      const curr = joinPositions[i];
+      const startIndex = curr.index + curr.length;
+      const endIndex = i + 1 < joinPositions.length ? joinPositions[i + 1].index : fromStr.length;
+      const joinChunk = fromStr.slice(startIndex, endIndex).trim();
+
+      let targetTable = '';
+      let targetAlias = '';
+      let onCondition: string | undefined;
+
+      const onSplit = joinChunk.split(/\bON\b/i);
+      const tableAndAliasChunk = onSplit[0].trim();
+      if (onSplit.length > 1) {
+        onCondition = onSplit.slice(1).join(' ON ').trim();
+      }
+
+      [targetTable, targetAlias] = this.extractTableAndAlias(tableAndAliasChunk);
+
+      joins.push({
+        type: curr.type,
+        tableName: targetTable,
+        alias: targetAlias,
+        onCondition,
+      });
+    }
+
+    return {
+      baseTable,
+      baseAlias,
+      joins,
+    };
+  }
+
+  private extractTableAndAlias(chunk: string): [string, string] {
+    const parts = chunk.trim().split(/\s+/);
+    const tableName = parts[0].replace(/^['"`]|['"`]$/g, '');
+    if (parts.length === 1) {
+      return [tableName, tableName];
+    }
+    if (parts.length === 2) {
+      return [tableName, parts[1].replace(/^['"`]|['"`]$/g, '')];
+    }
+    if (parts.length >= 3 && parts[1].toUpperCase() === 'AS') {
+      return [tableName, parts[2].replace(/^['"`]|['"`]$/g, '')];
+    }
+    return [tableName, parts[parts.length - 1].replace(/^['"`]|['"`]$/g, '')];
+  }
+
+  private wrapBaseRow(row: any, tableName: string, alias: string): any {
+    const wrapped: any = { ...row };
+    for (const [col, val] of Object.entries(row)) {
+      wrapped[`${tableName}.${col}`] = val;
+      if (alias && alias !== tableName) {
+        wrapped[`${alias}.${col}`] = val;
+      }
+    }
+    return wrapped;
+  }
+
+  private performJoin(
+    currentRows: any[],
+    targetRows: any[],
+    join: ParsedJoin,
+    targetSchema?: SqlTableSchema
+  ): any[] {
+    const joinedRows: any[] = [];
+
+    // Check if we can do an equijoin hash join: leftCol = rightCol
+    const eqMatch = join.onCondition?.match(/^([a-zA-Z0-9_.]+)\s*=\s*([a-zA-Z0-9_.]+)$/i);
+
+    if (eqMatch && join.type !== 'CROSS') {
+      const sideA = eqMatch[1].trim();
+      const sideB = eqMatch[2].trim();
+
+      // Determine which side belongs to right table (targetTable or alias)
+      let rightCol = '';
+      let leftCol = '';
+
+      const isSideATarget =
+        sideA.toLowerCase().startsWith(`${join.tableName.toLowerCase()}.`) ||
+        (join.alias && sideA.toLowerCase().startsWith(`${join.alias.toLowerCase()}.`));
+      const isSideBTarget =
+        sideB.toLowerCase().startsWith(`${join.tableName.toLowerCase()}.`) ||
+        (join.alias && sideB.toLowerCase().startsWith(`${join.alias.toLowerCase()}.`));
+
+      if (isSideATarget) {
+        rightCol = sideA;
+        leftCol = sideB;
+      } else if (isSideBTarget) {
+        rightCol = sideB;
+        leftCol = sideA;
+      } else {
+        const colOnlyA = sideA.includes('.') ? sideA.split('.')[1] : sideA;
+        if (targetSchema?.columns.some((c) => c.name.toLowerCase() === colOnlyA.toLowerCase())) {
+          rightCol = sideA;
+          leftCol = sideB;
+        } else {
+          rightCol = sideB;
+          leftCol = sideA;
+        }
+      }
+
+      // Build Hash Map for targetRows
+      const rightMap = new Map<string, any[]>();
+      for (let rIdx = 0; rIdx < targetRows.length; rIdx++) {
+        const rightRow = targetRows[rIdx];
+        const val = this.resolveColumnValue(rightRow, rightCol);
+        const key = val !== undefined && val !== null ? String(val) : '__NULL__';
+        if (!rightMap.has(key)) rightMap.set(key, []);
+        rightMap.get(key)!.push({ row: rightRow, index: rIdx });
+      }
+
+      const matchedRightIndexes = new Set<number>();
+
+      for (const leftRow of currentRows) {
+        const leftVal = this.resolveColumnValue(leftRow, leftCol);
+        const key = leftVal !== undefined && leftVal !== null ? String(leftVal) : '__NULL__';
+        const matches = rightMap.get(key) || [];
+
+        if (matches.length > 0) {
+          for (const m of matches) {
+            matchedRightIndexes.add(m.index);
+            joinedRows.push(this.mergeJoinedRows(leftRow, m.row, join.tableName, join.alias, targetSchema));
+          }
+        } else if (join.type === 'LEFT' || join.type === 'FULL') {
+          joinedRows.push(this.mergeJoinedRows(leftRow, null, join.tableName, join.alias, targetSchema));
+        }
+      }
+
+      if (join.type === 'RIGHT' || join.type === 'FULL') {
+        for (let rIdx = 0; rIdx < targetRows.length; rIdx++) {
+          if (!matchedRightIndexes.has(rIdx)) {
+            joinedRows.push(this.mergeJoinedRows(null, targetRows[rIdx], join.tableName, join.alias, targetSchema));
+          }
+        }
+      }
+
+      return joinedRows;
+    }
+
+    // Nested Loop Join fallback (or CROSS JOIN)
+    const matchedRightIndexes = new Set<number>();
+
+    for (const leftRow of currentRows) {
+      let matchedAny = false;
+
+      for (let rIdx = 0; rIdx < targetRows.length; rIdx++) {
+        const rightRow = targetRows[rIdx];
+        const merged = this.mergeJoinedRows(leftRow, rightRow, join.tableName, join.alias, targetSchema);
+
+        const passes =
+          join.type === 'CROSS' || !join.onCondition || this.evaluateCondition(merged, join.onCondition);
+        if (passes) {
+          joinedRows.push(merged);
+          matchedAny = true;
+          matchedRightIndexes.add(rIdx);
+        }
+      }
+
+      if (!matchedAny && (join.type === 'LEFT' || join.type === 'FULL')) {
+        joinedRows.push(this.mergeJoinedRows(leftRow, null, join.tableName, join.alias, targetSchema));
+      }
+    }
+
+    if (join.type === 'RIGHT' || join.type === 'FULL') {
+      for (let rIdx = 0; rIdx < targetRows.length; rIdx++) {
+        if (!matchedRightIndexes.has(rIdx)) {
+          joinedRows.push(this.mergeJoinedRows(null, targetRows[rIdx], join.tableName, join.alias, targetSchema));
+        }
+      }
+    }
+
+    return joinedRows;
+  }
+
+  private mergeJoinedRows(
+    leftRow: any | null,
+    rightRow: any | null,
+    rightTableName: string,
+    rightAlias: string,
+    rightSchema?: SqlTableSchema
+  ): any {
+    const merged: any = {};
+
+    if (leftRow) {
+      Object.assign(merged, leftRow);
+    }
+
+    if (rightRow) {
+      for (const [col, val] of Object.entries(rightRow)) {
+        merged[`${rightTableName}.${col}`] = val;
+        if (rightAlias && rightAlias !== rightTableName) {
+          merged[`${rightAlias}.${col}`] = val;
+        }
+        if (merged[col] === undefined) {
+          merged[col] = val;
+        }
+      }
+    } else if (rightSchema) {
+      for (const col of rightSchema.columns) {
+        merged[`${rightTableName}.${col.name}`] = null;
+        if (rightAlias && rightAlias !== rightTableName) {
+          merged[`${rightAlias}.${col.name}`] = null;
+        }
+        if (merged[col.name] === undefined) {
+          merged[col.name] = null;
+        }
+      }
+    }
+
+    return merged;
+  }
+
+  private parseProjectionColumns(colsStr: string): ProjectedColumnExpr[] {
+    const parts = colsStr.split(',').map((p) => p.trim());
+    return parts.map((part) => {
+      const asMatch = part.match(/^(.+?)\s+(?:AS\s+)?([a-zA-Z0-9_]+)$/i);
+      if (asMatch) {
+        const source = asMatch[1].replace(/^['"`]|['"`]$/g, '').trim();
+        const alias = asMatch[2].replace(/^['"`]|['"`]$/g, '').trim();
+        return { sourceExpr: source, alias, displayName: alias };
+      }
+
+      const clean = part.replace(/^['"`]|['"`]$/g, '').trim();
+      const displayName = clean.includes('.') ? clean.split('.')[1] : clean;
+      return { sourceExpr: clean, displayName };
+    });
+  }
+
+  private resolveColumnValue(row: any, colRef: string): any {
+    if (!row) return undefined;
+    if (row[colRef] !== undefined) return row[colRef];
+
+    const trimmed = colRef.trim().replace(/^['"`]|['"`]$/g, '');
+    if (row[trimmed] !== undefined) return row[trimmed];
+
+    const lower = trimmed.toLowerCase();
+    for (const k of Object.keys(row)) {
+      if (k.toLowerCase() === lower) return row[k];
+    }
+
+    if (trimmed.includes('.')) {
+      const colOnly = trimmed.split('.')[1].toLowerCase();
+      for (const k of Object.keys(row)) {
+        if (k.toLowerCase() === colOnly || k.toLowerCase().endsWith(`.${colOnly}`)) {
+          return row[k];
+        }
+      }
+      if (row[colOnly] !== undefined) return row[colOnly];
+    } else {
+      for (const k of Object.keys(row)) {
+        if (k.toLowerCase() === lower || k.toLowerCase().endsWith(`.${lower}`)) {
+          return row[k];
+        }
+      }
+    }
+
+    return undefined;
+  }
+
   private evaluateCondition(row: any, conditionStr: string): boolean {
     const trimmed = conditionStr.trim();
 
@@ -901,20 +1393,30 @@ export class SqlLabEngine {
       return subConditions.every((c) => this.evaluateCondition(row, c));
     }
 
-    // Single comparison
-    const compMatch = trimmed.match(/^([a-zA-Z0-9_]+)\s*(=|!=|<>|<=|>=|<|>|LIKE)\s*(.+)$/i);
+    // Single comparison (supports table.col or alias.col or col)
+    const compMatch = trimmed.match(/^([a-zA-Z0-9_.]+)\s*(=|!=|<>|<=|>=|<|>|LIKE)\s*(.+)$/i);
     if (!compMatch) return true;
 
     const [, colName, op, rawVal] = compMatch;
-    const rowVal = row[colName];
-    const targetVal = this.parseValue(rawVal);
+    const rowVal = this.resolveColumnValue(row, colName);
+
+    // If rawVal is a column reference in row (e.g. s.StudentID in a join condition)
+    let targetVal: any;
+    const cleanRaw = rawVal.trim().replace(/^['"`]|['"`]$/g, '');
+    const otherColVal = this.resolveColumnValue(row, cleanRaw);
+
+    if (otherColVal !== undefined && !/^['"].*['"]$/.test(rawVal.trim()) && !/^\d+(\.\d+)?$/.test(cleanRaw)) {
+      targetVal = otherColVal;
+    } else {
+      targetVal = this.parseValue(rawVal);
+    }
 
     switch (op.toUpperCase()) {
       case '=':
         return rowVal === targetVal || String(rowVal) === String(targetVal);
       case '!=':
       case '<>':
-        return rowVal !== targetVal;
+        return rowVal !== targetVal && String(rowVal) !== String(targetVal);
       case '<':
         return Number(rowVal) < Number(targetVal);
       case '<=':

@@ -195,4 +195,78 @@ test('14. Conversational Voice Engine: Voice Profiles and State Telemetry', asyn
   assert.equal(voiceEngine.getState().isMuted, false);
 });
 
+test('15. SQL Lab Engine: INNER JOIN and Multi-Table Chained Joins with Aliases', () => {
+  const engine = new SqlLabEngine();
+
+  // Test Orders JOIN Customers
+  const res1 = engine.execute(
+    'SELECT Orders.OrderID, Customers.Name, Orders.Total FROM Orders JOIN Customers ON Orders.CustomerID = Customers.CustomerID'
+  );
+  assert.equal(res1.success, true);
+  assert.equal(res1.commandType, 'SELECT');
+  assert.ok(res1.rows && res1.rows.length === 3);
+  assert.equal(res1.rows[0].OrderID, '#1042');
+  assert.equal(res1.rows[0].Name, 'Alex Mercer');
+  assert.equal(res1.rows[0].Total, 189.5);
+
+  // Test Chained Multi-Table JOIN: Loans + Students + Books with aliases and WHERE clause
+  const res2 = engine.execute(`
+    SELECT s.Name AS StudentName, b.Title AS BookTitle, l.BorrowDate, l.Status
+    FROM Loans l
+    JOIN Students s ON l.StudentID = s.StudentID
+    JOIN Books b ON l.BookID = b.BookID
+    WHERE l.Status = 'Active'
+    ORDER BY s.Name ASC
+  `);
+  assert.equal(res2.success, true);
+  assert.ok(res2.rows && res2.rows.length === 3);
+  assert.equal(res2.columns?.includes('StudentName'), true);
+  assert.equal(res2.columns?.includes('BookTitle'), true);
+  // Verify order
+  assert.equal(res2.rows[0].StudentName, 'Alice Johnson');
+});
+
+test('16. SQL Lab Engine: LEFT OUTER JOIN and NULL Extension', () => {
+  const engine = new SqlLabEngine();
+
+  // Students who may or may not have borrowed books
+  // S003 (Cara Williams) and S004 (David Lee) have no loans
+  const res = engine.execute(`
+    SELECT Students.StudentID, Students.Name, Loans.LoanID
+    FROM Students
+    LEFT JOIN Loans ON Students.StudentID = Loans.StudentID
+    ORDER BY Students.StudentID ASC
+  `);
+  assert.equal(res.success, true);
+  assert.ok(res.rows && res.rows.length >= 4);
+
+  // S001 has loans
+  const s1 = res.rows.find((r) => r.StudentID === 'S001');
+  assert.ok(s1 && s1.LoanID);
+
+  // S004 (David Lee) has no loans, LoanID must be null
+  const s4 = res.rows.find((r) => r.StudentID === 'S004');
+  assert.ok(s4);
+  assert.equal(s4.LoanID, null);
+});
+
+test('17. SQL Lab Engine: EXPLAIN QUERY PLAN for Relational Joins', () => {
+  const engine = new SqlLabEngine();
+
+  const explainRes = engine.execute(`
+    EXPLAIN SELECT Orders.OrderID, Customers.Name
+    FROM Orders
+    JOIN Customers ON Orders.CustomerID = Customers.CustomerID
+  `);
+  assert.equal(explainRes.success, true);
+  assert.equal(explainRes.commandType, 'EXPLAIN');
+  assert.ok(explainRes.rows && explainRes.rows.length >= 2);
+
+  // Should have Table Scan on base table + Hash Join on joined table
+  const joinStep = explainRes.metrics.queryPlan.find((step) => step.operation === 'HASH_JOIN' || step.operation === 'NESTED_LOOP_JOIN');
+  assert.ok(joinStep, 'Query plan must include a JOIN operation step');
+  assert.match(joinStep.detail, /Join/i);
+});
+
+
 

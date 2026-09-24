@@ -89,6 +89,24 @@ async function runAllTests() {
   const explainScan = engine.execute("EXPLAIN SELECT * FROM Orders WHERE Status = 'Delivered'");
   assert(explainScan.metrics.queryPlan[0].operation === 'TABLE_SCAN', 'EXPLAIN verified TABLE_SCAN on unindexed Status');
 
+  // 8. SQL Engine: JOIN Capabilities
+  const resJoin = engine.execute("SELECT Orders.OrderID, Customers.Name, Orders.Total FROM Orders JOIN Customers ON Orders.CustomerID = Customers.CustomerID");
+  assert(resJoin.success === true && resJoin.rows.length === 3, 'INNER JOIN executed successfully');
+  assert(resJoin.rows[0].Name === 'Alex Mercer', 'INNER JOIN correctly projected customer name');
+
+  const resChainedJoin = engine.execute("SELECT s.Name AS StudentName, b.Title AS BookTitle, l.BorrowDate FROM Loans l JOIN Students s ON l.StudentID = s.StudentID JOIN Books b ON l.BookID = b.BookID WHERE l.Status = 'Active'");
+  assert(resChainedJoin.success === true && resChainedJoin.rows.length === 3, 'Chained multi-table JOIN with aliases executed');
+  assert(resChainedJoin.columns.includes('StudentName'), 'Chained JOIN supported column aliasing');
+
+  const resLeftJoin = engine.execute("SELECT Students.StudentID, Students.Name, Loans.LoanID FROM Students LEFT JOIN Loans ON Students.StudentID = Loans.StudentID");
+  assert(resLeftJoin.success === true && resLeftJoin.rows.length >= 4, 'LEFT OUTER JOIN returned all left rows');
+  const unborrowedStudent = resLeftJoin.rows.find((r) => r.StudentID === 'S004');
+  assert(unborrowedStudent && unborrowedStudent.LoanID === null, 'LEFT OUTER JOIN extended unmatched rows with NULL');
+
+  const explainJoin = engine.execute("EXPLAIN SELECT Orders.OrderID, Customers.Name FROM Orders JOIN Customers ON Orders.CustomerID = Customers.CustomerID");
+  const hasJoinStep = explainJoin.metrics.queryPlan.some((step) => step.operation === 'HASH_JOIN' || step.operation === 'NESTED_LOOP_JOIN');
+  assert(hasJoinStep, 'EXPLAIN Query Plan generated genuine Relational JOIN operation step');
+
   // 8. Cryptographic Auth
   const salt = generateSalt(16);
   const password = 'SecretPassword123!';

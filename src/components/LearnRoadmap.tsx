@@ -883,6 +883,59 @@ export const LearnRoadmap: React.FC = () => {
               </button>
             </div>
 
+            {/* Quick Interactive SQL Presets including JOIN */}
+            <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+              <span className="text-[10px] text-slate-400 font-semibold mr-1">Presets:</span>
+              <button
+                onClick={() => {
+                  const q = "SELECT Orders.OrderID, Customers.Name, Orders.Total, Orders.Status FROM Orders JOIN Customers ON Orders.CustomerID = Customers.CustomerID";
+                  setSqlQuery(q);
+                  const res = dbSimulator.executeCustomSql(q);
+                  if (res.data) setSqlResult(res.data);
+                  setSqlMessage(res.message);
+                }}
+                className="px-2 py-0.5 rounded-lg bg-pink-950/60 hover:bg-pink-900 border border-pink-800 text-[10px] font-bold text-pink-300 transition-all cursor-pointer"
+              >
+                Orders ⨝ Customers (INNER JOIN)
+              </button>
+              <button
+                onClick={() => {
+                  const q = "SELECT s.Name AS Student, b.Title AS Book, l.BorrowDate, l.Status FROM Loans l JOIN Students s ON l.StudentID = s.StudentID JOIN Books b ON l.BookID = b.BookID WHERE l.Status = 'Active'";
+                  setSqlQuery(q);
+                  const res = dbSimulator.executeCustomSql(q);
+                  if (res.data) setSqlResult(res.data);
+                  setSqlMessage(res.message);
+                }}
+                className="px-2 py-0.5 rounded-lg bg-indigo-950/60 hover:bg-indigo-900 border border-indigo-800 text-[10px] font-bold text-indigo-300 transition-all cursor-pointer"
+              >
+                Loans ⨝ Students ⨝ Books (3-Way Join)
+              </button>
+              <button
+                onClick={() => {
+                  const q = "SELECT Students.StudentID, Students.Name, Loans.LoanID, Loans.Status FROM Students LEFT JOIN Loans ON Students.StudentID = Loans.StudentID";
+                  setSqlQuery(q);
+                  const res = dbSimulator.executeCustomSql(q);
+                  if (res.data) setSqlResult(res.data);
+                  setSqlMessage(res.message);
+                }}
+                className="px-2 py-0.5 rounded-lg bg-purple-950/60 hover:bg-purple-900 border border-purple-800 text-[10px] font-bold text-purple-300 transition-all cursor-pointer"
+              >
+                Students ⟕ Loans (LEFT JOIN)
+              </button>
+              <button
+                onClick={() => {
+                  const q = "EXPLAIN SELECT Orders.OrderID, Customers.Name FROM Orders JOIN Customers ON Orders.CustomerID = Customers.CustomerID";
+                  setSqlQuery(q);
+                  const res = dbSimulator.executeCustomSql(q);
+                  if (res.data) setSqlResult(res.data);
+                  setSqlMessage(res.message);
+                }}
+                className="px-2 py-0.5 rounded-lg bg-amber-950/60 hover:bg-amber-900 border border-amber-800 text-[10px] font-bold text-amber-300 transition-all cursor-pointer"
+              >
+                EXPLAIN Hash Join Plan
+              </button>
+            </div>
+
             <textarea
               rows={2}
               value={sqlQuery}

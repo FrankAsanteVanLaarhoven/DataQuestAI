@@ -24,13 +24,13 @@ export const AnalyticsView: React.FC = () => {
   const { awardXp, unlockCompetency } = useAppStore();
   const [telemetry, setTelemetry] = useState<TelemetrySummary>(telemetryService.getSummary());
   const [benchmarkQuery, setBenchmarkQuery] = useState("SELECT * FROM Orders WHERE CustomerID = 'C001'");
-  const [useIndexInBenchmark, setUseIndexInBenchmark] = useState(true);
+  const [benchmarkMode, setBenchmarkMode] = useState<'index' | 'scan' | 'join'>('index');
   const [showIndexChallenge, setShowIndexChallenge] = useState(false);
   const [userIndexSql, setUserIndexSql] = useState("CREATE INDEX idx_orders_customer ON Orders(CustomerID);");
   const [indexCreated, setIndexCreated] = useState(false);
   const [challengeFeedback, setChallengeFeedback] = useState<string | null>(null);
   const [benchmarkResult, setBenchmarkResult] = useState<{
-    op: 'INDEX_SEEK' | 'TABLE_SCAN';
+    op: 'INDEX_SEEK' | 'TABLE_SCAN' | 'HASH_JOIN';
     scanned: number;
     returned: number;
     durationMs: number;
@@ -57,7 +57,7 @@ export const AnalyticsView: React.FC = () => {
     if (/CREATE\s+INDEX\s+idx_orders_customer\s+ON\s+Orders\s*\(\s*CustomerID\s*\)/i.test(trimmed)) {
       realSqlLabEngine.execute(trimmed);
       setIndexCreated(true);
-      setUseIndexInBenchmark(true);
+      setBenchmarkMode('index');
       setBenchmarkResult({
         op: 'INDEX_SEEK',
         scanned: 1,
@@ -75,7 +75,7 @@ export const AnalyticsView: React.FC = () => {
   };
 
   const runBenchmark = () => {
-    if (useIndexInBenchmark) {
+    if (benchmarkMode === 'index') {
       const res = realSqlLabEngine.execute("EXPLAIN SELECT * FROM Orders WHERE CustomerID = 'C001'");
       setBenchmarkResult({
         op: 'INDEX_SEEK',
@@ -96,6 +96,28 @@ export const AnalyticsView: React.FC = () => {
         indexUsed: 'idx_orders_customer',
         success: true,
       });
+    } else if (benchmarkMode === 'join') {
+      const res = realSqlLabEngine.execute("EXPLAIN SELECT Orders.OrderID, Customers.Name, Orders.Total FROM Orders JOIN Customers ON Orders.CustomerID = Customers.CustomerID");
+      const joinStep = res.metrics.queryPlan.find((s) => s.operation === 'HASH_JOIN' || s.operation === 'NESTED_LOOP_JOIN');
+      setBenchmarkResult({
+        op: 'HASH_JOIN',
+        scanned: 6,
+        returned: 3,
+        durationMs: 1.1,
+        cost: 9.6,
+        detail: joinStep ? joinStep.detail : 'Hash Join on Customers (Orders.CustomerID = Customers.CustomerID)',
+      });
+      telemetryService.logExecution({
+        eventType: 'SELECT',
+        queryText: "SELECT Orders.OrderID, Customers.Name FROM Orders JOIN Customers (HASH JOIN)",
+        tableName: 'Orders JOIN Customers',
+        durationMs: 1.1,
+        rowsScanned: 6,
+        rowsReturned: 3,
+        rowsAffected: 0,
+        success: true,
+      });
+      awardXp(20, 'Benchmarked Relational Hash Join Query Plan');
     } else {
       // Simulate Table Scan without index on 100,000 synthetic rows
       const durationMs = 18.4;
@@ -170,26 +192,34 @@ export const AnalyticsView: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-center">
+          <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
             <button
-              onClick={() => setUseIndexInBenchmark(true)}
+              onClick={() => setBenchmarkMode('index')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                useIndexInBenchmark ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
+                benchmarkMode === 'index' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
               }`}
             >
               With B-Tree Index
             </button>
             <button
-              onClick={() => setUseIndexInBenchmark(false)}
+              onClick={() => setBenchmarkMode('join')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                !useIndexInBenchmark ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-400'
+                benchmarkMode === 'join' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'
+              }`}
+            >
+              Relational Hash Join
+            </button>
+            <button
+              onClick={() => setBenchmarkMode('scan')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                benchmarkMode === 'scan' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-400'
               }`}
             >
               Without Index (Table Scan)
             </button>
             <button
               onClick={runBenchmark}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold cursor-pointer"
             >
               <Play className="w-3.5 h-3.5" />
               Run Plan
@@ -209,7 +239,11 @@ export const AnalyticsView: React.FC = () => {
                 </span>
               </div>
               <span className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] ${
-                benchmarkResult.op === 'INDEX_SEEK' ? 'bg-emerald-950 text-emerald-300' : 'bg-rose-950 text-rose-300'
+                benchmarkResult.op === 'INDEX_SEEK'
+                  ? 'bg-emerald-950 text-emerald-300'
+                  : benchmarkResult.op === 'HASH_JOIN'
+                  ? 'bg-indigo-950 text-indigo-300'
+                  : 'bg-rose-950 text-rose-300'
               }`}>
                 {benchmarkResult.op}
               </span>
