@@ -316,8 +316,8 @@ export const Header: React.FC = () => {
             >
               <GraduationCap className="w-3.5 h-3.5 opacity-80" />
               <span>Teacher</span>
-              {user?.role === 'teacher' || user?.role === 'admin' ? (
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-emerald-400/30" title="Lecturer Session Active" />
+              {user?.role === 'super_admin' || user?.role === 'teacher' || user?.role === 'admin' ? (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 ring-2 ring-emerald-400/30" title="Educator / Admin Session Active" />
               ) : (
                 <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-500 font-mono">
                   🔒
@@ -519,6 +519,43 @@ export const Header: React.FC = () => {
                       Switch Role Persona
                     </span>
                     <div className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            sound.playClick();
+                            const res = await fetch('/api/auth', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ action: 'login', email: 'frank@dataquest.ai', password: 'DataQuest2026!' }),
+                            });
+                            const data = await res.json();
+                            if (res.ok && data.success) {
+                              if (data.token) {
+                                localStorage.setItem('dataquest_session_token', data.token);
+                                document.cookie = `dqs_token=${encodeURIComponent(data.token)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+                              }
+                              setUser(data.user);
+                              sound.playLevelUp();
+                              setUserMenuOpen(false);
+                            }
+                          } catch (e) {
+                            console.error(e);
+                          }
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                          user.role === 'super_admin'
+                            ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40'
+                            : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <span>👑</span>
+                          <span className="text-amber-400 font-semibold">Frank Asante-Van Laarhoven (Super Admin)</span>
+                        </span>
+                        {user.role === 'super_admin' && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                      </button>
+
                       <button
                         type="button"
                         onClick={async () => {

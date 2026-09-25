@@ -798,20 +798,20 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     user: {
-      id: 'usr_alex_demo',
-      email: 'alex@dataquest.org',
-      name: 'Alex Mercer',
-      avatar: '👩‍💻',
-      level: 5,
-      xp: 2350,
-      nextLevelXp: 3000,
-      streak: 12,
+      id: undefined,
+      email: undefined,
+      name: 'Guest Explorer',
+      avatar: '👤',
+      level: 1,
+      xp: 50,
+      nextLevelXp: 500,
+      streak: 1,
       role: 'student',
     },
     setUser: (newUser) => {
       set((state) => {
         const merged = { ...state.user, ...newUser };
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && merged.email) {
           localStorage.setItem('dataquest_user', JSON.stringify(merged));
         }
         return { user: merged };

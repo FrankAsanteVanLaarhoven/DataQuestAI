@@ -258,31 +258,19 @@ export async function POST(request: Request) {
       return response;
     }
 
-    // 4. GUEST ACCESS (Issues real time-limited session with student role)
+    // 4. GUEST ACCESS (Issues real ephemeral student sandbox session - zero teacher/super_admin privileges)
     if (action === 'guest') {
-      const userRecord: any = db.prepare('SELECT * FROM users WHERE role = ? ORDER BY xp DESC LIMIT 1').get('student');
-      const guestId = userRecord?.id || 'usr_guest_demo';
-      const safeUser = userRecord
-        ? {
-            id: userRecord.id,
-            email: userRecord.email,
-            name: userRecord.name,
-            role: 'student' as UserRole,
-            level: userRecord.level,
-            xp: userRecord.xp,
-            streak: userRecord.streak,
-            avatar: userRecord.avatar,
-          }
-        : {
-            id: guestId,
-            email: 'guest@dataquest.internal',
-            name: 'Demo Student',
-            role: 'student' as UserRole,
-            level: 1,
-            xp: 150,
-            streak: 1,
-            avatar: '👩‍💻',
-          };
+      const guestId = 'usr_guest_' + Math.random().toString(36).substring(2, 9);
+      const safeUser = {
+        id: guestId,
+        email: 'guest@dataquest.sandbox',
+        name: 'Guest Explorer',
+        role: 'student' as UserRole,
+        level: 1,
+        xp: 50,
+        streak: 1,
+        avatar: '👤',
+      };
 
       const guestToken = createSessionToken(guestId, 'student');
       const expiresAt = Date.now() + 24 * 60 * 60 * 1000;

@@ -81,7 +81,8 @@ export const TeacherStudio: React.FC = () => {
     { name: 'Elena Rostova', email: 'elena@dataquest.org', completed: 6, score: '96%', hintsUsed: 1, topMisconception: 'None (Mastered)' },
   ];
 
-  const isAuthorized = user?.role === 'teacher' || user?.role === 'admin';
+  const { setAuthModalOpen } = useAppStore();
+  const isAuthorized = user?.role === 'super_admin' || user?.role === 'admin' || user?.role === 'teacher';
 
   if (!isAuthorized) {
     return (
@@ -95,14 +96,14 @@ export const TeacherStudio: React.FC = () => {
           </div>
           <h2 className="text-2xl font-black tracking-tight text-white">Teacher Studio Access Restricted</h2>
           <p className="text-sm text-slate-300 leading-relaxed">
-            The Teacher Studio provides declarative mission authoring, class misconception distribution telemetry, and student gradebook management. Access is strictly restricted to accounts with verified educator roles (<code className="text-amber-300">teacher</code> or <code className="text-amber-300">admin</code>).
+            The Teacher Studio provides declarative mission authoring, class misconception distribution telemetry, and student gradebook management. Access is strictly restricted to accounts with verified educator or administrative roles (<code className="text-amber-300">teacher</code>, <code className="text-amber-300">admin</code>, or <code className="text-amber-300">super_admin</code>).
           </p>
         </div>
 
         <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 text-xs space-y-2">
           <div className="flex justify-between text-slate-400">
             <span>Current Identity:</span>
-            <span className="font-mono text-white">{user?.name || 'Guest Student'}</span>
+            <span className="font-mono text-white">{user?.name || 'Guest Explorer'}</span>
           </div>
           <div className="flex justify-between text-slate-400">
             <span>Assigned Role:</span>
@@ -110,22 +111,19 @@ export const TeacherStudio: React.FC = () => {
           </div>
           <div className="flex justify-between text-slate-400">
             <span>Privilege Level:</span>
-            <span className="text-rose-400 font-semibold">Insufficient Privileges</span>
+            <span className="text-rose-400 font-semibold">Insufficient Privileges (Guest / Student Account)</span>
           </div>
         </div>
 
-        <div className="pt-2 border-t border-slate-800/80 flex flex-col sm:flex-row gap-3">
+        <div className="pt-2 border-t border-slate-800/80 flex flex-col sm:flex-row items-center gap-3">
           <button
-            onClick={() => {
-              const modalBtn = document.getElementById('login-modal-trigger') || document.querySelector('[data-auth-trigger]');
-              if (modalBtn) (modalBtn as HTMLElement).click();
-            }}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg transition-all"
+            onClick={() => setAuthModalOpen(true)}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg transition-all cursor-pointer"
           >
-            Sign In with Lecturer Credentials
+            Sign In with Lecturer or Admin Credentials
           </button>
-          <div className="text-[11px] text-slate-400 self-center">
-            Course convenors can request elevated credentials from the department administrator.
+          <div className="text-[11px] text-slate-400">
+            Guest accounts have learning sandbox access only.
           </div>
         </div>
       </div>
