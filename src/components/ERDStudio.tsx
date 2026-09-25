@@ -676,6 +676,15 @@ export const ERDStudio: React.FC = () => {
   const [editingAttributeEntityId, setEditingAttributeEntityId] = useState<string | null>(null);
   const [editingAttribute, setEditingAttribute] = useState<ERDAttribute | null>(null);
 
+  // Inline Direct-Typing State (Click / Double-Click on canvas to rename)
+  const [inlineEditing, setInlineEditing] = useState<{
+    type: 'entityName' | 'attrName' | 'attrType' | 'relLabel' | 'methodName';
+    entityId?: string;
+    attrId?: string;
+    relId?: string;
+    methodId?: string;
+  } | null>(null);
+
   // Export Modal (SQL, PlantUML, Mermaid, JSON)
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportTab, setExportTab] = useState<'sql' | 'plantuml' | 'mermaid' | 'json'>('sql');
@@ -1166,6 +1175,82 @@ export const ERDStudio: React.FC = () => {
   };
 
   // --------------------------------------------------------------------------
+  // Direct Typing & Rename Handlers (Live Canvas & Inspector Editing)
+  // --------------------------------------------------------------------------
+
+  const handleRenameEntity = (id: string, newName: string) => {
+    const clean =
+      diagramMode === 'relational'
+        ? newName.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_')
+        : newName.trim().replace(/[^a-zA-Z0-9_]/g, '');
+    if (!clean) return;
+    setEntities((prev) => prev.map((e) => (e.id === id ? { ...e, name: clean } : e)));
+  };
+
+  const handleUpdateEntityComment = (id: string, comment: string) => {
+    setEntities((prev) => prev.map((e) => (e.id === id ? { ...e, comment } : e)));
+  };
+
+  const handleUpdateEntityStereotype = (id: string, val: string) => {
+    setEntities((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, stereotype: val, techBadge: val } : e))
+    );
+  };
+
+  const handleRenameAttribute = (entityId: string, attrId: string, newName: string) => {
+    const clean =
+      diagramMode === 'relational'
+        ? newName.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_')
+        : newName.trim().replace(/[^a-zA-Z0-9_]/g, '');
+    if (!clean) return;
+    setEntities((prev) =>
+      prev.map((e) => {
+        if (e.id !== entityId) return e;
+        return {
+          ...e,
+          attributes: e.attributes.map((a) => (a.id === attrId ? { ...a, name: clean } : a)),
+        };
+      })
+    );
+  };
+
+  const handleChangeAttributeType = (entityId: string, attrId: string, newType: string) => {
+    setEntities((prev) =>
+      prev.map((e) => {
+        if (e.id !== entityId) return e;
+        return {
+          ...e,
+          attributes: e.attributes.map((a) => (a.id === attrId ? { ...a, dataType: newType } : a)),
+        };
+      })
+    );
+  };
+
+  const handleRenameRelationship = (relId: string, newName: string) => {
+    setRelationships((prev) =>
+      prev.map((r) => (r.id === relId ? { ...r, name: newName } : r))
+    );
+  };
+
+  const handleUpdateRelationshipProtocol = (relId: string, val: string) => {
+    setRelationships((prev) =>
+      prev.map((r) => (r.id === relId ? { ...r, protocol: val, label: val } : r))
+    );
+  };
+
+  const handleRenameMethod = (entityId: string, methodId: string, newName: string) => {
+    setEntities((prev) =>
+      prev.map((e) => {
+        if (e.id !== entityId) return e;
+        return {
+          ...e,
+          methods: (e.methods || []).map((m) => (m.id === methodId ? { ...m, name: newName } : m)),
+        };
+      })
+    );
+  };
+
+  // --------------------------------------------------------------------------
   // Entity & Attribute Modal Handlers
   // --------------------------------------------------------------------------
 
@@ -1496,7 +1581,7 @@ export const ERDStudio: React.FC = () => {
     return (
       <svg className="absolute inset-0 pointer-events-none w-full h-full overflow-visible">
         <defs>
-          <filter id="sota-glow" x="-30%" y="-30%" width="160%" height="160%">
+          <filter id="connector-glow" x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur stdDeviation="4" result="blur" />
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
@@ -1621,7 +1706,7 @@ export const ERDStudio: React.FC = () => {
                   stroke={rel.color || '#a855f7'}
                   strokeWidth="8"
                   strokeOpacity="0.4"
-                  filter="url(#sota-glow)"
+                  filter="url(#connector-glow)"
                 />
               )}
 
@@ -1637,31 +1722,66 @@ export const ERDStudio: React.FC = () => {
                 className="transition-all duration-150"
               />
 
-              {/* Central Badge / Protocol Label */}
-              <g transform={`translate(${midPoint.x}, ${midPoint.y})`}>
-                <rect
-                  x="-32"
-                  y="-12"
-                  width="64"
-                  height="24"
-                  rx="12"
-                  fill="#0f172a"
-                  stroke={isSelected ? '#c084fc' : '#8b5cf6'}
-                  strokeWidth="1.5"
-                  className="shadow-md"
-                />
-                <text
-                  x="0"
-                  y="4"
-                  textAnchor="middle"
-                  fill="#f8fafc"
-                  fontSize="10"
-                  fontWeight="bold"
-                  fontFamily="monospace"
+              {/* Central Badge / Protocol Label with Inline Direct-Typing */}
+              {inlineEditing?.type === 'relLabel' && inlineEditing.relId === rel.id ? (
+                <foreignObject x={midPoint.x - 45} y={midPoint.y - 14} width="90" height="28">
+                  <input
+                    type="text"
+                    autoFocus
+                    defaultValue={rel.protocol || rel.label || rel.cardinality}
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      e.stopPropagation();
+                      if (e.key === 'Enter') {
+                        handleUpdateRelationshipProtocol(rel.id, (e.target as HTMLInputElement).value);
+                        setInlineEditing(null);
+                      } else if (e.key === 'Escape') {
+                        setInlineEditing(null);
+                      }
+                    }}
+                    onBlur={(e) => {
+                      handleUpdateRelationshipProtocol(rel.id, e.target.value);
+                      setInlineEditing(null);
+                    }}
+                    className="w-full h-full px-2 rounded-xl bg-slate-900 text-white font-mono text-[10px] font-bold border border-purple-400 outline-none text-center shadow-lg"
+                  />
+                </foreignObject>
+              ) : (
+                <g
+                  transform={`translate(${midPoint.x}, ${midPoint.y})`}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    sound.playClick();
+                    setInlineEditing({ type: 'relLabel', relId: rel.id });
+                  }}
                 >
-                  {rel.protocol || rel.label || rel.cardinality}
-                </text>
-              </g>
+                  <rect
+                    x="-32"
+                    y="-12"
+                    width="64"
+                    height="24"
+                    rx="12"
+                    fill="#0f172a"
+                    stroke={isSelected ? '#c084fc' : '#8b5cf6'}
+                    strokeWidth="1.5"
+                    className="shadow-md hover:stroke-purple-400 cursor-text"
+                  >
+                    <title>Double-click to type custom protocol or label</title>
+                  </rect>
+                  <text
+                    x="0"
+                    y="4"
+                    textAnchor="middle"
+                    fill="#f8fafc"
+                    fontSize="10"
+                    fontWeight="bold"
+                    fontFamily="monospace"
+                  >
+                    {rel.protocol || rel.label || rel.cardinality}
+                  </text>
+                </g>
+              )}
 
               {/* Interactive Waypoint Drag Handles (Elbow / Bend manipulation) */}
               {isSelected &&
@@ -1773,12 +1893,9 @@ export const ERDStudio: React.FC = () => {
               <h1 className="text-sm sm:text-base font-bold text-white tracking-tight">
                 Architecture &amp; UML Studio
               </h1>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/10 text-purple-300 border border-purple-500/20 font-mono">
-                SOTA Modeling
-              </span>
             </div>
             <p className="text-[10px] text-slate-400 hidden md:block">
-              Interactive draggable arrows, angle splitting, UML classes, distributed architectures &amp; live compilation
+              Visual database design, relational schema modeling, and system architectures
             </p>
           </div>
         </div>
@@ -2201,9 +2318,41 @@ export const ERDStudio: React.FC = () => {
                             {entity.stereotype}
                           </span>
                         )}
-                        <span className="font-mono text-xs font-bold text-white truncate block">
-                          {entity.name}
-                        </span>
+                        {inlineEditing?.type === 'entityName' && inlineEditing.entityId === entity.id ? (
+                          <input
+                            type="text"
+                            autoFocus
+                            defaultValue={entity.name}
+                            onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => {
+                              e.stopPropagation();
+                              if (e.key === 'Enter') {
+                                handleRenameEntity(entity.id, (e.target as HTMLInputElement).value);
+                                setInlineEditing(null);
+                              } else if (e.key === 'Escape') {
+                                setInlineEditing(null);
+                              }
+                            }}
+                            onBlur={(e) => {
+                              handleRenameEntity(entity.id, e.target.value);
+                              setInlineEditing(null);
+                            }}
+                            className="px-1 py-0.5 rounded bg-slate-800 text-white font-mono text-xs font-bold border border-purple-500 outline-hidden w-32 shadow-inner"
+                          />
+                        ) : (
+                          <span
+                            onDoubleClick={(e) => {
+                              e.stopPropagation();
+                              sound.playClick();
+                              setInlineEditing({ type: 'entityName', entityId: entity.id });
+                            }}
+                            title="Double-click to type new name"
+                            className="font-mono text-xs font-bold text-white truncate block cursor-text hover:text-purple-300 transition-colors"
+                          >
+                            {entity.name}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -2227,7 +2376,7 @@ export const ERDStudio: React.FC = () => {
                           setIsEntityModalOpen(true);
                         }}
                         className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-800"
-                        title="Edit"
+                        title="Edit in Modal"
                       >
                         <Edit2 className="w-3 h-3" />
                       </button>
@@ -2277,24 +2426,90 @@ export const ERDStudio: React.FC = () => {
                             <span className="w-3 h-3 block" />
                           )}
 
-                          <span
-                            className={`font-mono truncate ${
-                              attr.isPrimaryKey
-                                ? 'font-bold text-amber-300 underline decoration-amber-500/50'
-                                : attr.isForeignKey
-                                ? 'text-purple-300'
-                                : 'text-slate-300'
-                            }`}
-                          >
-                            {attr.name}
-                          </span>
+                          {inlineEditing?.type === 'attrName' &&
+                          inlineEditing.entityId === entity.id &&
+                          inlineEditing.attrId === attr.id ? (
+                            <input
+                              type="text"
+                              autoFocus
+                              defaultValue={attr.name}
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => {
+                                e.stopPropagation();
+                                if (e.key === 'Enter') {
+                                  handleRenameAttribute(entity.id, attr.id, (e.target as HTMLInputElement).value);
+                                  setInlineEditing(null);
+                                } else if (e.key === 'Escape') {
+                                  setInlineEditing(null);
+                                }
+                              }}
+                              onBlur={(e) => {
+                                handleRenameAttribute(entity.id, attr.id, e.target.value);
+                                setInlineEditing(null);
+                              }}
+                              className="px-1 py-0.2 rounded bg-slate-800 text-purple-200 font-mono text-[11px] border border-purple-500 outline-hidden w-24"
+                            />
+                          ) : (
+                            <span
+                              onDoubleClick={(e) => {
+                                e.stopPropagation();
+                                sound.playClick();
+                                setInlineEditing({ type: 'attrName', entityId: entity.id, attrId: attr.id });
+                              }}
+                              title="Double-click to type new name"
+                              className={`font-mono truncate cursor-text hover:text-purple-300 transition-colors ${
+                                attr.isPrimaryKey
+                                  ? 'font-bold text-amber-300 underline decoration-amber-500/50'
+                                  : attr.isForeignKey
+                                  ? 'text-purple-300'
+                                  : 'text-slate-300'
+                              }`}
+                            >
+                              {attr.name}
+                            </span>
+                          )}
                         </div>
 
                         {/* Right: Data Type & Connector Port */}
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="font-mono text-[9px] text-slate-500">
-                            {attr.dataType.split('(')[0]}
-                          </span>
+                          {inlineEditing?.type === 'attrType' &&
+                          inlineEditing.entityId === entity.id &&
+                          inlineEditing.attrId === attr.id ? (
+                            <input
+                              type="text"
+                              autoFocus
+                              defaultValue={attr.dataType}
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => {
+                                e.stopPropagation();
+                                if (e.key === 'Enter') {
+                                  handleChangeAttributeType(entity.id, attr.id, (e.target as HTMLInputElement).value);
+                                  setInlineEditing(null);
+                                } else if (e.key === 'Escape') {
+                                  setInlineEditing(null);
+                                }
+                              }}
+                              onBlur={(e) => {
+                                handleChangeAttributeType(entity.id, attr.id, e.target.value);
+                                setInlineEditing(null);
+                              }}
+                              className="px-1 py-0.2 rounded bg-slate-800 text-slate-300 font-mono text-[9px] border border-purple-500 outline-hidden w-16"
+                            />
+                          ) : (
+                            <span
+                              onDoubleClick={(e) => {
+                                e.stopPropagation();
+                                sound.playClick();
+                                setInlineEditing({ type: 'attrType', entityId: entity.id, attrId: attr.id });
+                              }}
+                              title="Double-click to edit type"
+                              className="font-mono text-[9px] text-slate-500 hover:text-slate-300 cursor-text transition-colors"
+                            >
+                              {attr.dataType.split('(')[0]}
+                            </span>
+                          )}
 
                           {/* Connector Port Circle (Click & Drag to connect) */}
                           <button
@@ -2317,9 +2532,45 @@ export const ERDStudio: React.FC = () => {
                           key={method.id}
                           className="px-2 py-1 text-[10px] font-mono text-blue-300 truncate"
                         >
-                          <span className="text-slate-400">{method.visibility} </span>
-                          <span>{method.name}({method.parameters || ''}): </span>
-                          <span className="text-slate-400">{method.returnType}</span>
+                          {inlineEditing?.type === 'methodName' &&
+                          inlineEditing.entityId === entity.id &&
+                          inlineEditing.methodId === method.id ? (
+                            <input
+                              type="text"
+                              autoFocus
+                              defaultValue={method.name}
+                              onClick={(e) => e.stopPropagation()}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => {
+                                e.stopPropagation();
+                                if (e.key === 'Enter') {
+                                  handleRenameMethod(entity.id, method.id, (e.target as HTMLInputElement).value);
+                                  setInlineEditing(null);
+                                } else if (e.key === 'Escape') {
+                                  setInlineEditing(null);
+                                }
+                              }}
+                              onBlur={(e) => {
+                                handleRenameMethod(entity.id, method.id, e.target.value);
+                                setInlineEditing(null);
+                              }}
+                              className="px-1 py-0.2 rounded bg-slate-800 text-blue-200 font-mono text-[10px] border border-purple-500 outline-hidden w-full"
+                            />
+                          ) : (
+                            <span
+                              onDoubleClick={(e) => {
+                                e.stopPropagation();
+                                sound.playClick();
+                                setInlineEditing({ type: 'methodName', entityId: entity.id, methodId: method.id });
+                              }}
+                              title="Double-click to type new method name"
+                              className="cursor-text hover:text-blue-200 transition-colors block truncate"
+                            >
+                              <span className="text-slate-400">{method.visibility} </span>
+                              <span>{method.name}({method.parameters || ''}): </span>
+                              <span className="text-slate-400">{method.returnType}</span>
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -2373,11 +2624,15 @@ export const ERDStudio: React.FC = () => {
             <div className="space-y-4">
               <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/30 space-y-2">
                 <span className="text-[10px] font-bold font-mono text-purple-300 uppercase tracking-wider block">
-                  Active Relationship Connection
+                  Connection Identifier
                 </span>
-                <p className="text-xs font-bold text-white">
-                  {selectedRelationship.name}
-                </p>
+                <input
+                  type="text"
+                  value={selectedRelationship.name}
+                  onChange={(e) => handleRenameRelationship(selectedRelationship.id, e.target.value)}
+                  placeholder="e.g. orders_to_customers"
+                  className="w-full px-2.5 py-1.5 rounded-xl border border-purple-500/40 bg-slate-900 text-xs font-mono font-bold text-white outline-hidden focus:border-purple-400"
+                />
                 <div className="text-[11px] text-slate-300 font-mono">
                   {entities.find((e) => e.id === selectedRelationship.fromEntityId)?.name} ➔{' '}
                   {entities.find((e) => e.id === selectedRelationship.toEntityId)?.name}
@@ -2570,22 +2825,49 @@ export const ERDStudio: React.FC = () => {
           ) : selectedEntity ? (
             /* 2. If Entity is Selected */
             <div className="space-y-4">
-              <div className="p-3 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-1.5">
+              <div className="p-3 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-2">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                   {selectedEntity.nodeType === 'uml_class'
-                    ? 'UML Class'
+                    ? 'UML Class Name'
                     : selectedEntity.nodeType === 'microservice' ||
                       selectedEntity.nodeType === 'gateway' ||
                       selectedEntity.nodeType === 'queue'
-                    ? 'Distributed Component'
-                    : 'Table Schema'}
+                    ? 'Distributed Component Name'
+                    : 'Table Name'}
                 </span>
-                <p className="text-sm font-mono font-bold text-white">
-                  {selectedEntity.name}
-                </p>
-                <p className="text-[11px] text-slate-400">
-                  {selectedEntity.comment || 'No documentation provided.'}
-                </p>
+                <input
+                  type="text"
+                  value={selectedEntity.name}
+                  onChange={(e) => handleRenameEntity(selectedEntity.id, e.target.value)}
+                  placeholder="e.g. students, OrderService"
+                  className="w-full px-2.5 py-1.5 rounded-xl border border-purple-500/40 bg-slate-900 text-sm font-mono font-bold text-white outline-hidden focus:border-purple-400"
+                />
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
+                    Stereotype / Tech Badge
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedEntity.stereotype || selectedEntity.techBadge || ''}
+                    onChange={(e) => handleUpdateEntityStereotype(selectedEntity.id, e.target.value)}
+                    placeholder="e.g. <<service>>, Kafka, Redis, Go"
+                    className="w-full px-2 py-1 rounded-lg border border-slate-700 bg-slate-900 text-xs font-mono text-purple-300 outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 block mb-0.5">
+                    Documentation / Note
+                  </label>
+                  <textarea
+                    value={selectedEntity.comment || ''}
+                    onChange={(e) => handleUpdateEntityComment(selectedEntity.id, e.target.value)}
+                    rows={2}
+                    placeholder="Description of the entity role..."
+                    className="w-full px-2 py-1 rounded-lg border border-slate-700 bg-slate-900 text-xs text-slate-300 outline-hidden"
+                  />
+                </div>
               </div>
 
               {/* Attributes in Selected Entity */}
@@ -2607,38 +2889,74 @@ export const ERDStudio: React.FC = () => {
                   {selectedEntity.attributes.map((attr) => (
                     <div
                       key={attr.id}
-                      className="p-2 rounded-xl bg-slate-800/40 border border-slate-800 flex items-center justify-between text-xs"
+                      className="p-2 rounded-xl bg-slate-800/40 border border-slate-800 flex items-center justify-between text-xs gap-1.5"
                     >
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        {attr.isPrimaryKey ? (
-                          <Key className="w-3 h-3 text-amber-400 shrink-0" />
-                        ) : attr.isForeignKey ? (
-                          <LinkIcon className="w-3 h-3 text-purple-400 shrink-0" />
-                        ) : (
-                          <span className="w-3 h-3 rounded-full bg-slate-700 shrink-0" />
-                        )}
-                        <span className="font-mono font-medium truncate text-white">
-                          {attr.name}
-                        </span>
+                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEntities((prev) =>
+                              prev.map((ent) =>
+                                ent.id === selectedEntity.id
+                                  ? {
+                                      ...ent,
+                                      attributes: ent.attributes.map((a) =>
+                                        a.id === attr.id
+                                          ? { ...a, isPrimaryKey: !a.isPrimaryKey }
+                                          : a
+                                      ),
+                                    }
+                                  : ent
+                              )
+                            );
+                          }}
+                          title="Toggle Primary Key"
+                          className="shrink-0"
+                        >
+                          {attr.isPrimaryKey ? (
+                            <Key className="w-3.5 h-3.5 text-amber-400" />
+                          ) : (
+                            <span className="w-3.5 h-3.5 rounded-full bg-slate-700 block hover:bg-slate-600" />
+                          )}
+                        </button>
+
+                        <input
+                          type="text"
+                          value={attr.name}
+                          onChange={(e) =>
+                            handleRenameAttribute(selectedEntity.id, attr.id, e.target.value)
+                          }
+                          className="w-full px-1.5 py-0.5 rounded bg-slate-900 text-white font-mono text-[11px] border border-slate-700 focus:border-purple-400 outline-hidden"
+                          title="Click to rename attribute"
+                        />
                       </div>
 
-                      <div className="flex items-center gap-1">
-                        <span className="font-mono text-[9px] text-slate-400">
-                          {attr.dataType.split('(')[0]}
-                        </span>
-                        <button
-                          onClick={() => {
-                            setEditingAttributeEntityId(selectedEntity.id);
-                            setEditingAttribute(attr);
-                            setIsAttributeModalOpen(true);
-                          }}
-                          className="p-1 text-slate-400 hover:text-white"
+                      <div className="flex items-center gap-1 shrink-0">
+                        <select
+                          value={attr.dataType}
+                          onChange={(e) =>
+                            handleChangeAttributeType(selectedEntity.id, attr.id, e.target.value)
+                          }
+                          className="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-300 font-mono text-[9px] outline-hidden"
                         >
-                          <Edit2 className="w-3 h-3" />
-                        </button>
+                          <option value="INT">INT</option>
+                          <option value="BIGINT">BIGINT</option>
+                          <option value="VARCHAR(100)">VARCHAR(100)</option>
+                          <option value="VARCHAR(255)">VARCHAR(255)</option>
+                          <option value="TEXT">TEXT</option>
+                          <option value="BOOLEAN">BOOLEAN</option>
+                          <option value="DECIMAL(10,2)">DECIMAL</option>
+                          <option value="DATE">DATE</option>
+                          <option value="TIMESTAMP">TIMESTAMP</option>
+                          <option value="UUID">UUID</option>
+                          <option value="HTTPS">HTTPS</option>
+                          <option value="Protobuf">Protobuf</option>
+                          <option value="In-Memory">In-Memory</option>
+                        </select>
                         <button
                           onClick={() => handleDeleteAttribute(selectedEntity.id, attr.id)}
                           className="p-1 text-slate-400 hover:text-rose-400"
+                          title="Delete attribute"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -2920,7 +3238,7 @@ export const ERDStudio: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* SOTA EXPORT MODAL: SQL DDL, PlantUML, Mermaid.js & JSON */}
+      {/* EXPORT MODAL: SQL DDL, PlantUML, Mermaid.js & JSON */}
       {/* ========================================================================= */}
       {showExportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">

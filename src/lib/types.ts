@@ -217,7 +217,7 @@ export interface ERDEntity {
   color?: string;
   isWeak?: boolean;
   attributes: ERDAttribute[];
-  // SOTA UML & Distributed Systems
+  // Advanced UML & Distributed Systems
   nodeType?: DiagramNodeType;
   stereotype?: string; // e.g. '<<interface>>', '<<service>>', '<<kafka>>'
   methods?: ERDMethod[]; // For UML Class diagrams
@@ -242,7 +242,7 @@ export interface ERDRelationship {
   isIdentifying?: boolean;
   onDelete?: 'CASCADE' | 'SET NULL' | 'RESTRICT' | 'NO ACTION';
   onUpdate?: 'CASCADE' | 'RESTRICT';
-  // SOTA UML & Distributed Systems Routing & Waypoints
+  // Routing, Splines & Waypoints
   waypoints?: ERDWaypoint[];
   routingStyle?: RoutingStyle;
   lineStyle?: LineStyle;
