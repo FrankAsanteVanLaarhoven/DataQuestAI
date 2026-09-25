@@ -219,7 +219,7 @@ export const Header: React.FC = () => {
             </div>
           </div>
 
-          {/* Navigation Links - Apple Segmented Control */}
+          {/* Primary Navigation Links */}
           <nav className="hidden lg:flex items-center gap-1 bg-zinc-200/50 dark:bg-white/[0.05] p-1 rounded-xl border border-zinc-300/40 dark:border-white/[0.06] backdrop-blur-md">
             <button
               onClick={() => setActiveTab('capstone')}
@@ -774,7 +774,7 @@ export const Header: React.FC = () => {
               </span>
             </button>
 
-            {/* Apple Theme Switcher (Dark / Light / System Theme) */}
+            {/* Theme Switcher (Dark / Light / System Theme) */}
             <button
               onClick={cycleTheme}
               title={`Active Theme: ${theme.toUpperCase()} (Click to toggle Light / Dark / System Theme)`}

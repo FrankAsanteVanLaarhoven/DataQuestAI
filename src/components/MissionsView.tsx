@@ -43,8 +43,8 @@ export const MissionsView: React.FC = () => {
 
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto p-2 sm:p-4">
-      {/* Apple-styled Banner */}
-      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 border border-black/[0.06] dark:border-white/[0.08] bg-gradient-to-r from-violet-600/10 via-purple-600/10 to-indigo-600/10 dark:from-violet-500/[0.08] dark:via-purple-500/[0.06] dark:to-indigo-500/[0.08] backdrop-blur-2xl shadow-sm">
+      {/* Missions Hero Banner */}
+      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-7 border border-black/[0.06] dark:border-white/[0.08] bg-gradient-to-r from-violet-600/10 via-purple-600/10 to-indigo-600/10 dark:from-violet-500/[0.08] dark:via-purple-500/[0.06] dark:to-indigo-500/[0.08] backdrop-blur-2xl shadow-sm">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-700 dark:text-violet-300 text-xs font-semibold uppercase tracking-wider mb-2.5">
           <Compass className="w-3.5 h-3.5" /> Hands-On Industry Capstone Track
         </div>

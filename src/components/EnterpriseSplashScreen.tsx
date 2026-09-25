@@ -90,7 +90,7 @@ export const EnterpriseSplashScreen: React.FC = () => {
   const demoAccounts = [
     {
       label: 'Super Admin',
-      badge: 'Tier-0 Frank',
+      badge: 'Founder',
       name: 'Frank Asante-Van Laarhoven',
       email: 'frank@dataquest.ai',
       password: 'DataQuest2026!',
@@ -299,7 +299,7 @@ export const EnterpriseSplashScreen: React.FC = () => {
       <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1000px] h-[550px] bg-gradient-to-b from-indigo-600/20 via-purple-600/10 to-transparent blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-cyan-600/10 blur-3xl pointer-events-none" />
 
-      {/* Top Palantir Enterprise Telemetry Bar */}
+      {/* Top Enterprise Telemetry Bar */}
       <header className="relative z-20 w-full border-b border-white/[0.08] bg-black/40 backdrop-blur-xl px-4 sm:px-8 py-2.5 flex items-center justify-between text-xs">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
@@ -352,13 +352,13 @@ export const EnterpriseSplashScreen: React.FC = () => {
       <main className="relative z-10 flex-1 max-w-[1700px] w-full mx-auto px-4 sm:px-8 py-8 lg:py-12 flex flex-col justify-center">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
-          {/* Left Column: Palantir-Style Intelligence Presentation & Architecture Engine */}
+          {/* Left Column: Relational Intelligence Architecture Engine */}
           <div className="lg:col-span-7 space-y-6">
             {/* Top Pill */}
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-md">
               <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
               <span className="font-mono text-[10px] uppercase tracking-widest text-indigo-300 font-bold">
-                Palantir Foundry Architecture • Apple Pro Craft
+                Autonomous Relational Intelligence • CSC1033 Standard
               </span>
             </div>
 
@@ -778,7 +778,7 @@ export const EnterpriseSplashScreen: React.FC = () => {
         </div>
       </main>
 
-      {/* Bottom Palantir Security Classification Footer */}
+      {/* Bottom Security Classification Footer */}
       <footer className="relative z-20 w-full border-t border-white/[0.08] bg-black/40 backdrop-blur-xl px-4 sm:px-8 py-3 text-[11px] text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
         <div className="flex items-center gap-3">
           <span className="font-mono text-slate-400">DATAQUEST ENTERPRISE v2.6</span>

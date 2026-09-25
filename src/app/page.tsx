@@ -98,7 +98,7 @@ export default function HomePage() {
       <main className="flex-1 w-full max-w-[1900px] mx-auto p-2 sm:p-4">
         {activeTab === 'capstone' && (
           <div className="space-y-3">
-            {/* Apple Pro Enterprise Banner */}
+            {/* Enterprise Header Banner */}
             <div className="relative rounded-3xl apple-glass p-6 sm:p-7 shadow-xs overflow-hidden">
               <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div className="space-y-2 max-w-3xl">
@@ -114,7 +114,7 @@ export default function HomePage() {
                     {t.courseTagline || 'A database course end to end with illustrations, and gamification'}
                   </p>
 
-                  {/* Refined Apple Pills */}
+                  {/* Core Platform Highlights */}
                   <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px]">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-white/[0.08] border border-zinc-200/80 dark:border-white/[0.12] text-zinc-700 dark:text-zinc-100 font-medium shadow-2xs">
                       <MousePointer className="w-3 h-3 text-purple-500 dark:text-purple-400 opacity-90" />
@@ -139,7 +139,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Apple-style Architecture Telemetry Card (Replacing polygon mountain) */}
+                {/* Real-time Architecture Telemetry Card */}
                 <div className="hidden lg:flex items-center gap-4 bg-white/60 dark:bg-black/40 backdrop-blur-xl border border-zinc-200/80 dark:border-white/[0.08] p-3.5 rounded-2xl shadow-sm">
                   <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
                     <Database className="w-5 h-5" />
@@ -156,7 +156,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 3-Column Layout matching Image 1 */}
+            {/* 3-Column Relational Studio Layout */}
             <div className="flex flex-col lg:flex-row gap-3">
               {/* Left Column: Capstone Missions & Champion Card */}
               <MissionsSidebar />

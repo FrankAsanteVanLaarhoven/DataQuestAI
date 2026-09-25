@@ -262,7 +262,7 @@ export const SuperAdminConsole: React.FC = () => {
 
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/25 text-xs font-bold uppercase tracking-wider">
-            🔒 Tier-0 Founder Clearance Only
+            🔒 Founder Clearance Required
           </div>
           <h2 className="text-2xl font-bold tracking-tight text-white">
             Super Administrator Intelligence Command
