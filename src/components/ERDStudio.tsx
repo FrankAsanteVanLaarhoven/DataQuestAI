@@ -8,9 +8,20 @@ import {
   ERDEntity,
   ERDAttribute,
   ERDRelationship,
+  ERDWaypoint,
+  ERDMethod,
   ErdCardinality,
   ErdNotation,
+  RoutingStyle,
+  LineStyle,
+  ArrowheadType,
+  DiagramNodeType,
 } from '@/lib/types';
+import {
+  computeConnectionPath,
+  generatePlantUml,
+  generateMermaid,
+} from '@/lib/diagram-routing';
 import {
   Network,
   Database,
@@ -40,12 +51,27 @@ import {
   ChevronUp,
   FolderOpen,
   Share2,
+  Scissors,
+  CornerDownRight,
+  GitFork,
+  Cpu,
+  Server,
+  Zap,
+  Cloud,
+  Sliders,
+  Workflow,
+  Terminal,
+  Activity,
+  Boxes,
 } from 'lucide-react';
 
 // ============================================================================
-// CSC1033 STANDARD COURSE TEMPLATES
+// BENCHMARK ARCHITECTURAL TEMPLATES
 // ============================================================================
 
+export type DiagramMode = 'relational' | 'uml' | 'distributed';
+
+// 1. Relational Academic Registry (CSC1033 Standard)
 const csc1033UniversityTemplate: {
   entities: ERDEntity[];
   relationships: ERDRelationship[];
@@ -57,8 +83,9 @@ const csc1033UniversityTemplate: {
       comment: 'Enrolled undergraduate and postgraduate university students',
       x: 80,
       y: 120,
-      color: '#8b5cf6', // purple
+      color: '#8b5cf6',
       isWeak: false,
+      nodeType: 'entity',
       attributes: [
         { id: 'att_s1', name: 'student_id', dataType: 'INT', isPrimaryKey: true, isNullable: false, isUnique: true },
         { id: 'att_s2', name: 'first_name', dataType: 'VARCHAR(100)', isPrimaryKey: false, isNullable: false, isUnique: false },
@@ -72,10 +99,11 @@ const csc1033UniversityTemplate: {
       id: 'ent_departments',
       name: 'departments',
       comment: 'Academic university faculties and research departments',
-      x: 850,
+      x: 880,
       y: 80,
-      color: '#06b6d4', // cyan
+      color: '#06b6d4',
       isWeak: false,
+      nodeType: 'entity',
       attributes: [
         { id: 'att_d1', name: 'department_id', dataType: 'INT', isPrimaryKey: true, isNullable: false, isUnique: true },
         { id: 'att_d2', name: 'department_name', dataType: 'VARCHAR(100)', isPrimaryKey: false, isNullable: false, isUnique: true },
@@ -87,10 +115,11 @@ const csc1033UniversityTemplate: {
       id: 'ent_professors',
       name: 'professors',
       comment: 'Academic faculty convenors and module lecturers',
-      x: 850,
+      x: 880,
       y: 380,
-      color: '#10b981', // emerald
+      color: '#10b981',
       isWeak: false,
+      nodeType: 'entity',
       attributes: [
         { id: 'att_p1', name: 'professor_id', dataType: 'INT', isPrimaryKey: true, isNullable: false, isUnique: true },
         { id: 'att_p2', name: 'department_id', dataType: 'INT', isPrimaryKey: false, isForeignKey: true, isNullable: false, isUnique: false },
@@ -105,8 +134,9 @@ const csc1033UniversityTemplate: {
       comment: 'Curriculum modules (e.g. CSC1033 Database Systems)',
       x: 480,
       y: 420,
-      color: '#f59e0b', // amber
+      color: '#f59e0b',
       isWeak: false,
+      nodeType: 'entity',
       attributes: [
         { id: 'att_c1', name: 'course_id', dataType: 'INT', isPrimaryKey: true, isNullable: false, isUnique: true },
         { id: 'att_c2', name: 'professor_id', dataType: 'INT', isPrimaryKey: false, isForeignKey: true, isNullable: false, isUnique: false },
@@ -121,8 +151,9 @@ const csc1033UniversityTemplate: {
       comment: 'Associative Bridge / Junction Entity resolving M:N Student-Course relation',
       x: 470,
       y: 110,
-      color: '#ec4899', // pink
+      color: '#ec4899',
       isWeak: true,
+      nodeType: 'entity',
       attributes: [
         { id: 'att_e1', name: 'student_id', dataType: 'INT', isPrimaryKey: true, isForeignKey: true, isNullable: false, isUnique: false },
         { id: 'att_e2', name: 'course_id', dataType: 'INT', isPrimaryKey: true, isForeignKey: true, isNullable: false, isUnique: false },
@@ -145,6 +176,8 @@ const csc1033UniversityTemplate: {
       toModality: 'optional',
       isIdentifying: false,
       onDelete: 'RESTRICT',
+      routingStyle: 'orthogonal',
+      arrowhead: 'crows_foot',
     },
     {
       id: 'rel_2',
@@ -158,6 +191,8 @@ const csc1033UniversityTemplate: {
       toModality: 'optional',
       isIdentifying: false,
       onDelete: 'CASCADE',
+      routingStyle: 'orthogonal',
+      arrowhead: 'crows_foot',
     },
     {
       id: 'rel_3',
@@ -171,6 +206,8 @@ const csc1033UniversityTemplate: {
       toModality: 'optional',
       isIdentifying: true,
       onDelete: 'CASCADE',
+      routingStyle: 'orthogonal',
+      arrowhead: 'crows_foot',
     },
     {
       id: 'rel_4',
@@ -184,10 +221,13 @@ const csc1033UniversityTemplate: {
       toModality: 'optional',
       isIdentifying: true,
       onDelete: 'CASCADE',
+      routingStyle: 'orthogonal',
+      arrowhead: 'crows_foot',
     },
   ],
 };
 
+// 2. Relational E-Commerce 3NF
 const ecommerceTemplate: {
   entities: ERDEntity[];
   relationships: ERDRelationship[];
@@ -201,6 +241,7 @@ const ecommerceTemplate: {
       y: 120,
       color: '#3b82f6',
       isWeak: false,
+      nodeType: 'entity',
       attributes: [
         { id: 'ec_c1', name: 'customer_id', dataType: 'INT', isPrimaryKey: true, isNullable: false, isUnique: true },
         { id: 'ec_c2', name: 'email', dataType: 'VARCHAR(255)', isPrimaryKey: false, isNullable: false, isUnique: true },
@@ -216,6 +257,7 @@ const ecommerceTemplate: {
       y: 120,
       color: '#10b981',
       isWeak: false,
+      nodeType: 'entity',
       attributes: [
         { id: 'ec_o1', name: 'order_id', dataType: 'INT', isPrimaryKey: true, isNullable: false, isUnique: true },
         { id: 'ec_o2', name: 'customer_id', dataType: 'INT', isPrimaryKey: false, isForeignKey: true, isNullable: false, isUnique: false },
@@ -228,10 +270,11 @@ const ecommerceTemplate: {
       id: 'ent_order_items',
       name: 'order_items',
       comment: 'Junction table between orders and products (3NF normalized)',
-      x: 800,
+      x: 840,
       y: 120,
       color: '#ec4899',
       isWeak: true,
+      nodeType: 'entity',
       attributes: [
         { id: 'ec_oi1', name: 'order_id', dataType: 'INT', isPrimaryKey: true, isForeignKey: true, isNullable: false, isUnique: false },
         { id: 'ec_oi2', name: 'product_id', dataType: 'INT', isPrimaryKey: true, isForeignKey: true, isNullable: false, isUnique: false },
@@ -243,10 +286,11 @@ const ecommerceTemplate: {
       id: 'ent_products',
       name: 'products',
       comment: 'Catalog SKUs and inventory tracking',
-      x: 800,
-      y: 380,
+      x: 840,
+      y: 400,
       color: '#f59e0b',
       isWeak: false,
+      nodeType: 'entity',
       attributes: [
         { id: 'ec_p1', name: 'product_id', dataType: 'INT', isPrimaryKey: true, isNullable: false, isUnique: true },
         { id: 'ec_p2', name: 'product_name', dataType: 'VARCHAR(255)', isPrimaryKey: false, isNullable: false, isUnique: false },
@@ -268,6 +312,8 @@ const ecommerceTemplate: {
       toModality: 'optional',
       isIdentifying: false,
       onDelete: 'CASCADE',
+      routingStyle: 'orthogonal',
+      arrowhead: 'crows_foot',
     },
     {
       id: 'rel_ec2',
@@ -281,6 +327,8 @@ const ecommerceTemplate: {
       toModality: 'mandatory',
       isIdentifying: true,
       onDelete: 'CASCADE',
+      routingStyle: 'orthogonal',
+      arrowhead: 'crows_foot',
     },
     {
       id: 'rel_ec3',
@@ -294,6 +342,286 @@ const ecommerceTemplate: {
       toModality: 'optional',
       isIdentifying: true,
       onDelete: 'RESTRICT',
+      routingStyle: 'orthogonal',
+      arrowhead: 'crows_foot',
+    },
+  ],
+};
+
+// 3. UML Clean Architecture Domain Model
+const umlDomainTemplate: {
+  entities: ERDEntity[];
+  relationships: ERDRelationship[];
+} = {
+  entities: [
+    {
+      id: 'uml_user_controller',
+      name: 'UserController',
+      comment: 'RESTful API Controller routing user authentication and profiles',
+      x: 80,
+      y: 120,
+      color: '#3b82f6',
+      nodeType: 'uml_class',
+      stereotype: '<<controller>>',
+      attributes: [
+        { id: 'u_c1', name: 'userService', dataType: 'UserService', isPrimaryKey: false, isNullable: false, isUnique: false },
+      ],
+      methods: [
+        { id: 'm_c1', name: 'register', returnType: 'Response<UserDTO>', visibility: '+', parameters: 'req: RegisterRequest' },
+        { id: 'm_c2', name: 'getProfile', returnType: 'Response<UserDTO>', visibility: '+', parameters: 'id: UUID' },
+      ],
+    },
+    {
+      id: 'uml_user_service',
+      name: 'UserService',
+      comment: 'Core business domain logic and credential validation',
+      x: 480,
+      y: 120,
+      color: '#8b5cf6',
+      nodeType: 'uml_class',
+      stereotype: '<<service>>',
+      attributes: [
+        { id: 'u_s1', name: 'userRepo', dataType: 'UserRepository', isPrimaryKey: false, isNullable: false, isUnique: false },
+        { id: 'u_s2', name: 'cacheService', dataType: 'CacheService', isPrimaryKey: false, isNullable: false, isUnique: false },
+      ],
+      methods: [
+        { id: 'm_s1', name: 'authenticate', returnType: 'AuthToken', visibility: '+', parameters: 'email: string, pass: string' },
+        { id: 'm_s2', name: 'createAccount', returnType: 'UserEntity', visibility: '+', parameters: 'dto: CreateUserDTO' },
+      ],
+    },
+    {
+      id: 'uml_user_repo_interface',
+      name: 'UserRepository',
+      comment: 'Data persistence contract interface (Clean Architecture)',
+      x: 480,
+      y: 420,
+      color: '#06b6d4',
+      nodeType: 'uml_class',
+      stereotype: '<<interface>>',
+      attributes: [],
+      methods: [
+        { id: 'm_r1', name: 'findById', returnType: 'Optional<UserEntity>', visibility: '+', parameters: 'id: UUID' },
+        { id: 'm_r2', name: 'save', returnType: 'UserEntity', visibility: '+', parameters: 'user: UserEntity' },
+        { id: 'm_r3', name: 'findByEmail', returnType: 'Optional<UserEntity>', visibility: '+', parameters: 'email: string' },
+      ],
+    },
+    {
+      id: 'uml_user_entity',
+      name: 'UserEntity',
+      comment: 'Domain Model Entity with primary identity',
+      x: 880,
+      y: 120,
+      color: '#10b981',
+      nodeType: 'uml_class',
+      stereotype: '<<entity>>',
+      attributes: [
+        { id: 'u_e1', name: 'id', dataType: 'UUID', isPrimaryKey: true, isNullable: false, isUnique: true },
+        { id: 'u_e2', name: 'email', dataType: 'string', isPrimaryKey: false, isNullable: false, isUnique: true },
+        { id: 'u_e3', name: 'role', dataType: 'UserRole', isPrimaryKey: false, isNullable: false, isUnique: false },
+      ],
+      methods: [
+        { id: 'm_e1', name: 'verifyPassword', returnType: 'boolean', visibility: '+', parameters: 'candidate: string' },
+      ],
+    },
+  ],
+  relationships: [
+    {
+      id: 'rel_uml_1',
+      name: 'controller_delegates_service',
+      fromEntityId: 'uml_user_controller',
+      fromAttributeId: 'u_c1',
+      toEntityId: 'uml_user_service',
+      toAttributeId: 'u_s1',
+      cardinality: '1:1',
+      routingStyle: 'orthogonal',
+      arrowhead: 'uml_arrow',
+      label: 'calls',
+    },
+    {
+      id: 'rel_uml_2',
+      name: 'service_uses_repo',
+      fromEntityId: 'uml_user_service',
+      fromAttributeId: 'u_s1',
+      toEntityId: 'uml_user_repo_interface',
+      toAttributeId: 'm_r1',
+      cardinality: '1:1',
+      routingStyle: 'orthogonal',
+      arrowhead: 'diamond_open',
+      label: 'aggregates',
+    },
+    {
+      id: 'rel_uml_3',
+      name: 'service_produces_entity',
+      fromEntityId: 'uml_user_service',
+      fromAttributeId: 'u_s2',
+      toEntityId: 'uml_user_entity',
+      toAttributeId: 'u_e1',
+      cardinality: '1:N',
+      routingStyle: 'orthogonal',
+      arrowhead: 'diamond_filled',
+      label: 'composes',
+    },
+  ],
+};
+
+// 4. Distributed Event-Driven Cloud Systems Architecture
+const distributedCloudTemplate: {
+  entities: ERDEntity[];
+  relationships: ERDRelationship[];
+} = {
+  entities: [
+    {
+      id: 'dist_gateway',
+      name: 'Cloudflare / API Gateway',
+      comment: 'Global Edge Router with TLS Termination, Rate Limiting & Auth Validation',
+      x: 60,
+      y: 180,
+      color: '#f97316',
+      nodeType: 'gateway',
+      techBadge: 'Envoy / Edge',
+      metrics: { rps: '48.2k req/s', latency: '<3ms', status: 'healthy' },
+      attributes: [
+        { id: 'dg_1', name: 'port_443', dataType: 'HTTPS', isPrimaryKey: true, isNullable: false, isUnique: true },
+        { id: 'dg_2', name: 'rate_limit', dataType: '10k/min', isPrimaryKey: false, isNullable: false, isUnique: false },
+      ],
+    },
+    {
+      id: 'dist_auth',
+      name: 'Auth Microservice',
+      comment: 'OAuth2 / JWT Token Issuer & RBAC Permission Authority',
+      x: 440,
+      y: 60,
+      color: '#8b5cf6',
+      nodeType: 'microservice',
+      techBadge: 'Go / OAuth2',
+      metrics: { rps: '12.4k req/s', latency: '5ms', status: 'healthy' },
+      attributes: [
+        { id: 'da_1', name: 'grpc_port_50051', dataType: 'Protobuf', isPrimaryKey: true, isNullable: false, isUnique: true },
+      ],
+    },
+    {
+      id: 'dist_order',
+      name: 'Order Processing Engine',
+      comment: 'High-throughput transactional order execution and state machine',
+      x: 440,
+      y: 300,
+      color: '#3b82f6',
+      nodeType: 'microservice',
+      techBadge: 'Rust / Tokio',
+      metrics: { rps: '18.5k req/s', latency: '12ms', status: 'healthy' },
+      attributes: [
+        { id: 'do_1', name: 'http_port_8080', dataType: 'REST', isPrimaryKey: true, isNullable: false, isUnique: true },
+      ],
+    },
+    {
+      id: 'dist_kafka',
+      name: 'Apache Kafka Event Bus',
+      comment: 'Distributed partitioned commit log for asynchronous event streams',
+      x: 820,
+      y: 300,
+      color: '#ec4899',
+      nodeType: 'queue',
+      techBadge: 'Kafka 3.7',
+      metrics: { rps: '95.0k msg/s', latency: '<2ms', status: 'healthy' },
+      attributes: [
+        { id: 'dk_1', name: 'topic_orders_placed', dataType: 'Avro Event', isPrimaryKey: true, isNullable: false, isUnique: true },
+        { id: 'dk_2', name: 'topic_payments_success', dataType: 'Avro Event', isPrimaryKey: false, isNullable: false, isUnique: true },
+      ],
+    },
+    {
+      id: 'dist_db',
+      name: 'PostgreSQL Multi-AZ Cluster',
+      comment: 'ACID Relational Storage with Read Replicas & pgBouncer Pooling',
+      x: 1200,
+      y: 120,
+      color: '#10b981',
+      nodeType: 'database',
+      techBadge: 'Postgres 16',
+      metrics: { rps: '24.2k iops', latency: '<4ms', status: 'healthy' },
+      attributes: [
+        { id: 'ddb_1', name: 'port_5432', dataType: 'SQL Pool', isPrimaryKey: true, isNullable: false, isUnique: true },
+      ],
+    },
+    {
+      id: 'dist_redis',
+      name: 'Redis In-Memory Cluster',
+      comment: 'Sub-millisecond Session & Catalog Cache Layer (Cache-Aside)',
+      x: 1200,
+      y: 380,
+      color: '#ef4444',
+      nodeType: 'cache',
+      techBadge: 'Redis 7.2',
+      metrics: { rps: '185k ops/s', latency: '<1ms', status: 'healthy' },
+      attributes: [
+        { id: 'dr_1', name: 'port_6379', dataType: 'In-Memory', isPrimaryKey: true, isNullable: false, isUnique: true },
+      ],
+    },
+  ],
+  relationships: [
+    {
+      id: 'rel_dist_1',
+      name: 'gateway_auth_grpc',
+      fromEntityId: 'dist_gateway',
+      fromAttributeId: 'dg_1',
+      toEntityId: 'dist_auth',
+      toAttributeId: 'da_1',
+      cardinality: '1:1',
+      routingStyle: 'orthogonal',
+      lineStyle: 'solid',
+      arrowhead: 'async_arrow',
+      protocol: 'gRPC / Mutual TLS',
+    },
+    {
+      id: 'rel_dist_2',
+      name: 'gateway_orders_rest',
+      fromEntityId: 'dist_gateway',
+      fromAttributeId: 'dg_1',
+      toEntityId: 'dist_order',
+      toAttributeId: 'do_1',
+      cardinality: '1:1',
+      routingStyle: 'orthogonal',
+      lineStyle: 'solid',
+      arrowhead: 'async_arrow',
+      protocol: 'HTTPS / REST (v2)',
+    },
+    {
+      id: 'rel_dist_3',
+      name: 'orders_publish_kafka',
+      fromEntityId: 'dist_order',
+      fromAttributeId: 'do_1',
+      toEntityId: 'dist_kafka',
+      toAttributeId: 'dk_1',
+      cardinality: '1:N',
+      routingStyle: 'orthogonal',
+      lineStyle: 'dashed',
+      arrowhead: 'async_arrow',
+      protocol: 'Async Event Stream',
+    },
+    {
+      id: 'rel_dist_4',
+      name: 'auth_db_sync',
+      fromEntityId: 'dist_auth',
+      fromAttributeId: 'da_1',
+      toEntityId: 'dist_db',
+      toAttributeId: 'ddb_1',
+      cardinality: '1:N',
+      routingStyle: 'orthogonal',
+      lineStyle: 'solid',
+      arrowhead: 'uml_arrow',
+      protocol: 'pgBouncer Pool',
+    },
+    {
+      id: 'rel_dist_5',
+      name: 'order_cache_aside',
+      fromEntityId: 'dist_order',
+      fromAttributeId: 'do_1',
+      toEntityId: 'dist_redis',
+      toAttributeId: 'dr_1',
+      cardinality: '1:N',
+      routingStyle: 'orthogonal',
+      lineStyle: 'dashed',
+      arrowhead: 'async_arrow',
+      protocol: 'Sub-ms Read/Write',
     },
   ],
 };
@@ -301,10 +629,14 @@ const ecommerceTemplate: {
 export const ERDStudio: React.FC = () => {
   const { setActiveTab, awardXp } = useAppStore();
 
+  // Mode: Relational ERD vs UML Class Diagram vs Distributed Systems Architecture
+  const [diagramMode, setDiagramMode] = useState<DiagramMode>('relational');
+
   // Core Data States
   const [entities, setEntities] = useState<ERDEntity[]>(csc1033UniversityTemplate.entities);
   const [relationships, setRelationships] = useState<ERDRelationship[]>(csc1033UniversityTemplate.relationships);
   const [notation, setNotation] = useState<ErdNotation>('crows_foot');
+  const [defaultRoutingStyle, setDefaultRoutingStyle] = useState<RoutingStyle>('orthogonal');
 
   // Canvas Viewport & Pan/Zoom
   const [zoom, setZoom] = useState(1);
@@ -315,6 +647,8 @@ export const ERDStudio: React.FC = () => {
   // Selection & Inspector
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
   const [selectedRelationshipId, setSelectedRelationshipId] = useState<string | null>(null);
+
+  // Wire Connection States (Click & Drag & Release)
   const [connectingFrom, setConnectingFrom] = useState<{
     entityId: string;
     attributeId: string;
@@ -323,15 +657,33 @@ export const ERDStudio: React.FC = () => {
   } | null>(null);
   const [dragMousePos, setDragMousePos] = useState<{ x: number; y: number } | null>(null);
 
+  // Interactive Endpoint Re-routing (Click, Drag & Release Existing Arrow Ends)
+  const [relinking, setRelinking] = useState<{
+    relationshipId: string;
+    end: 'from' | 'to';
+  } | null>(null);
+
+  // Dragging Waypoint State (Bending Elbows / Angles)
+  const [draggingWaypoint, setDraggingWaypoint] = useState<{
+    relationshipId: string;
+    waypointId: string;
+  } | null>(null);
+
   // Modals & Panels
   const [isEntityModalOpen, setIsEntityModalOpen] = useState(false);
   const [editingEntity, setEditingEntity] = useState<ERDEntity | null>(null);
   const [isAttributeModalOpen, setIsAttributeModalOpen] = useState(false);
   const [editingAttributeEntityId, setEditingAttributeEntityId] = useState<string | null>(null);
   const [editingAttribute, setEditingAttribute] = useState<ERDAttribute | null>(null);
-  const [showSqlDdlModal, setShowSqlDdlModal] = useState(false);
-  const [sqlCopied, setSqlCopied] = useState(false);
+
+  // Export Modal (SQL, PlantUML, Mermaid, JSON)
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportTab, setExportTab] = useState<'sql' | 'plantuml' | 'mermaid' | 'json'>('sql');
+  const [copiedCode, setCopiedCode] = useState(false);
   const [sqlSyncSuccess, setSqlSyncSuccess] = useState<string | null>(null);
+
+  // Internal Clipboard for Copy & Paste
+  const clipboardEntityRef = useRef<ERDEntity | null>(null);
 
   // Dragging Entity State
   const [draggingEntityId, setDraggingEntityId] = useState<string | null>(null);
@@ -351,20 +703,97 @@ export const ERDStudio: React.FC = () => {
   );
 
   // --------------------------------------------------------------------------
-  // Dragging & Canvas Handlers
+  // Keyboard Shortcuts (Delete, Duplicate, Copy, Paste, Escape)
+  // --------------------------------------------------------------------------
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is currently typing in an input, textarea, or select
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === 'INPUT' ||
+          activeEl.tagName === 'TEXTAREA' ||
+          activeEl.tagName === 'SELECT' ||
+          activeEl.getAttribute('contenteditable') === 'true')
+      ) {
+        return;
+      }
+
+      // Delete / Backspace: Delete selected entity or relationship
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedRelationshipId) {
+          e.preventDefault();
+          handleDeleteRelationship(selectedRelationshipId);
+        } else if (selectedEntityId) {
+          e.preventDefault();
+          handleDeleteEntity(selectedEntityId);
+        }
+      }
+
+      // Cmd+D / Ctrl+D: Duplicate selected element
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'd' || e.key === 'D')) {
+        e.preventDefault();
+        if (selectedEntityId) {
+          handleDuplicateEntity(selectedEntityId);
+        } else if (selectedRelationshipId) {
+          handleDuplicateRelationship(selectedRelationshipId);
+        }
+      }
+
+      // Cmd+C / Ctrl+C: Copy selected entity
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'c' || e.key === 'C')) {
+        if (selectedEntity) {
+          clipboardEntityRef.current = JSON.parse(JSON.stringify(selectedEntity));
+          sound.playClick();
+        }
+      }
+
+      // Cmd+V / Ctrl+V: Paste copied entity
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'v' || e.key === 'V')) {
+        if (clipboardEntityRef.current) {
+          e.preventDefault();
+          handlePasteEntity();
+        }
+      }
+
+      // Escape: Deselect everything
+      if (e.key === 'Escape') {
+        setSelectedEntityId(null);
+        setSelectedRelationshipId(null);
+        setConnectingFrom(null);
+        setRelinking(null);
+        setDraggingWaypoint(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedEntityId, selectedRelationshipId, selectedEntity, entities]);
+
+  // --------------------------------------------------------------------------
+  // Dragging, Panning & Canvas Mouse Handlers
   // --------------------------------------------------------------------------
 
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
-    // Only pan if clicking empty canvas
+    // Only pan if clicking empty canvas background or plain SVG area
     if (e.target === canvasRef.current || (e.target as HTMLElement).tagName === 'svg') {
       setIsPanning(true);
       startPanRef.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
       setSelectedEntityId(null);
       setSelectedRelationshipId(null);
+      setRelinking(null);
     }
   };
 
   const handleCanvasMouseMove = (e: React.MouseEvent) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const currentMousePos = {
+      x: (e.clientX - rect.left - pan.x) / zoom,
+      y: (e.clientY - rect.top - pan.y) / zoom,
+    };
+
     if (isPanning) {
       setPan({
         x: e.clientX - startPanRef.current.x,
@@ -373,28 +802,52 @@ export const ERDStudio: React.FC = () => {
       return;
     }
 
+    // Dragging an entity card
     if (draggingEntityId) {
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const rawX = (e.clientX - rect.left - pan.x) / zoom - dragEntityOffsetRef.current.x;
-      const rawY = (e.clientY - rect.top - pan.y) / zoom - dragEntityOffsetRef.current.y;
+      const rawX = currentMousePos.x - dragEntityOffsetRef.current.x;
+      const rawY = currentMousePos.y - dragEntityOffsetRef.current.y;
 
       // Magnetic snap to 10px grid
       const snapX = Math.round(rawX / 10) * 10;
       const snapY = Math.round(rawY / 10) * 10;
 
       setEntities((prev) =>
-        prev.map((ent) => (ent.id === draggingEntityId ? { ...ent, x: Math.max(10, snapX), y: Math.max(10, snapY) } : ent))
+        prev.map((ent) =>
+          ent.id === draggingEntityId
+            ? { ...ent, x: Math.max(10, snapX), y: Math.max(10, snapY) }
+            : ent
+        )
       );
+      return;
     }
 
+    // Dragging connection wire (creation)
     if (connectingFrom) {
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      setDragMousePos({
-        x: (e.clientX - rect.left - pan.x) / zoom,
-        y: (e.clientY - rect.top - pan.y) / zoom,
-      });
+      setDragMousePos(currentMousePos);
+      return;
+    }
+
+    // Dragging relationship endpoint (re-linking)
+    if (relinking) {
+      setDragMousePos(currentMousePos);
+      return;
+    }
+
+    // Dragging waypoint (angle bend point)
+    if (draggingWaypoint) {
+      const snapX = Math.round(currentMousePos.x / 10) * 10;
+      const snapY = Math.round(currentMousePos.y / 10) * 10;
+
+      setRelationships((prev) =>
+        prev.map((rel) => {
+          if (rel.id !== draggingWaypoint.relationshipId) return rel;
+          const updatedWaypoints = (rel.waypoints || []).map((wp) =>
+            wp.id === draggingWaypoint.waypointId ? { ...wp, x: snapX, y: snapY } : wp
+          );
+          return { ...rel, waypoints: updatedWaypoints };
+        })
+      );
+      return;
     }
   };
 
@@ -404,6 +857,13 @@ export const ERDStudio: React.FC = () => {
     if (connectingFrom) {
       setConnectingFrom(null);
       setDragMousePos(null);
+    }
+    if (relinking) {
+      setRelinking(null);
+      setDragMousePos(null);
+    }
+    if (draggingWaypoint) {
+      setDraggingWaypoint(null);
     }
   };
 
@@ -426,7 +886,7 @@ export const ERDStudio: React.FC = () => {
   };
 
   // --------------------------------------------------------------------------
-  // Interactive Port Connector (Wire Drawing)
+  // Interactive Port Connector (Wire Drawing & Re-routing)
   // --------------------------------------------------------------------------
 
   const handleStartConnect = (e: React.MouseEvent, entityId: string, attributeId: string) => {
@@ -438,10 +898,9 @@ export const ERDStudio: React.FC = () => {
     const sourceEntity = entities.find((ent) => ent.id === entityId);
     if (!sourceEntity) return;
 
-    // Approximate port position
     const attrIndex = sourceEntity.attributes.findIndex((a) => a.id === attributeId);
     const portX = sourceEntity.x + 240;
-    const portY = sourceEntity.y + 60 + attrIndex * 28;
+    const portY = sourceEntity.y + 60 + Math.max(0, attrIndex) * 28;
 
     setConnectingFrom({
       entityId,
@@ -457,97 +916,297 @@ export const ERDStudio: React.FC = () => {
 
   const handleDropOnPort = (e: React.MouseEvent, targetEntityId: string, targetAttributeId: string) => {
     e.stopPropagation();
-    if (!connectingFrom || connectingFrom.entityId === targetEntityId) {
+
+    // 1. If currently creating a new wire
+    if (connectingFrom) {
+      if (connectingFrom.entityId === targetEntityId) {
+        setConnectingFrom(null);
+        setDragMousePos(null);
+        return;
+      }
+
+      sound.playSuccess();
+      const sourceEnt = entities.find((ent) => ent.id === connectingFrom.entityId);
+      const targetEnt = entities.find((ent) => ent.id === targetEntityId);
+      const sourceAttr = sourceEnt?.attributes.find((a) => a.id === connectingFrom.attributeId);
+      const targetAttr = targetEnt?.attributes.find((a) => a.id === targetAttributeId);
+
+      let defaultCard: ErdCardinality = '1:N';
+      if (sourceAttr?.isPrimaryKey && targetAttr?.isPrimaryKey) {
+        defaultCard = '1:1';
+      }
+
+      // Auto-mark target column as foreign key if not already PK
+      if (targetAttr && !targetAttr.isPrimaryKey) {
+        setEntities((prev) =>
+          prev.map((ent) =>
+            ent.id === targetEntityId
+              ? {
+                  ...ent,
+                  attributes: ent.attributes.map((att) =>
+                    att.id === targetAttributeId
+                      ? {
+                          ...att,
+                          isForeignKey: true,
+                          references: {
+                            entityId: connectingFrom.entityId,
+                            attributeId: connectingFrom.attributeId,
+                            tableName: sourceEnt?.name,
+                            columnName: sourceAttr?.name,
+                          },
+                        }
+                      : att
+                  ),
+                }
+              : ent
+          )
+        );
+      }
+
+      const newRel: ERDRelationship = {
+        id: 'rel_' + Math.random().toString(36).substring(2, 8),
+        name: `${sourceEnt?.name}_to_${targetEnt?.name}`,
+        fromEntityId: connectingFrom.entityId,
+        fromAttributeId: connectingFrom.attributeId,
+        toEntityId: targetEntityId,
+        toAttributeId: targetAttributeId,
+        cardinality: defaultCard,
+        fromModality: 'mandatory',
+        toModality: 'optional',
+        isIdentifying: targetAttr?.isPrimaryKey || false,
+        onDelete: 'CASCADE',
+        routingStyle: defaultRoutingStyle,
+        arrowhead: diagramMode === 'uml' ? 'uml_arrow' : 'crows_foot',
+      };
+
+      setRelationships((prev) => [...prev, newRel]);
+      setSelectedRelationshipId(newRel.id);
       setConnectingFrom(null);
       setDragMousePos(null);
+      awardXp(25, 'Connected Relational Foreign Key');
       return;
     }
 
-    sound.playSuccess();
-
-    // Check if source attribute is primary key, infer cardinality
-    const sourceEnt = entities.find((ent) => ent.id === connectingFrom.entityId);
-    const targetEnt = entities.find((ent) => ent.id === targetEntityId);
-    const sourceAttr = sourceEnt?.attributes.find((a) => a.id === connectingFrom.attributeId);
-    const targetAttr = targetEnt?.attributes.find((a) => a.id === targetAttributeId);
-
-    let defaultCardinality: ErdCardinality = '1:N';
-    if (sourceAttr?.isPrimaryKey && targetAttr?.isPrimaryKey) {
-      defaultCardinality = '1:1';
-    }
-
-    // Auto-mark target column as foreign key if not already PK
-    if (targetAttr && !targetAttr.isPrimaryKey) {
-      setEntities((prev) =>
-        prev.map((ent) =>
-          ent.id === targetEntityId
-            ? {
-                ...ent,
-                attributes: ent.attributes.map((att) =>
-                  att.id === targetAttributeId
-                    ? {
-                        ...att,
-                        isForeignKey: true,
-                        references: {
-                          entityId: connectingFrom.entityId,
-                          attributeId: connectingFrom.attributeId,
-                          tableName: sourceEnt?.name,
-                          columnName: sourceAttr?.name,
-                        },
-                      }
-                    : att
-                ),
-              }
-            : ent
-        )
+    // 2. If currently re-linking an existing relationship endpoint
+    if (relinking) {
+      sound.playSuccess();
+      setRelationships((prev) =>
+        prev.map((r) => {
+          if (r.id !== relinking.relationshipId) return r;
+          if (relinking.end === 'from') {
+            return {
+              ...r,
+              fromEntityId: targetEntityId,
+              fromAttributeId: targetAttributeId,
+            };
+          } else {
+            return {
+              ...r,
+              toEntityId: targetEntityId,
+              toAttributeId: targetAttributeId,
+            };
+          }
+        })
       );
+      setRelinking(null);
+      setDragMousePos(null);
+      awardXp(20, 'Re-routed Architecture Link');
+      return;
     }
-
-    const newRel: ERDRelationship = {
-      id: 'rel_' + Math.random().toString(36).substring(2, 8),
-      name: `${sourceEnt?.name}_to_${targetEnt?.name}`,
-      fromEntityId: connectingFrom.entityId,
-      fromAttributeId: connectingFrom.attributeId,
-      toEntityId: targetEntityId,
-      toAttributeId: targetAttributeId,
-      cardinality: defaultCardinality,
-      fromModality: 'mandatory',
-      toModality: 'optional',
-      isIdentifying: targetAttr?.isPrimaryKey || false,
-      onDelete: 'CASCADE',
-    };
-
-    setRelationships((prev) => [...prev, newRel]);
-    setSelectedRelationshipId(newRel.id);
-    setConnectingFrom(null);
-    setDragMousePos(null);
-    awardXp(25, 'Connected Relational Foreign Key');
   };
 
   // --------------------------------------------------------------------------
-  // Entity CRUD
+  // Angle Splitting & Waypoint Controls (Elbows / Multi-angle routing)
+  // --------------------------------------------------------------------------
+
+  const handleAddWaypoint = (relId: string, point?: { x: number; y: number }) => {
+    sound.playSnap();
+    setRelationships((prev) =>
+      prev.map((rel) => {
+        if (rel.id !== relId) return rel;
+
+        const fromEnt = entities.find((e) => e.id === rel.fromEntityId);
+        const toEnt = entities.find((e) => e.id === rel.toEntityId);
+        const defaultMidX = fromEnt && toEnt ? (fromEnt.x + toEnt.x) / 2 + 120 : 300;
+        const defaultMidY = fromEnt && toEnt ? (fromEnt.y + toEnt.y) / 2 + 60 : 300;
+
+        const newWp: ERDWaypoint = {
+          id: 'wp_' + Math.random().toString(36).substring(2, 8),
+          x: point ? point.x : defaultMidX,
+          y: point ? point.y : defaultMidY,
+        };
+
+        return {
+          ...rel,
+          waypoints: [...(rel.waypoints || []), newWp],
+        };
+      })
+    );
+    awardXp(10, 'Split Arrow Angle & Added Waypoint');
+  };
+
+  const handleDeleteWaypoint = (relId: string, wpId: string) => {
+    sound.playClick();
+    setRelationships((prev) =>
+      prev.map((rel) =>
+        rel.id === relId
+          ? {
+              ...rel,
+              waypoints: (rel.waypoints || []).filter((wp) => wp.id !== wpId),
+            }
+          : rel
+      )
+    );
+  };
+
+  // --------------------------------------------------------------------------
+  // Node / Relationship CRUD, Duplication & Clipboard
+  // --------------------------------------------------------------------------
+
+  const handleDuplicateEntity = (entityId: string) => {
+    const target = entities.find((e) => e.id === entityId);
+    if (!target) return;
+    sound.playSuccess();
+
+    const clone: ERDEntity = {
+      ...JSON.parse(JSON.stringify(target)),
+      id: 'ent_' + Math.random().toString(36).substring(2, 8),
+      name: `${target.name}_copy`,
+      x: target.x + 40,
+      y: target.y + 40,
+      attributes: target.attributes.map((a) => ({
+        ...a,
+        id: 'att_' + Math.random().toString(36).substring(2, 8),
+      })),
+    };
+
+    setEntities((prev) => [...prev, clone]);
+    setSelectedEntityId(clone.id);
+    awardXp(15, 'Duplicated Architecture Entity');
+  };
+
+  const handlePasteEntity = () => {
+    if (!clipboardEntityRef.current) return;
+    sound.playSuccess();
+    const source = clipboardEntityRef.current;
+
+    const clone: ERDEntity = {
+      ...JSON.parse(JSON.stringify(source)),
+      id: 'ent_' + Math.random().toString(36).substring(2, 8),
+      name: `${source.name}_pasted`,
+      x: source.x + 50,
+      y: source.y + 50,
+      attributes: source.attributes.map((a) => ({
+        ...a,
+        id: 'att_' + Math.random().toString(36).substring(2, 8),
+      })),
+    };
+
+    setEntities((prev) => [...prev, clone]);
+    setSelectedEntityId(clone.id);
+    awardXp(15, 'Pasted Entity Architecture');
+  };
+
+  const handleDeleteEntity = (entityId: string) => {
+    sound.playError();
+    setEntities((prev) => prev.filter((e) => e.id !== entityId));
+    setRelationships((prev) =>
+      prev.filter((r) => r.fromEntityId !== entityId && r.toEntityId !== entityId)
+    );
+    if (selectedEntityId === entityId) setSelectedEntityId(null);
+  };
+
+  const handleDuplicateRelationship = (relId: string) => {
+    const target = relationships.find((r) => r.id === relId);
+    if (!target) return;
+    sound.playSuccess();
+
+    const clone: ERDRelationship = {
+      ...JSON.parse(JSON.stringify(target)),
+      id: 'rel_' + Math.random().toString(36).substring(2, 8),
+      name: `${target.name}_copy`,
+      waypoints: (target.waypoints || []).map((wp) => ({
+        ...wp,
+        id: 'wp_' + Math.random().toString(36).substring(2, 8),
+        y: wp.y + 30,
+      })),
+    };
+
+    setRelationships((prev) => [...prev, clone]);
+    setSelectedRelationshipId(clone.id);
+    awardXp(15, 'Duplicated Architecture Arrow');
+  };
+
+  const handleReverseRelationship = (relId: string) => {
+    sound.playSnap();
+    setRelationships((prev) =>
+      prev.map((r) => {
+        if (r.id !== relId) return r;
+        return {
+          ...r,
+          fromEntityId: r.toEntityId,
+          fromAttributeId: r.toAttributeId,
+          toEntityId: r.fromEntityId,
+          toAttributeId: r.fromAttributeId,
+          cardinality:
+            r.cardinality === '1:N'
+              ? 'N:1'
+              : r.cardinality === 'N:1'
+              ? '1:N'
+              : r.cardinality,
+        };
+      })
+    );
+  };
+
+  const handleDeleteRelationship = (relId: string) => {
+    sound.playError();
+    setRelationships((prev) => prev.filter((r) => r.id !== relId));
+    if (selectedRelationshipId === relId) setSelectedRelationshipId(null);
+  };
+
+  // --------------------------------------------------------------------------
+  // Entity & Attribute Modal Handlers
   // --------------------------------------------------------------------------
 
   const handleOpenAddEntity = () => {
     sound.playClick();
+    const isUml = diagramMode === 'uml';
+    const isDist = diagramMode === 'distributed';
+
     setEditingEntity({
       id: 'ent_' + Math.random().toString(36).substring(2, 8),
-      name: 'new_table',
-      comment: 'Relational entity table',
+      name: isDist ? 'NewMicroservice' : isUml ? 'NewDomainClass' : 'new_table',
+      comment: isDist ? 'Distributed Cloud Service' : isUml ? 'UML Domain Object' : 'Relational table',
       x: Math.max(50, -pan.x + 200),
       y: Math.max(50, -pan.y + 150),
-      color: '#6366f1',
+      color: isDist ? '#f97316' : isUml ? '#3b82f6' : '#6366f1',
       isWeak: false,
+      nodeType: isDist ? 'microservice' : isUml ? 'uml_class' : 'entity',
+      stereotype: isUml ? '<<service>>' : undefined,
+      techBadge: isDist ? 'Go / REST' : undefined,
+      metrics: isDist ? { rps: '10.0k req/s', latency: '<5ms', status: 'healthy' } : undefined,
       attributes: [
         {
           id: 'att_' + Math.random().toString(36).substring(2, 8),
-          name: 'id',
-          dataType: 'INT',
+          name: isDist ? 'http_port_8080' : 'id',
+          dataType: isDist ? 'TCP' : isUml ? 'UUID' : 'INT',
           isPrimaryKey: true,
           isNullable: false,
           isUnique: true,
         },
       ],
+      methods: isUml
+        ? [
+            {
+              id: 'm_' + Math.random().toString(36).substring(2, 8),
+              name: 'execute',
+              returnType: 'Result',
+              visibility: '+',
+              parameters: 'req: Request',
+            },
+          ]
+        : undefined,
     });
     setIsEntityModalOpen(true);
   };
@@ -555,7 +1214,10 @@ export const ERDStudio: React.FC = () => {
   const handleSaveEntity = () => {
     if (!editingEntity || !editingEntity.name.trim()) return;
     sound.playSuccess();
-    const cleanName = editingEntity.name.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+    const cleanName =
+      diagramMode === 'relational'
+        ? editingEntity.name.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_')
+        : editingEntity.name.trim().replace(/[^a-zA-Z0-9_]/g, '');
 
     setEntities((prev) => {
       const exists = prev.some((e) => e.id === editingEntity.id);
@@ -567,26 +1229,15 @@ export const ERDStudio: React.FC = () => {
 
     setIsEntityModalOpen(false);
     setSelectedEntityId(editingEntity.id);
-    awardXp(15, 'Created Relational Entity');
+    awardXp(15, 'Configured System Entity');
   };
-
-  const handleDeleteEntity = (entityId: string) => {
-    sound.playError();
-    setEntities((prev) => prev.filter((e) => e.id !== entityId));
-    setRelationships((prev) => prev.filter((r) => r.fromEntityId !== entityId && r.toEntityId !== entityId));
-    if (selectedEntityId === entityId) setSelectedEntityId(null);
-  };
-
-  // --------------------------------------------------------------------------
-  // Attribute CRUD
-  // --------------------------------------------------------------------------
 
   const handleOpenAddAttribute = (entityId: string) => {
     sound.playClick();
     setEditingAttributeEntityId(entityId);
     setEditingAttribute({
       id: 'att_' + Math.random().toString(36).substring(2, 8),
-      name: 'column_name',
+      name: diagramMode === 'relational' ? 'column_name' : 'field_name',
       dataType: 'VARCHAR(100)',
       isPrimaryKey: false,
       isForeignKey: false,
@@ -599,7 +1250,10 @@ export const ERDStudio: React.FC = () => {
   const handleSaveAttribute = () => {
     if (!editingAttribute || !editingAttributeEntityId || !editingAttribute.name.trim()) return;
     sound.playSuccess();
-    const cleanName = editingAttribute.name.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+    const cleanName =
+      diagramMode === 'relational'
+        ? editingAttribute.name.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_')
+        : editingAttribute.name.trim();
 
     setEntities((prev) =>
       prev.map((ent) => {
@@ -624,14 +1278,13 @@ export const ERDStudio: React.FC = () => {
         ent.id === entityId ? { ...ent, attributes: ent.attributes.filter((a) => a.id !== attributeId) } : ent
       )
     );
-    // Remove relationships referencing this attribute
     setRelationships((prev) =>
       prev.filter((r) => r.fromAttributeId !== attributeId && r.toAttributeId !== attributeId)
     );
   };
 
   // --------------------------------------------------------------------------
-  // Relationship Normalization (Decompose M:N into Junction Table - CSC1033)
+  // 3NF Many-to-Many Normalization Decomposition
   // --------------------------------------------------------------------------
 
   const handleDecomposeManyToMany = (relId: string) => {
@@ -643,8 +1296,6 @@ export const ERDStudio: React.FC = () => {
     if (!fromEnt || !toEnt) return;
 
     sound.playLevelUp();
-
-    // Create Junction Table between From and To
     const junctionName = `${fromEnt.name}_${toEnt.name}_map`;
     const junctionId = 'ent_junc_' + Math.random().toString(36).substring(2, 7);
 
@@ -659,6 +1310,7 @@ export const ERDStudio: React.FC = () => {
       y: (fromEnt.y + toEnt.y) / 2 + 50,
       color: '#ec4899',
       isWeak: true,
+      nodeType: 'entity',
       attributes: [
         {
           id: 'junc_att_' + Math.random().toString(36).substring(2, 6),
@@ -691,7 +1343,6 @@ export const ERDStudio: React.FC = () => {
       ],
     };
 
-    // Remove old M:N relation, add two 1:N relations
     const rel1: ERDRelationship = {
       id: 'rel_' + Math.random().toString(36).substring(2, 8),
       name: `${fromEnt.name}_to_junction`,
@@ -704,6 +1355,8 @@ export const ERDStudio: React.FC = () => {
       toModality: 'optional',
       isIdentifying: true,
       onDelete: 'CASCADE',
+      routingStyle: 'orthogonal',
+      arrowhead: 'crows_foot',
     };
 
     const rel2: ERDRelationship = {
@@ -718,6 +1371,8 @@ export const ERDStudio: React.FC = () => {
       toModality: 'optional',
       isIdentifying: true,
       onDelete: 'CASCADE',
+      routingStyle: 'orthogonal',
+      arrowhead: 'crows_foot',
     };
 
     setEntities((prev) => [...prev, junctionEntity]);
@@ -727,7 +1382,7 @@ export const ERDStudio: React.FC = () => {
   };
 
   // --------------------------------------------------------------------------
-  // SQL DDL Generation & Compilation
+  // Universal Code & Spec Generators (SQL, PlantUML, Mermaid, JSON)
   // --------------------------------------------------------------------------
 
   const generatedSqlDdl = useMemo(() => {
@@ -757,7 +1412,6 @@ export const ERDStudio: React.FC = () => {
         lines.push(`  PRIMARY KEY (${primaryKeys.join(', ')})`);
       }
 
-      // Foreign Keys in this table
       const foreignKeyRels = relationships.filter((r) => r.toEntityId === ent.id);
       foreignKeyRels.forEach((fkRel) => {
         const fromEnt = entities.find((e) => e.id === fkRel.fromEntityId);
@@ -778,10 +1432,24 @@ export const ERDStudio: React.FC = () => {
     return sql;
   }, [entities, relationships]);
 
+  const generatedPlantUml = useMemo(
+    () => generatePlantUml(entities, relationships, diagramMode),
+    [entities, relationships, diagramMode]
+  );
+
+  const generatedMermaid = useMemo(
+    () => generateMermaid(entities, relationships, diagramMode),
+    [entities, relationships, diagramMode]
+  );
+
+  const generatedJson = useMemo(
+    () => JSON.stringify({ diagramMode, entities, relationships }, null, 2),
+    [diagramMode, entities, relationships]
+  );
+
   const handlePushToSqlLab = () => {
     try {
       sound.playLevelUp();
-      // Execute each CREATE TABLE statement in the SQL Lab engine
       const statements = generatedSqlDdl
         .split(';')
         .map((s) => s.trim())
@@ -802,35 +1470,65 @@ export const ERDStudio: React.FC = () => {
     }
   };
 
-  const handleCopySql = () => {
-    navigator.clipboard.writeText(generatedSqlDdl);
+  const handleCopyExportCode = (content: string) => {
+    navigator.clipboard.writeText(content);
     sound.playSuccess();
-    setSqlCopied(true);
-    setTimeout(() => setSqlCopied(false), 2000);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
+  };
+
+  const handleDownloadExport = (content: string, filename: string) => {
+    sound.playClick();
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   // --------------------------------------------------------------------------
-  // SVG Path Calculation for Connectors
+  // SVG Marker Defs & Path Rendering
   // --------------------------------------------------------------------------
 
   const renderRelationshipsSvg = () => {
     return (
       <svg className="absolute inset-0 pointer-events-none w-full h-full overflow-visible">
         <defs>
-          {/* Neon Glow Filters */}
-          <filter id="erd-glow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
+          <filter id="sota-glow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
 
-          {/* Marker: One-to-Many Crow's Foot Fork */}
-          <marker id="crows-foot-many" viewBox="0 0 16 16" refX="14" refY="8" markerWidth="12" markerHeight="12" orient="auto-start-reverse">
+          {/* Marker: Crow's Foot Fork (Many) */}
+          <marker id="crows-foot-many" viewBox="0 0 16 16" refX="14" refY="8" markerWidth="14" markerHeight="14" orient="auto-start-reverse">
             <path d="M 0 0 L 14 8 L 0 16 M 14 0 L 14 16" fill="none" stroke="#8b5cf6" strokeWidth="2" />
           </marker>
 
           {/* Marker: Mandatory One Bar */}
-          <marker id="crows-foot-one" viewBox="0 0 16 16" refX="4" refY="8" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+          <marker id="crows-foot-one" viewBox="0 0 16 16" refX="4" refY="8" markerWidth="12" markerHeight="12" orient="auto-start-reverse">
             <path d="M 4 2 L 4 14 M 8 2 L 8 14" fill="none" stroke="#8b5cf6" strokeWidth="2" />
+          </marker>
+
+          {/* Marker: Standard UML Arrow */}
+          <marker id="uml-arrow" viewBox="0 0 16 16" refX="14" refY="8" markerWidth="12" markerHeight="12" orient="auto">
+            <path d="M 2 2 L 14 8 L 2 14 Z" fill="#3b82f6" />
+          </marker>
+
+          {/* Marker: Composition Filled Diamond */}
+          <marker id="diamond-filled" viewBox="0 0 16 16" refX="8" refY="8" markerWidth="14" markerHeight="14" orient="auto">
+            <path d="M 0 8 L 8 2 L 16 8 L 8 14 Z" fill="#8b5cf6" stroke="#c084fc" strokeWidth="1" />
+          </marker>
+
+          {/* Marker: Aggregation Open Diamond */}
+          <marker id="diamond-open" viewBox="0 0 16 16" refX="8" refY="8" markerWidth="14" markerHeight="14" orient="auto">
+            <path d="M 0 8 L 8 2 L 16 8 L 8 14 Z" fill="#0f172a" stroke="#8b5cf6" strokeWidth="2" />
+          </marker>
+
+          {/* Marker: Async Open Arrow */}
+          <marker id="async-arrow" viewBox="0 0 16 16" refX="14" refY="8" markerWidth="12" markerHeight="12" orient="auto">
+            <path d="M 4 2 L 14 8 L 4 14" fill="none" stroke="#f97316" strokeWidth="2.5" strokeLinecap="round" />
           </marker>
         </defs>
 
@@ -845,61 +1543,106 @@ export const ERDStudio: React.FC = () => {
           const fromIdx = fromAttrIndex >= 0 ? fromAttrIndex : 0;
           const toIdx = toAttrIndex >= 0 ? toAttrIndex : 0;
 
-          // Connect from right of Source to left of Target (or vice versa based on geometry)
           const isTargetRight = toEnt.x > fromEnt.x;
 
+          // Compute start and end port coordinates
           const startX = isTargetRight ? fromEnt.x + 240 : fromEnt.x;
           const startY = fromEnt.y + 55 + fromIdx * 28;
 
           const endX = isTargetRight ? toEnt.x : toEnt.x + 240;
           const endY = toEnt.y + 55 + toIdx * 28;
 
-          const deltaX = Math.abs(endX - startX);
-          const curveOffset = Math.max(50, deltaX * 0.4);
+          const isRelinkingThis = relinking?.relationshipId === rel.id;
+          const activeStart = isRelinkingThis && relinking.end === 'from' && dragMousePos ? dragMousePos : { x: startX, y: startY };
+          const activeEnd = isRelinkingThis && relinking.end === 'to' && dragMousePos ? dragMousePos : { x: endX, y: endY };
 
-          const cp1x = isTargetRight ? startX + curveOffset : startX - curveOffset;
-          const cp1y = startY;
-          const cp2x = isTargetRight ? endX - curveOffset : endX + curveOffset;
-          const cp2y = endY;
-
-          const pathD = `M ${startX} ${startY} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${endX} ${endY}`;
-          const midX = (startX + endX) / 2;
-          const midY = (startY + endY) / 2;
+          const routing = rel.routingStyle || defaultRoutingStyle;
+          const { d: pathD, midPoint } = computeConnectionPath(
+            activeStart,
+            activeEnd,
+            rel.waypoints || [],
+            routing
+          );
 
           const isSelected = selectedRelationshipId === rel.id;
 
-          return (
-            <g key={rel.id} className="pointer-events-auto cursor-pointer" onClick={() => {
-              sound.playClick();
-              setSelectedRelationshipId(rel.id);
-              setSelectedEntityId(null);
-            }}>
-              {/* Thick transparent background path for easy clicking */}
-              <path d={pathD} fill="none" stroke="transparent" strokeWidth="20" />
+          // Determine line style
+          const strokeDash =
+            rel.lineStyle === 'dashed'
+              ? '6 4'
+              : rel.lineStyle === 'dotted'
+              ? '2 4'
+              : !rel.isIdentifying && diagramMode === 'relational'
+              ? '6 3'
+              : 'none';
 
-              {/* Glowing Outline when selected */}
+          // Determine markers
+          const markerEndId =
+            rel.arrowhead === 'diamond_filled'
+              ? 'url(#diamond-filled)'
+              : rel.arrowhead === 'diamond_open'
+              ? 'url(#diamond-open)'
+              : rel.arrowhead === 'uml_arrow'
+              ? 'url(#uml-arrow)'
+              : rel.arrowhead === 'async_arrow'
+              ? 'url(#async-arrow)'
+              : 'url(#crows-foot-many)';
+
+          const markerStartId =
+            diagramMode === 'relational' ? 'url(#crows-foot-one)' : undefined;
+
+          return (
+            <g
+              key={rel.id}
+              className="pointer-events-auto cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                sound.playClick();
+                setSelectedRelationshipId(rel.id);
+                setSelectedEntityId(null);
+              }}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                const rect = canvasRef.current?.getBoundingClientRect();
+                if (!rect) return;
+                const clickX = Math.round(((e.clientX - rect.left - pan.x) / zoom) / 10) * 10;
+                const clickY = Math.round(((e.clientY - rect.top - pan.y) / zoom) / 10) * 10;
+                handleAddWaypoint(rel.id, { x: clickX, y: clickY });
+              }}
+            >
+              {/* Invisible Thick Hover Path for Easy Selection */}
+              <path d={pathD} fill="none" stroke="transparent" strokeWidth="24" />
+
+              {/* Glowing Outline when Selected */}
               {isSelected && (
-                <path d={pathD} fill="none" stroke="#a855f7" strokeWidth="6" strokeOpacity="0.4" filter="url(#erd-glow)" />
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke={rel.color || '#a855f7'}
+                  strokeWidth="8"
+                  strokeOpacity="0.4"
+                  filter="url(#sota-glow)"
+                />
               )}
 
-              {/* Main Relationship Line */}
+              {/* Core Rendered Path */}
               <path
                 d={pathD}
                 fill="none"
-                stroke={isSelected ? '#c084fc' : '#8b5cf6'}
+                stroke={isSelected ? '#c084fc' : rel.color || '#8b5cf6'}
                 strokeWidth={isSelected ? '3' : '2'}
-                strokeDasharray={rel.isIdentifying ? 'none' : '6 3'}
-                markerStart="url(#crows-foot-one)"
-                markerEnd="url(#crows-foot-many)"
-                className="transition-all"
+                strokeDasharray={strokeDash}
+                markerStart={markerStartId}
+                markerEnd={markerEndId}
+                className="transition-all duration-150"
               />
 
-              {/* Central Cardinality Badge Pill */}
-              <g transform={`translate(${midX}, ${midY})`}>
+              {/* Central Badge / Protocol Label */}
+              <g transform={`translate(${midPoint.x}, ${midPoint.y})`}>
                 <rect
-                  x="-28"
+                  x="-32"
                   y="-12"
-                  width="56"
+                  width="64"
                   height="24"
                   rx="12"
                   fill="#0f172a"
@@ -916,17 +1659,96 @@ export const ERDStudio: React.FC = () => {
                   fontWeight="bold"
                   fontFamily="monospace"
                 >
-                  {rel.cardinality}
+                  {rel.protocol || rel.label || rel.cardinality}
                 </text>
               </g>
+
+              {/* Interactive Waypoint Drag Handles (Elbow / Bend manipulation) */}
+              {isSelected &&
+                (rel.waypoints || []).map((wp, wpIdx) => (
+                  <g key={wp.id} transform={`translate(${wp.x}, ${wp.y})`}>
+                    <circle
+                      r="7"
+                      fill="#ec4899"
+                      stroke="#ffffff"
+                      strokeWidth="2"
+                      className="cursor-move hover:scale-125 transition-transform"
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        sound.playSnap();
+                        setDraggingWaypoint({ relationshipId: rel.id, waypointId: wp.id });
+                      }}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteWaypoint(rel.id, wp.id);
+                      }}
+                    />
+                    <text
+                      x="0"
+                      y="-10"
+                      textAnchor="middle"
+                      fill="#f472b6"
+                      fontSize="9"
+                      fontFamily="monospace"
+                      fontWeight="bold"
+                    >
+                      ∠{wpIdx + 1}
+                    </text>
+                  </g>
+                ))}
+
+              {/* Interactive Endpoint Re-linking Handles */}
+              {isSelected && (
+                <>
+                  {/* Start Handle */}
+                  <circle
+                    cx={activeStart.x}
+                    cy={activeStart.y}
+                    r="6"
+                    fill="#3b82f6"
+                    stroke="#ffffff"
+                    strokeWidth="2"
+                    className="cursor-grab hover:scale-150 transition-transform animate-pulse"
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      sound.playSnap();
+                      setRelinking({ relationshipId: rel.id, end: 'from' });
+                    }}
+                  >
+                    <title>Drag to reconnect start of relationship</title>
+                  </circle>
+
+                  {/* End Handle */}
+                  <circle
+                    cx={activeEnd.x}
+                    cy={activeEnd.y}
+                    r="6"
+                    fill="#10b981"
+                    stroke="#ffffff"
+                    strokeWidth="2"
+                    className="cursor-grab hover:scale-150 transition-transform animate-pulse"
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      sound.playSnap();
+                      setRelinking({ relationshipId: rel.id, end: 'to' });
+                    }}
+                  >
+                    <title>Drag to reconnect end of relationship</title>
+                  </circle>
+                </>
+              )}
             </g>
           );
         })}
 
-        {/* Live Connecting Wire while dragging port */}
-        {connectingFrom && dragMousePos && (
+        {/* Live Connecting Wire while dragging port or re-linking */}
+        {(connectingFrom || relinking) && dragMousePos && (
           <path
-            d={`M ${connectingFrom.x} ${connectingFrom.y} Q ${(connectingFrom.x + dragMousePos.x) / 2} ${(connectingFrom.y + dragMousePos.y) / 2 - 40} ${dragMousePos.x} ${dragMousePos.y}`}
+            d={`M ${connectingFrom?.x || dragMousePos.x} ${connectingFrom?.y || dragMousePos.y} Q ${
+              ((connectingFrom?.x || dragMousePos.x) + dragMousePos.x) / 2
+            } ${((connectingFrom?.y || dragMousePos.y) + dragMousePos.y) / 2 - 40} ${dragMousePos.x} ${
+              dragMousePos.y
+            }`}
             fill="none"
             stroke="#ec4899"
             strokeWidth="3"
@@ -940,183 +1762,394 @@ export const ERDStudio: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] w-full max-w-[1900px] mx-auto select-none overflow-hidden bg-slate-950 text-slate-100 rounded-3xl border border-slate-800 shadow-2xl relative font-sans">
-      
       {/* Top Studio Control Bar */}
       <header className="h-14 px-4 sm:px-6 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between gap-3 z-20 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 flex items-center justify-center text-white shadow-md shadow-purple-500/25">
-            <Network className="w-4 h-4" />
+            <Workflow className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-sm sm:text-base font-bold text-white tracking-tight">
-                ER Diagram Studio
+                Architecture &amp; UML Studio
               </h1>
               <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/10 text-purple-300 border border-purple-500/20 font-mono">
-                Relational Canvas
-              </span>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
-                Full CRUD
+                SOTA Modeling
               </span>
             </div>
             <p className="text-[10px] text-slate-400 hidden md:block">
-              Drag-and-drop entity modeling, multi-cardinality relationships, 3NF normalization &amp; live SQL compilation
+              Interactive draggable arrows, angle splitting, UML classes, distributed architectures &amp; live compilation
             </p>
           </div>
         </div>
 
-        {/* Center: Template & Notation Switcher */}
+        {/* Center: Diagram Mode Switcher (Relational ERD | UML Class | Distributed Architecture) */}
         <div className="flex items-center gap-2">
-          {/* Preset Template Switcher */}
-          <div className="hidden lg:flex items-center gap-1 p-1 bg-slate-800/80 rounded-xl border border-slate-700/60 text-xs">
+          <div className="flex items-center p-1 bg-slate-800/90 rounded-xl border border-slate-700/60 text-xs">
+            <button
+              onClick={() => {
+                sound.playClick();
+                setDiagramMode('relational');
+                setDefaultRoutingStyle('orthogonal');
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold transition-all text-xs ${
+                diagramMode === 'relational'
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Database className="w-3.5 h-3.5" />
+              <span>Relational ERD</span>
+            </button>
+
+            <button
+              onClick={() => {
+                sound.playClick();
+                setDiagramMode('uml');
+                setDefaultRoutingStyle('orthogonal');
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold transition-all text-xs ${
+                diagramMode === 'uml'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Boxes className="w-3.5 h-3.5" />
+              <span>UML Class</span>
+            </button>
+
+            <button
+              onClick={() => {
+                sound.playClick();
+                setDiagramMode('distributed');
+                setDefaultRoutingStyle('orthogonal');
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg font-bold transition-all text-xs ${
+                diagramMode === 'distributed'
+                  ? 'bg-orange-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Cloud className="w-3.5 h-3.5" />
+              <span>Distributed Systems</span>
+            </button>
+          </div>
+
+          {/* Preset Templates */}
+          <div className="hidden xl:flex items-center gap-1 p-1 bg-slate-800/60 rounded-xl border border-slate-700/50 text-xs">
             <span className="px-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
               Templates:
             </span>
             <button
               onClick={() => {
                 sound.playClick();
+                setDiagramMode('relational');
                 setEntities(csc1033UniversityTemplate.entities);
                 setRelationships(csc1033UniversityTemplate.relationships);
                 setSelectedEntityId(null);
                 setSelectedRelationshipId(null);
                 awardXp(15, 'Loaded Academic Registry ERD');
               }}
-              className="px-2.5 py-1 rounded-lg font-semibold hover:bg-slate-700 text-slate-200 transition-all text-xs"
+              className="px-2 py-1 rounded-lg font-semibold hover:bg-slate-700 text-slate-300 text-xs"
             >
-              🎓 Academic Registry
+              Academic
             </button>
             <button
               onClick={() => {
                 sound.playClick();
+                setDiagramMode('relational');
                 setEntities(ecommerceTemplate.entities);
                 setRelationships(ecommerceTemplate.relationships);
                 setSelectedEntityId(null);
                 setSelectedRelationshipId(null);
                 awardXp(15, 'Loaded E-Commerce ERD');
               }}
-              className="px-2.5 py-1 rounded-lg font-semibold hover:bg-slate-700 text-slate-200 transition-all text-xs"
+              className="px-2 py-1 rounded-lg font-semibold hover:bg-slate-700 text-slate-300 text-xs"
             >
-              🛒 E-Commerce
-            </button>
-          </div>
-
-          {/* Notation Toggle */}
-          <div className="flex items-center gap-1 p-1 bg-slate-800/80 rounded-xl border border-slate-700/60 text-xs">
-            <button
-              onClick={() => setNotation('crows_foot')}
-              className={`px-2 py-1 rounded-lg font-bold transition-all text-[11px] ${
-                notation === 'crows_foot' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Crow&apos;s Foot
+              E-Commerce
             </button>
             <button
-              onClick={() => setNotation('uml')}
-              className={`px-2 py-1 rounded-lg font-bold transition-all text-[11px] ${
-                notation === 'uml' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
-              }`}
+              onClick={() => {
+                sound.playClick();
+                setDiagramMode('uml');
+                setEntities(umlDomainTemplate.entities);
+                setRelationships(umlDomainTemplate.relationships);
+                setSelectedEntityId(null);
+                setSelectedRelationshipId(null);
+                awardXp(15, 'Loaded UML Domain Template');
+              }}
+              className="px-2 py-1 rounded-lg font-semibold hover:bg-slate-700 text-slate-300 text-xs"
             >
-              UML Multiplicity
+              UML Domain
+            </button>
+            <button
+              onClick={() => {
+                sound.playClick();
+                setDiagramMode('distributed');
+                setEntities(distributedCloudTemplate.entities);
+                setRelationships(distributedCloudTemplate.relationships);
+                setSelectedEntityId(null);
+                setSelectedRelationshipId(null);
+                awardXp(15, 'Loaded Distributed Systems Template');
+              }}
+              className="px-2 py-1 rounded-lg font-semibold hover:bg-slate-700 text-slate-300 text-xs"
+            >
+              Cloud Microservices
             </button>
           </div>
         </div>
 
-        {/* Right Actions: Add Table, SQL DDL, Sync to SQL Lab */}
+        {/* Right Actions: Add Node & Export */}
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={handleOpenAddEntity}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md shadow-purple-600/30 transition-all active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md shadow-purple-600/30 transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Add Entity</span>
+            <span>
+              {diagramMode === 'distributed'
+                ? 'Add Component'
+                : diagramMode === 'uml'
+                ? 'Add Class'
+                : 'Add Entity'}
+            </span>
           </button>
 
           <button
-            onClick={() => setShowSqlDdlModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all cursor-pointer"
-            title="Inspect Generated SQL DDL Script"
+            type="button"
+            onClick={() => setShowExportModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-all cursor-pointer"
           >
             <Code className="w-3.5 h-3.5 text-purple-400" />
-            <span className="hidden sm:inline">View SQL DDL</span>
+            <span>Export &amp; Code</span>
           </button>
 
           <button
+            type="button"
             onClick={handlePushToSqlLab}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md shadow-emerald-600/30 transition-all active:scale-95 cursor-pointer"
-            title="Deploy schema directly into isolated In-Memory SQL Lab Engine"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/30 transition-all cursor-pointer"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
-            <span className="hidden sm:inline">Push to SQL Lab</span>
+            <span>Push to SQL Lab</span>
           </button>
         </div>
       </header>
 
-      {/* Sync Success Banner */}
+      {/* Synchronized Feedback Banner */}
       {sqlSyncSuccess && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-2xl bg-emerald-500/90 text-white text-xs font-bold shadow-xl flex items-center gap-2 animate-in fade-in duration-200 backdrop-blur-md">
-          <Check className="w-4 h-4" />
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-30 px-4 py-2 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center gap-2 shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-top-2">
+          <Check className="w-4 h-4 text-emerald-400" />
           <span>{sqlSyncSuccess}</span>
         </div>
       )}
 
-      {/* Canvas Workspace Layout */}
-      <div className="flex-1 relative overflow-hidden flex">
-        
-        {/* Main Interactive Diagram Canvas */}
+      {/* Main Studio Viewport */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Canvas Area */}
         <div
           ref={canvasRef}
           onMouseDown={handleCanvasMouseDown}
           onMouseMove={handleCanvasMouseMove}
           onMouseUp={handleCanvasMouseUp}
-          className="flex-1 h-full w-full relative bg-[#090d16] cursor-grab active:cursor-grabbing overflow-hidden"
+          className="flex-1 h-full relative overflow-hidden bg-slate-950 cursor-grab active:cursor-grabbing"
           style={{
-            backgroundImage: `radial-gradient(#1e293b 1.5px, transparent 1.5px)`,
+            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1.2px, transparent 0)`,
             backgroundSize: `${24 * zoom}px ${24 * zoom}px`,
             backgroundPosition: `${pan.x}px ${pan.y}px`,
           }}
         >
-          {/* Zoom / Pan Navigation Float HUD */}
-          <div className="absolute bottom-4 left-4 z-30 flex items-center gap-1 p-1 bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl backdrop-blur-md">
+          {/* Floating Canvas Quick-Tools (Zoom, Routing Style, Reset) */}
+          <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/90 border border-slate-800 backdrop-blur-md shadow-lg">
+            {/* Routing Style Quick Switcher */}
+            <div className="flex items-center p-0.5 rounded-lg bg-slate-800/80 mr-1 text-[11px]">
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setDefaultRoutingStyle('orthogonal');
+                  if (selectedRelationship) {
+                    setRelationships((prev) =>
+                      prev.map((r) =>
+                        r.id === selectedRelationship.id ? { ...r, routingStyle: 'orthogonal' } : r
+                      )
+                    );
+                  }
+                }}
+                className={`p-1.5 rounded-md font-bold transition-all ${
+                  defaultRoutingStyle === 'orthogonal'
+                    ? 'bg-purple-600 text-white'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Orthogonal / Elbow Routing (90° Right Angles)"
+              >
+                <CornerDownRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setDefaultRoutingStyle('curved');
+                  if (selectedRelationship) {
+                    setRelationships((prev) =>
+                      prev.map((r) =>
+                        r.id === selectedRelationship.id ? { ...r, routingStyle: 'curved' } : r
+                      )
+                    );
+                  }
+                }}
+                className={`p-1.5 rounded-md font-bold transition-all ${
+                  defaultRoutingStyle === 'curved'
+                    ? 'bg-purple-600 text-white'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Curved Bezier Routing"
+              >
+                <Activity className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => {
+                  sound.playClick();
+                  setDefaultRoutingStyle('straight');
+                  if (selectedRelationship) {
+                    setRelationships((prev) =>
+                      prev.map((r) =>
+                        r.id === selectedRelationship.id ? { ...r, routingStyle: 'straight' } : r
+                      )
+                    );
+                  }
+                }}
+                className={`p-1.5 rounded-md font-bold transition-all ${
+                  defaultRoutingStyle === 'straight'
+                    ? 'bg-purple-600 text-white'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Straight Polyline Routing"
+              >
+                <Sliders className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
             <button
-              onClick={() => setZoom((z) => Math.min(1.8, z + 0.1))}
-              className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-300 transition-colors"
+              type="button"
+              onClick={() => setZoom((z) => Math.min(2, z + 0.1))}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
               title="Zoom In"
             >
-              <ZoomIn className="w-4 h-4" />
+              <ZoomIn className="w-3.5 h-3.5" />
             </button>
-            <span className="font-mono text-[11px] font-bold text-slate-400 px-2">
+            <span className="text-[11px] font-mono text-slate-400 px-1">
               {Math.round(zoom * 100)}%
             </span>
             <button
-              onClick={() => setZoom((z) => Math.max(0.5, z - 0.1))}
-              className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-300 transition-colors"
+              type="button"
+              onClick={() => setZoom((z) => Math.max(0.4, z - 0.1))}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
               title="Zoom Out"
             >
-              <ZoomOut className="w-4 h-4" />
+              <ZoomOut className="w-3.5 h-3.5" />
             </button>
             <button
+              type="button"
               onClick={() => {
                 setZoom(1);
                 setPan({ x: 0, y: 0 });
               }}
-              className="p-1.5 rounded-xl hover:bg-slate-800 text-slate-300 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
               title="Reset View"
             >
-              <Maximize2 className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          {/* Canvas Transform Wrapper */}
+          {/* Floating Context Toolbar for Selected Element */}
+          {(selectedEntity || selectedRelationship) && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-900/95 border border-purple-500/40 backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-top-2">
+              {selectedEntity && (
+                <>
+                  <span className="text-xs font-mono font-bold text-purple-300 pr-2 border-r border-slate-800">
+                    {selectedEntity.name}
+                  </span>
+                  <button
+                    onClick={() => handleDuplicateEntity(selectedEntity.id)}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200"
+                    title="Duplicate Entity (Cmd+D)"
+                  >
+                    <Copy className="w-3 h-3 text-purple-400" />
+                    <span>Duplicate</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingEntity(selectedEntity);
+                      setIsEntityModalOpen(true);
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200"
+                  >
+                    <Edit2 className="w-3 h-3 text-blue-400" />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteEntity(selectedEntity.id)}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-semibold"
+                    title="Delete Entity (Delete key)"
+                  >
+                    <Trash2 className="w-3 h-3 text-rose-400" />
+                    <span>Delete</span>
+                  </button>
+                </>
+              )}
+
+              {selectedRelationship && (
+                <>
+                  <span className="text-xs font-mono font-bold text-purple-300 pr-2 border-r border-slate-800">
+                    {selectedRelationship.name}
+                  </span>
+                  <button
+                    onClick={() => handleAddWaypoint(selectedRelationship.id)}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200"
+                    title="Split Arrow / Add Angle Waypoint"
+                  >
+                    <Scissors className="w-3 h-3 text-pink-400" />
+                    <span>Add Angle</span>
+                  </button>
+                  <button
+                    onClick={() => handleReverseRelationship(selectedRelationship.id)}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200"
+                    title="Reverse Arrow Direction"
+                  >
+                    <RotateCcw className="w-3 h-3 text-cyan-400" />
+                    <span>Reverse</span>
+                  </button>
+                  <button
+                    onClick={() => handleDuplicateRelationship(selectedRelationship.id)}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200"
+                    title="Duplicate Arrow (Cmd+D)"
+                  >
+                    <Copy className="w-3 h-3 text-purple-400" />
+                    <span>Duplicate</span>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteRelationship(selectedRelationship.id)}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs font-semibold"
+                    title="Delete Arrow (Delete key)"
+                  >
+                    <Trash2 className="w-3 h-3 text-rose-400" />
+                    <span>Delete</span>
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Transformed Canvas Container */}
           <div
-            className="w-full h-full absolute inset-0 origin-top-left"
+            className="absolute inset-0 origin-top-left pointer-events-none"
             style={{
               transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
             }}
           >
-            {/* SVG Connecting Relationships Layer */}
+            {/* SVG Wire Layer */}
             {renderRelationshipsSvg()}
 
-            {/* Entity Table Cards Layer */}
+            {/* Entity & Component Cards Layer */}
             {entities.map((entity) => {
               const isSelected = selectedEntityId === entity.id;
 
@@ -1125,34 +2158,67 @@ export const ERDStudio: React.FC = () => {
                   key={entity.id}
                   style={{
                     transform: `translate(${entity.x}px, ${entity.y}px)`,
-                    borderColor: isSelected ? entity.color || '#8b5cf6' : '#334155',
+                    width: 240,
                   }}
                   onMouseDown={(e) => startDraggingEntity(e, entity)}
-                  className={`absolute w-[240px] rounded-2xl bg-slate-900/95 border-2 shadow-xl backdrop-blur-md transition-shadow select-none group cursor-move ${
-                    isSelected ? 'ring-4 ring-purple-500/20 shadow-2xl' : 'hover:border-slate-600'
+                  onMouseUp={(e) => {
+                    if (connectingFrom || relinking) {
+                      const firstAttrId = entity.attributes[0]?.id || 'att_default';
+                      handleDropOnPort(e, entity.id, firstAttrId);
+                    }
+                  }}
+                  className={`absolute top-0 left-0 pointer-events-auto rounded-2xl bg-slate-900/95 border transition-shadow backdrop-blur-xl ${
+                    isSelected
+                      ? 'border-purple-400 shadow-xl shadow-purple-500/20 ring-2 ring-purple-500/30'
+                      : 'border-slate-800 hover:border-slate-700 shadow-lg'
                   }`}
                 >
-                  {/* Entity Header */}
+                  {/* Entity / Component Header */}
                   <div
-                    className="p-2.5 rounded-t-[14px] flex items-center justify-between border-b border-slate-800/80"
-                    style={{ backgroundColor: `${entity.color || '#8b5cf6'}20` }}
+                    className="px-3 py-2.5 border-b border-slate-800 rounded-t-2xl flex items-center justify-between gap-1"
+                    style={{
+                      borderTop: `3px solid ${entity.color || '#8b5cf6'}`,
+                    }}
                   >
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <Database
-                        className="w-3.5 h-3.5 shrink-0"
-                        style={{ color: entity.color || '#8b5cf6' }}
-                      />
-                      <span className="font-bold text-xs text-white truncate font-mono">
-                        {entity.name}
-                      </span>
-                      {entity.isWeak && (
-                        <span className="text-[9px] px-1 py-0.2 rounded bg-pink-500/20 text-pink-300 font-mono font-bold">
-                          Weak
-                        </span>
+                      {entity.nodeType === 'gateway' ? (
+                        <Zap className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                      ) : entity.nodeType === 'queue' ? (
+                        <Activity className="w-3.5 h-3.5 text-pink-400 shrink-0" />
+                      ) : entity.nodeType === 'database' ? (
+                        <Database className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      ) : entity.nodeType === 'cache' ? (
+                        <Cpu className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                      ) : entity.nodeType === 'uml_class' ? (
+                        <Boxes className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                      ) : (
+                        <Database className="w-3.5 h-3.5 text-purple-400 shrink-0" />
                       )}
+
+                      <div className="min-w-0">
+                        {entity.stereotype && (
+                          <span className="text-[9px] font-mono text-slate-400 block leading-tight">
+                            {entity.stereotype}
+                          </span>
+                        )}
+                        <span className="font-mono text-xs font-bold text-white truncate block">
+                          {entity.name}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDuplicateEntity(entity.id);
+                        }}
+                        className="p-1 rounded-md text-slate-400 hover:text-purple-300 hover:bg-slate-800"
+                        title="Duplicate"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -1160,8 +2226,8 @@ export const ERDStudio: React.FC = () => {
                           setEditingEntity(entity);
                           setIsEntityModalOpen(true);
                         }}
-                        className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                        title="Edit Entity Properties"
+                        className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-800"
+                        title="Edit"
                       >
                         <Edit2 className="w-3 h-3" />
                       </button>
@@ -1171,13 +2237,24 @@ export const ERDStudio: React.FC = () => {
                           e.stopPropagation();
                           handleDeleteEntity(entity.id);
                         }}
-                        className="p-1 rounded-md text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors"
-                        title="Delete Entity"
+                        className="p-1 rounded-md text-slate-400 hover:text-rose-400 hover:bg-slate-800"
+                        title="Delete"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </div>
                   </div>
+
+                  {/* Distributed Systems Telemetry Badge (If Available) */}
+                  {entity.metrics && (
+                    <div className="px-3 py-1 bg-slate-950/70 border-b border-slate-800/80 flex items-center justify-between text-[10px] font-mono">
+                      <div className="flex items-center gap-1 text-emerald-400">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>{entity.metrics.rps || 'Healthy'}</span>
+                      </div>
+                      <span className="text-slate-400">{entity.metrics.latency}</span>
+                    </div>
+                  )}
 
                   {/* Attributes Column List */}
                   <div className="divide-y divide-slate-800/60 p-1">
@@ -1219,7 +2296,7 @@ export const ERDStudio: React.FC = () => {
                             {attr.dataType.split('(')[0]}
                           </span>
 
-                          {/* Connector Port Circle (Drag or drop to form relationships) */}
+                          {/* Connector Port Circle (Click & Drag to connect) */}
                           <button
                             type="button"
                             onMouseDown={(e) => handleStartConnect(e, entity.id, attr.id)}
@@ -1232,6 +2309,22 @@ export const ERDStudio: React.FC = () => {
                     ))}
                   </div>
 
+                  {/* UML Methods Section (If Present) */}
+                  {entity.methods && entity.methods.length > 0 && (
+                    <div className="border-t border-slate-800/80 p-1 divide-y divide-slate-800/50">
+                      {entity.methods.map((method) => (
+                        <div
+                          key={method.id}
+                          className="px-2 py-1 text-[10px] font-mono text-blue-300 truncate"
+                        >
+                          <span className="text-slate-400">{method.visibility} </span>
+                          <span>{method.name}({method.parameters || ''}): </span>
+                          <span className="text-slate-400">{method.returnType}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Add Column Button at bottom of card */}
                   <div className="p-1.5 pt-0">
                     <button
@@ -1240,10 +2333,10 @@ export const ERDStudio: React.FC = () => {
                         e.stopPropagation();
                         handleOpenAddAttribute(entity.id);
                       }}
-                      className="w-full py-1 rounded-lg border border-dashed border-slate-700 hover:border-purple-500 hover:bg-purple-500/10 text-slate-400 hover:text-purple-300 text-[10px] font-bold transition-all flex items-center justify-center gap-1"
+                      className="w-full py-1 rounded-lg border border-dashed border-slate-700 hover:border-purple-500 hover:bg-purple-500/10 text-slate-400 hover:text-purple-300 text-[10px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <Plus className="w-2.5 h-2.5" />
-                      <span>Add Column</span>
+                      <span>Add Attribute / Port</span>
                     </button>
                   </div>
                 </div>
@@ -1254,7 +2347,6 @@ export const ERDStudio: React.FC = () => {
 
         {/* Right Sidebar: Active Entity & Relationship Property Inspector */}
         <aside className="w-80 border-l border-slate-800 bg-slate-900/95 backdrop-blur-xl p-4 flex flex-col gap-4 overflow-y-auto z-20">
-          
           {/* Inspector Header */}
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
             <div className="flex items-center gap-2">
@@ -1292,6 +2384,53 @@ export const ERDStudio: React.FC = () => {
                 </div>
               </div>
 
+              {/* Routing Style & Angle Controls */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-300 block mb-1.5">
+                  Routing Style &amp; Angles
+                </label>
+                <div className="grid grid-cols-3 gap-1">
+                  {(['orthogonal', 'curved', 'straight'] as RoutingStyle[]).map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => {
+                        sound.playClick();
+                        setRelationships((prev) =>
+                          prev.map((r) =>
+                            r.id === selectedRelationship.id ? { ...r, routingStyle: st } : r
+                          )
+                        );
+                      }}
+                      className={`py-1.5 px-2 rounded-xl text-[10px] font-mono font-bold border capitalize transition-all ${
+                        (selectedRelationship.routingStyle || defaultRoutingStyle) === st
+                          ? 'border-purple-400 bg-purple-600/30 text-white'
+                          : 'border-slate-800 bg-slate-800/40 text-slate-400 hover:border-slate-700'
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    onClick={() => handleAddWaypoint(selectedRelationship.id)}
+                    className="flex-1 py-1.5 rounded-xl border border-dashed border-slate-700 hover:border-purple-400 bg-slate-800/50 hover:bg-purple-500/10 text-xs font-bold text-purple-300 flex items-center justify-center gap-1.5"
+                  >
+                    <Scissors className="w-3 h-3 text-pink-400" />
+                    <span>Split / Add Waypoint</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleReverseRelationship(selectedRelationship.id)}
+                    className="p-1.5 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 hover:text-white"
+                    title="Reverse Arrow Direction"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
               {/* Cardinality Selector */}
               <div>
                 <label className="text-[11px] font-bold text-slate-300 block mb-1.5">
@@ -1317,6 +2456,54 @@ export const ERDStudio: React.FC = () => {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Arrowhead & UML Styles */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-300 block mb-1.5">
+                  Arrowhead Semantics
+                </label>
+                <select
+                  value={selectedRelationship.arrowhead || 'crows_foot'}
+                  onChange={(e) => {
+                    const val = e.target.value as any;
+                    setRelationships((prev) =>
+                      prev.map((r) =>
+                        r.id === selectedRelationship.id ? { ...r, arrowhead: val } : r
+                      )
+                    );
+                  }}
+                  className="w-full px-2.5 py-1.5 rounded-xl border border-slate-700 bg-slate-800 text-xs text-white"
+                >
+                  <option value="crows_foot">Crow&apos;s Foot (Relational)</option>
+                  <option value="uml_arrow">UML Association (Arrow)</option>
+                  <option value="diamond_filled">UML Composition (Filled Diamond ◆)</option>
+                  <option value="diamond_open">UML Aggregation (Open Diamond ◇)</option>
+                  <option value="async_arrow">Async Protocol / Event (Open ➔)</option>
+                </select>
+              </div>
+
+              {/* Protocol / Label Annotation (For Distributed Systems) */}
+              <div>
+                <label className="text-[11px] font-bold text-slate-300 block mb-1">
+                  Protocol / Transport Label
+                </label>
+                <input
+                  type="text"
+                  value={selectedRelationship.protocol || selectedRelationship.label || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setRelationships((prev) =>
+                      prev.map((r) =>
+                        r.id === selectedRelationship.id
+                          ? { ...r, protocol: val, label: val }
+                          : r
+                      )
+                    );
+                  }}
+                  placeholder="e.g. gRPC, REST, Kafka Event"
+                  className="w-full px-2.5 py-1.5 rounded-xl border border-slate-700 bg-slate-800 text-xs text-white font-mono"
+                />
               </div>
 
               {/* M:N Decompose Special Feature */}
@@ -1355,31 +2542,43 @@ export const ERDStudio: React.FC = () => {
                   className="w-full px-2.5 py-1.5 rounded-xl border border-slate-700 bg-slate-800 text-xs text-white"
                 >
                   <option value="CASCADE">CASCADE (Delete children)</option>
-                  <option value="RESTRICT">RESTRICT (Block deletion if children exist)</option>
+                  <option value="RESTRICT">RESTRICT (Block deletion)</option>
                   <option value="SET NULL">SET NULL (Set foreign key to NULL)</option>
                   <option value="NO ACTION">NO ACTION</option>
                 </select>
               </div>
 
-              {/* Delete Relationship */}
-              <button
-                onClick={() => {
-                  sound.playError();
-                  setRelationships((prev) => prev.filter((r) => r.id !== selectedRelationship.id));
-                  setSelectedRelationshipId(null);
-                }}
-                className="w-full py-2 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
-              >
-                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                <span>Disconnect Relationship</span>
-              </button>
+              {/* Actions: Duplicate & Delete */}
+              <div className="space-y-2 pt-2 border-t border-slate-800">
+                <button
+                  onClick={() => handleDuplicateRelationship(selectedRelationship.id)}
+                  className="w-full py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Copy className="w-3.5 h-3.5 text-purple-400" />
+                  <span>Duplicate Connection</span>
+                </button>
+
+                <button
+                  onClick={() => handleDeleteRelationship(selectedRelationship.id)}
+                  className="w-full py-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Disconnect Relationship</span>
+                </button>
+              </div>
             </div>
           ) : selectedEntity ? (
             /* 2. If Entity is Selected */
             <div className="space-y-4">
               <div className="p-3 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-1.5">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Table Schema
+                  {selectedEntity.nodeType === 'uml_class'
+                    ? 'UML Class'
+                    : selectedEntity.nodeType === 'microservice' ||
+                      selectedEntity.nodeType === 'gateway' ||
+                      selectedEntity.nodeType === 'queue'
+                    ? 'Distributed Component'
+                    : 'Table Schema'}
                 </span>
                 <p className="text-sm font-mono font-bold text-white">
                   {selectedEntity.name}
@@ -1393,7 +2592,7 @@ export const ERDStudio: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-bold text-slate-300">
-                    Columns ({selectedEntity.attributes.length})
+                    Attributes / Ports ({selectedEntity.attributes.length})
                   </span>
                   <button
                     onClick={() => handleOpenAddAttribute(selectedEntity.id)}
@@ -1452,22 +2651,30 @@ export const ERDStudio: React.FC = () => {
               {/* Entity Controls */}
               <div className="pt-2 border-t border-slate-800 space-y-2">
                 <button
+                  onClick={() => handleDuplicateEntity(selectedEntity.id)}
+                  className="w-full py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Copy className="w-3.5 h-3.5 text-purple-400" />
+                  <span>Duplicate Architecture Node</span>
+                </button>
+
+                <button
                   onClick={() => {
                     setEditingEntity(selectedEntity);
                     setIsEntityModalOpen(true);
                   }}
-                  className="w-full py-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition-all flex items-center justify-center gap-1.5"
+                  className="w-full py-1.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition-all flex items-center justify-center gap-1.5"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
-                  <span>Edit Table Name &amp; Options</span>
+                  <span>Edit Properties</span>
                 </button>
 
                 <button
                   onClick={() => handleDeleteEntity(selectedEntity.id)}
-                  className="w-full py-2 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                  className="w-full py-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
                 >
                   <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Delete Table</span>
+                  <span>Delete Node</span>
                 </button>
               </div>
             </div>
@@ -1478,15 +2685,21 @@ export const ERDStudio: React.FC = () => {
                 <HelpCircle className="w-6 h-6" />
               </div>
               <p className="text-xs font-medium text-slate-400">
-                Click any Entity card or Relationship connection line on the canvas to inspect and edit its relational constraints.
+                Click any Card or Arrow line to inspect, re-link, or split into angles.
               </p>
               <div className="text-[11px] text-purple-400 bg-purple-500/10 border border-purple-500/20 p-2.5 rounded-xl text-left space-y-1">
                 <p className="font-bold flex items-center gap-1">
                   <Sparkles className="w-3 h-3" />
-                  <span>Quick Tip:</span>
+                  <span>Pro Shortcuts:</span>
                 </p>
                 <p className="text-slate-300">
-                  Drag from any column&apos;s connector circle on Table A and drop onto Table B to visually establish Foreign Key relationships!
+                  • <b>Double Click</b> any arrow to split and add an elbow angle!
+                </p>
+                <p className="text-slate-300">
+                  • <b>Drag endpoints</b> (blue/green circles) to reconnect arrows!
+                </p>
+                <p className="text-slate-300">
+                  • <b>Cmd+D</b> duplicates nodes or connections instantly!
                 </p>
               </div>
             </div>
@@ -1495,15 +2708,19 @@ export const ERDStudio: React.FC = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* MODAL: Create / Edit Entity */}
+      {/* MODAL: Create / Edit Entity or Distributed Component */}
       {/* ========================================================================= */}
       {isEntityModalOpen && editingEntity && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
           <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Database className="w-4 h-4 text-purple-400" />
-                <span>{entities.some((e) => e.id === editingEntity.id) ? 'Edit Entity' : 'Create New Entity'}</span>
+                <Workflow className="w-4 h-4 text-purple-400" />
+                <span>
+                  {entities.some((e) => e.id === editingEntity.id)
+                    ? 'Edit System Node'
+                    : 'Create New Architecture Node'}
+                </span>
               </h3>
               <button
                 onClick={() => setIsEntityModalOpen(false)}
@@ -1516,40 +2733,46 @@ export const ERDStudio: React.FC = () => {
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-bold text-slate-300 block mb-1">
-                  Table Name (SQL Identifier)
+                  Identifier Name
                 </label>
                 <input
                   type="text"
                   value={editingEntity.name}
                   onChange={(e) => setEditingEntity({ ...editingEntity, name: e.target.value })}
-                  placeholder="e.g. students, course_catalog"
+                  placeholder="e.g. OrderService, customers"
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white font-mono outline-hidden focus:border-purple-500"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-bold text-slate-300 block mb-1">
-                  Documentation / Course Note
+                  Stereotype / Tech Badge
+                </label>
+                <input
+                  type="text"
+                  value={editingEntity.stereotype || editingEntity.techBadge || ''}
+                  onChange={(e) =>
+                    setEditingEntity({
+                      ...editingEntity,
+                      stereotype: e.target.value,
+                      techBadge: e.target.value,
+                    })
+                  }
+                  placeholder="e.g. <<service>>, Envoy, Kafka, Redis"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white font-mono outline-hidden focus:border-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300 block mb-1">
+                  Architecture Description
                 </label>
                 <textarea
                   value={editingEntity.comment || ''}
                   onChange={(e) => setEditingEntity({ ...editingEntity, comment: e.target.value })}
-                  placeholder="Description of the entity and its real-world domain role..."
+                  placeholder="Description of the component role in the distributed system..."
                   rows={2}
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white outline-hidden focus:border-purple-500"
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/60 border border-slate-700/60">
-                <div>
-                  <span className="text-xs font-bold text-white block">Weak Entity</span>
-                  <span className="text-[10px] text-slate-400">Depends on parent entity for identification</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={editingEntity.isWeak || false}
-                  onChange={(e) => setEditingEntity({ ...editingEntity, isWeak: e.target.checked })}
-                  className="w-4 h-4 accent-purple-600 rounded"
                 />
               </div>
 
@@ -1558,7 +2781,7 @@ export const ERDStudio: React.FC = () => {
                   Header Accent Color
                 </label>
                 <div className="flex items-center gap-2">
-                  {['#8b5cf6', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899'].map((c) => (
+                  {['#8b5cf6', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#f97316'].map((c) => (
                     <button
                       key={c}
                       type="button"
@@ -1586,7 +2809,7 @@ export const ERDStudio: React.FC = () => {
                 onClick={handleSaveEntity}
                 className="flex-1 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md shadow-purple-600/30"
               >
-                Save Entity
+                Save Node
               </button>
             </div>
           </div>
@@ -1594,7 +2817,7 @@ export const ERDStudio: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL: Create / Edit Attribute */}
+      {/* MODAL: Create / Edit Attribute Column */}
       {/* ========================================================================= */}
       {isAttributeModalOpen && editingAttribute && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
@@ -1602,7 +2825,7 @@ export const ERDStudio: React.FC = () => {
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Code className="w-4 h-4 text-purple-400" />
-                <span>Column Specification</span>
+                <span>Attribute / Port Specification</span>
               </h3>
               <button
                 onClick={() => setIsAttributeModalOpen(false)}
@@ -1615,87 +2838,61 @@ export const ERDStudio: React.FC = () => {
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-bold text-slate-300 block mb-1">
-                  Column Name
+                  Attribute / Port Name
                 </label>
                 <input
                   type="text"
                   value={editingAttribute.name}
                   onChange={(e) => setEditingAttribute({ ...editingAttribute, name: e.target.value })}
-                  placeholder="e.g. student_id, first_name"
+                  placeholder="e.g. user_id, port_8080"
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white font-mono outline-hidden focus:border-purple-500"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-bold text-slate-300 block mb-1">
-                  Data Type
+                  Type Definition
                 </label>
-                <select
+                <input
+                  type="text"
                   value={editingAttribute.dataType}
-                  onChange={(e) => setEditingAttribute({ ...editingAttribute, dataType: e.target.value as any })}
+                  onChange={(e) => setEditingAttribute({ ...editingAttribute, dataType: e.target.value })}
+                  placeholder="e.g. INT, VARCHAR(255), UUID, HTTPS, gRPC"
                   className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white font-mono"
-                >
-                  <option value="INT">INT (Integer)</option>
-                  <option value="BIGINT">BIGINT (Large Integer)</option>
-                  <option value="VARCHAR(100)">VARCHAR(100) (Short Text)</option>
-                  <option value="VARCHAR(255)">VARCHAR(255) (Standard String)</option>
-                  <option value="TEXT">TEXT (Long Text)</option>
-                  <option value="BOOLEAN">BOOLEAN (True / False)</option>
-                  <option value="DECIMAL(10,2)">DECIMAL(10,2) (Financial / Precision)</option>
-                  <option value="DATE">DATE (Calendar Day)</option>
-                  <option value="TIMESTAMP">TIMESTAMP (Date &amp; Time)</option>
-                  <option value="UUID">UUID (Global Identifier)</option>
-                </select>
+                />
               </div>
 
-              {/* Constraint Checkboxes */}
               <div className="space-y-2 pt-1">
                 <label className="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 cursor-pointer">
                   <div className="flex items-center gap-2">
                     <Key className="w-4 h-4 text-amber-400" />
                     <div>
-                      <span className="text-xs font-bold text-white block">Primary Key (PK)</span>
-                      <span className="text-[10px] text-slate-400">Uniquely identifies table records</span>
+                      <span className="text-xs font-bold text-white block">Primary Identifier</span>
+                      <span className="text-[10px] text-slate-400">Primary Key or Main Gateway Port</span>
                     </div>
                   </div>
                   <input
                     type="checkbox"
                     checked={editingAttribute.isPrimaryKey}
-                    onChange={(e) => {
-                      const checked = e.target.checked;
+                    onChange={(e) =>
                       setEditingAttribute({
                         ...editingAttribute,
-                        isPrimaryKey: checked,
-                        isNullable: checked ? false : editingAttribute.isNullable,
-                        isUnique: checked ? true : editingAttribute.isUnique,
-                      });
-                    }}
+                        isPrimaryKey: e.target.checked,
+                      })
+                    }
                     className="w-4 h-4 accent-amber-500 rounded"
                   />
                 </label>
 
                 <label className="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 cursor-pointer">
                   <div>
-                    <span className="text-xs font-bold text-white block">NOT NULL</span>
-                    <span className="text-[10px] text-slate-400">Attribute value cannot be empty</span>
+                    <span className="text-xs font-bold text-white block">NOT NULL / Required</span>
+                    <span className="text-[10px] text-slate-400">Mandatory attribute value</span>
                   </div>
                   <input
                     type="checkbox"
                     checked={!editingAttribute.isNullable}
                     onChange={(e) => setEditingAttribute({ ...editingAttribute, isNullable: !e.target.checked })}
-                    className="w-4 h-4 accent-purple-600 rounded"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/60 border border-slate-700/60 cursor-pointer">
-                  <div>
-                    <span className="text-xs font-bold text-white block">UNIQUE</span>
-                    <span className="text-[10px] text-slate-400">Enforces distinct values across all rows</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={editingAttribute.isUnique}
-                    onChange={(e) => setEditingAttribute({ ...editingAttribute, isUnique: e.target.checked })}
                     className="w-4 h-4 accent-purple-600 rounded"
                   />
                 </label>
@@ -1715,7 +2912,7 @@ export const ERDStudio: React.FC = () => {
                 onClick={handleSaveAttribute}
                 className="flex-1 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md shadow-purple-600/30"
               >
-                Apply Column
+                Apply Attribute
               </button>
             </div>
           </div>
@@ -1723,63 +2920,140 @@ export const ERDStudio: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL: View & Export Generated SQL DDL */}
+      {/* SOTA EXPORT MODAL: SQL DDL, PlantUML, Mermaid.js & JSON */}
       {/* ========================================================================= */}
-      {showSqlDdlModal && (
+      {showExportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 max-h-[85vh] flex flex-col">
+          <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
                   <Code className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-white">Generated Relational SQL DDL</h3>
-                  <p className="text-xs text-slate-400">Standard DDL with Foreign Key constraints &amp; cascading rules</p>
+                  <h3 className="text-base font-bold text-white">Universal Architecture Export</h3>
+                  <p className="text-xs text-slate-400">Export as SQL DDL, PlantUML, Mermaid diagram, or JSON schema</p>
                 </div>
               </div>
               <button
-                onClick={() => setShowSqlDdlModal(false)}
+                onClick={() => setShowExportModal(false)}
                 className="text-slate-400 hover:text-white"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
+            {/* Export Format Selector Tabs */}
+            <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+              <button
+                onClick={() => setExportTab('sql')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  exportTab === 'sql'
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'bg-slate-800 text-slate-400 hover:text-white'
+                }`}
+              >
+                📜 SQL DDL
+              </button>
+              <button
+                onClick={() => setExportTab('plantuml')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  exportTab === 'plantuml'
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'bg-slate-800 text-slate-400 hover:text-white'
+                }`}
+              >
+                🌿 PlantUML
+              </button>
+              <button
+                onClick={() => setExportTab('mermaid')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  exportTab === 'mermaid'
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'bg-slate-800 text-slate-400 hover:text-white'
+                }`}
+              >
+                📊 Mermaid.js
+              </button>
+              <button
+                onClick={() => setExportTab('json')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  exportTab === 'json'
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'bg-slate-800 text-slate-400 hover:text-white'
+                }`}
+              >
+                💾 JSON Spec
+              </button>
+            </div>
+
             {/* Code Block Viewer */}
-            <div className="flex-1 overflow-y-auto rounded-2xl bg-black/60 p-4 border border-slate-800 font-mono text-xs text-purple-200 select-text leading-relaxed">
-              <pre>{generatedSqlDdl}</pre>
+            <div className="flex-1 overflow-y-auto rounded-2xl bg-black/70 p-4 border border-slate-800 font-mono text-xs text-purple-200 select-text leading-relaxed">
+              <pre>
+                {exportTab === 'sql'
+                  ? generatedSqlDdl
+                  : exportTab === 'plantuml'
+                  ? generatedPlantUml
+                  : exportTab === 'mermaid'
+                  ? generatedMermaid
+                  : generatedJson}
+              </pre>
             </div>
 
             {/* Modal Bottom Actions */}
             <div className="flex items-center justify-between shrink-0 pt-2">
               <span className="text-[11px] text-slate-500 font-mono">
-                {entities.length} Tables • {relationships.length} Relational Constraints
+                {entities.length} Nodes • {relationships.length} Architectural Connections
               </span>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={handleCopySql}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 transition-all"
+                  onClick={() => {
+                    const content =
+                      exportTab === 'sql'
+                        ? generatedSqlDdl
+                        : exportTab === 'plantuml'
+                        ? generatedPlantUml
+                        : exportTab === 'mermaid'
+                        ? generatedMermaid
+                        : generatedJson;
+                    const ext =
+                      exportTab === 'sql'
+                        ? 'schema.sql'
+                        : exportTab === 'plantuml'
+                        ? 'architecture.puml'
+                        : exportTab === 'mermaid'
+                        ? 'diagram.mmd'
+                        : 'architecture.json';
+                    handleDownloadExport(content, ext);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition-all"
                 >
-                  {sqlCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{sqlCopied ? 'Copied!' : 'Copy SQL'}</span>
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download</span>
                 </button>
+
                 <button
                   onClick={() => {
-                    handlePushToSqlLab();
-                    setShowSqlDdlModal(false);
+                    const content =
+                      exportTab === 'sql'
+                        ? generatedSqlDdl
+                        : exportTab === 'plantuml'
+                        ? generatedPlantUml
+                        : exportTab === 'mermaid'
+                        ? generatedMermaid
+                        : generatedJson;
+                    handleCopyExportCode(content);
                   }}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/30 transition-all"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md shadow-purple-600/30 transition-all"
                 >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>Execute in SQL Lab</span>
+                  {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedCode ? 'Copied!' : 'Copy Code'}</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 };

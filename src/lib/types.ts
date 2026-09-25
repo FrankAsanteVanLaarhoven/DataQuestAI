@@ -146,6 +146,40 @@ export type ErdCardinality = '1:1' | '1:N' | 'N:1' | 'M:N';
 export type ErdModality = 'mandatory' | 'optional';
 export type ErdNotation = 'crows_foot' | 'chen' | 'uml';
 
+export type DiagramNodeType =
+  | 'entity'
+  | 'uml_class'
+  | 'microservice'
+  | 'gateway'
+  | 'queue'
+  | 'database'
+  | 'cache'
+  | 'external';
+
+export type RoutingStyle = 'orthogonal' | 'curved' | 'straight';
+export type LineStyle = 'solid' | 'dashed' | 'dotted';
+export type ArrowheadType =
+  | 'crows_foot'
+  | 'uml_arrow'
+  | 'diamond_filled'
+  | 'diamond_open'
+  | 'async_arrow'
+  | 'none';
+
+export interface ERDWaypoint {
+  id: string;
+  x: number;
+  y: number;
+}
+
+export interface ERDMethod {
+  id: string;
+  name: string;
+  returnType: string;
+  visibility: '+' | '-' | '#';
+  parameters?: string;
+}
+
 export interface ERDAttribute {
   id: string;
   name: string;
@@ -159,7 +193,8 @@ export interface ERDAttribute {
     | 'DECIMAL(10,2)'
     | 'DATE'
     | 'TIMESTAMP'
-    | 'UUID';
+    | 'UUID'
+    | string;
   isPrimaryKey: boolean;
   isForeignKey?: boolean;
   isNullable: boolean;
@@ -182,6 +217,16 @@ export interface ERDEntity {
   color?: string;
   isWeak?: boolean;
   attributes: ERDAttribute[];
+  // SOTA UML & Distributed Systems
+  nodeType?: DiagramNodeType;
+  stereotype?: string; // e.g. '<<interface>>', '<<service>>', '<<kafka>>'
+  methods?: ERDMethod[]; // For UML Class diagrams
+  techBadge?: string; // e.g. 'Go', 'Kafka', 'Redis', 'Postgres', 'gRPC'
+  metrics?: {
+    rps?: string;
+    latency?: string;
+    status?: 'healthy' | 'degraded' | 'syncing';
+  };
 }
 
 export interface ERDRelationship {
@@ -197,5 +242,13 @@ export interface ERDRelationship {
   isIdentifying?: boolean;
   onDelete?: 'CASCADE' | 'SET NULL' | 'RESTRICT' | 'NO ACTION';
   onUpdate?: 'CASCADE' | 'RESTRICT';
+  // SOTA UML & Distributed Systems Routing & Waypoints
+  waypoints?: ERDWaypoint[];
+  routingStyle?: RoutingStyle;
+  lineStyle?: LineStyle;
+  arrowhead?: ArrowheadType;
+  label?: string;
+  protocol?: string; // e.g. 'REST (HTTPS)', 'gRPC', 'Async Event (Kafka)', 'SQL Query'
+  color?: string;
 }
 
