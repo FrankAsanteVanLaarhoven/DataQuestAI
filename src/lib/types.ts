@@ -137,3 +137,65 @@ export interface LeaderboardUser {
   badgesCount: number;
   solvedCapstones: number;
 }
+
+// ---------------------------------------------------------------------------
+// Entity-Relationship Diagram (ERD) Domain Model (CSC1033 Course Aligned)
+// ---------------------------------------------------------------------------
+
+export type ErdCardinality = '1:1' | '1:N' | 'N:1' | 'M:N';
+export type ErdModality = 'mandatory' | 'optional';
+export type ErdNotation = 'crows_foot' | 'chen' | 'uml';
+
+export interface ERDAttribute {
+  id: string;
+  name: string;
+  dataType:
+    | 'INT'
+    | 'BIGINT'
+    | 'VARCHAR(100)'
+    | 'VARCHAR(255)'
+    | 'TEXT'
+    | 'BOOLEAN'
+    | 'DECIMAL(10,2)'
+    | 'DATE'
+    | 'TIMESTAMP'
+    | 'UUID';
+  isPrimaryKey: boolean;
+  isForeignKey?: boolean;
+  isNullable: boolean;
+  isUnique: boolean;
+  comment?: string;
+  references?: {
+    entityId: string;
+    attributeId: string;
+    tableName?: string;
+    columnName?: string;
+  };
+}
+
+export interface ERDEntity {
+  id: string;
+  name: string;
+  comment?: string;
+  x: number;
+  y: number;
+  color?: string;
+  isWeak?: boolean;
+  attributes: ERDAttribute[];
+}
+
+export interface ERDRelationship {
+  id: string;
+  name: string;
+  fromEntityId: string;
+  fromAttributeId: string;
+  toEntityId: string;
+  toAttributeId: string;
+  cardinality: ErdCardinality;
+  fromModality?: ErdModality;
+  toModality?: ErdModality;
+  isIdentifying?: boolean;
+  onDelete?: 'CASCADE' | 'SET NULL' | 'RESTRICT' | 'NO ACTION';
+  onUpdate?: 'CASCADE' | 'RESTRICT';
+}
+

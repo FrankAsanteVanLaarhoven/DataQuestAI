@@ -106,7 +106,7 @@ export const INITIAL_COMPETENCIES: CompetencyBadge[] = [
 
 interface AppState {
   // Navigation & User
-  activeTab: 'capstone' | 'missions' | 'learn' | 'analytics' | 'community' | 'leaderboard' | 'teacher' | 'university' | 'super_admin';
+  activeTab: 'capstone' | 'missions' | 'learn' | 'analytics' | 'community' | 'leaderboard' | 'teacher' | 'university' | 'super_admin' | 'erd';
   setActiveTab: (tab: AppState['activeTab']) => void;
   hintCount?: number;
   user: {

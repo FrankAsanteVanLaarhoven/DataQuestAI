@@ -9,6 +9,7 @@ import { RatingModal } from './RatingModal';
 import { ShareModal } from './ShareModal';
 import { UserAvatar } from './UserAvatar';
 import {
+  Network,
   Database,
   Flame,
   Star,
@@ -254,6 +255,20 @@ export const Header: React.FC = () => {
               <span>{t.learn}</span>
               <span className="text-[9px] px-1.5 py-0.2 rounded-sm bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 font-bold border border-purple-200/50 dark:border-purple-800/50">
                 Course
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('erd')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'erd'
+                  ? 'bg-purple-600 text-white shadow-xs font-semibold'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-white'
+              }`}
+            >
+              <Network className="w-3.5 h-3.5 opacity-80" />
+              <span>ER Diagram</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded-sm bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 font-bold border border-purple-200/50 dark:border-purple-800/50">
+                Studio
               </span>
             </button>
             <button

@@ -1484,3 +1484,4 @@ export class SqlLabEngine {
 
 // Global Singleton Instance
 export const realSqlLabEngine = new SqlLabEngine();
+export const sqlLabEngine = realSqlLabEngine;

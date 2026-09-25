@@ -20,6 +20,7 @@ import {
   Table,
   CheckCircle2,
   Sparkles,
+  Network,
 } from 'lucide-react';
 
 interface ToolboxItem {
@@ -49,7 +50,7 @@ const toolboxItems: ToolboxItem[] = [
 ];
 
 export const ConceptToolbox: React.FC = () => {
-  const { addNodeToCanvas, language } = useAppStore();
+  const { addNodeToCanvas, language, setActiveTab } = useAppStore();
   const t = translations[language] || translations.en;
 
   const handleDragStart = (e: React.DragEvent, item: ToolboxItem) => {
@@ -73,9 +74,20 @@ export const ConceptToolbox: React.FC = () => {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.05] dark:border-white/[0.06] text-[10px] font-medium text-zinc-600 dark:text-zinc-300">
-          <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-          15 Architecture Primitives
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('erd')}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-700 dark:text-purple-300 text-[10px] font-bold transition-all shadow-2xs cursor-pointer"
+            title="Launch Full Interactive Entity-Relationship Diagram Studio"
+          >
+            <Network className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+            <span>Open ERD Studio</span>
+          </button>
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.05] dark:border-white/[0.06] text-[10px] font-medium text-zinc-600 dark:text-zinc-300">
+            <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
+            15 Architecture Primitives
+          </div>
         </div>
       </div>
 

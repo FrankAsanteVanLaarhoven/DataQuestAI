@@ -17,6 +17,7 @@ import { AnalyticsView } from '@/components/AnalyticsView';
 import { TeacherStudio } from '@/components/TeacherStudio';
 import { SuperAdminConsole } from '@/components/SuperAdminConsole';
 import { DigitalUniversitySimulation } from '@/components/DigitalUniversitySimulation';
+import { ERDStudio } from '@/components/ERDStudio';
 import { EnterpriseSplashScreen } from '@/components/EnterpriseSplashScreen';
 import { translations, languages } from '@/lib/i18n';
 import {
@@ -175,6 +176,7 @@ export default function HomePage() {
         )}
 
         {activeTab === 'missions' && <MissionsView />}
+        {activeTab === 'erd' && <ERDStudio />}
         {activeTab === 'learn' && <LearnRoadmap />}
         {activeTab === 'analytics' && <AnalyticsView />}
         {activeTab === 'community' && <CommunityGallery />}
