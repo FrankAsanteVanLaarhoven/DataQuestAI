@@ -115,7 +115,7 @@ export const Header: React.FC = () => {
   const t = translations[language] || translations.en;
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
 
-  // Restore authenticated session from token or local storage
+  // Restore authenticated session strictly from verified cryptographic session token
   useEffect(() => {
     let isMounted = true;
     const restoreSession = async () => {
@@ -134,20 +134,17 @@ export const Header: React.FC = () => {
           if (isMounted && res.ok && data.valid && data.user) {
             setUser(data.user);
             return;
-          } else if (res.status === 401) {
+          } else {
+            // Token is invalid or expired: purge both token and cached user to prevent unauthorized auto-login
             localStorage.removeItem('dataquest_session_token');
+            localStorage.removeItem('dataquest_user');
           }
-        }
-
-        const saved = localStorage.getItem('dataquest_user');
-        if (saved && isMounted) {
-          const parsed = JSON.parse(saved);
-          if (parsed && parsed.email) {
-            setUser(parsed);
-          }
+        } else {
+          // No session token present: purge any stale cached user
+          localStorage.removeItem('dataquest_user');
         }
       } catch (err) {
-        console.warn('Session restoration skipped:', err);
+        console.warn('Session verification skipped:', err);
       }
     };
 
@@ -324,28 +321,22 @@ export const Header: React.FC = () => {
                 </span>
               )}
             </button>
-            <button
-              onClick={() => setActiveTab('super_admin')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === 'super_admin'
-                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-xs font-semibold'
-                  : user?.role === 'super_admin'
-                  ? 'text-amber-400 hover:text-amber-300 font-semibold'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-white'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-              <span>Super Admin</span>
-              {user?.role === 'super_admin' ? (
+            {user?.role === 'super_admin' && (
+              <button
+                onClick={() => setActiveTab('super_admin')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  activeTab === 'super_admin'
+                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-xs font-semibold'
+                    : 'text-amber-400 hover:text-amber-300 font-semibold'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                <span>Super Admin</span>
                 <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/30 text-amber-300 font-bold border border-amber-500/40 font-mono">
                   👑 Frank
                 </span>
-              ) : (
-                <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-200 dark:bg-zinc-800 text-zinc-500 font-mono">
-                  🔒
-                </span>
-              )}
-            </button>
+              </button>
+            )}
           </nav>
 
           {/* User Profile, XP, Streaks & Virality Controls */}
@@ -832,7 +823,7 @@ export const Header: React.FC = () => {
             </button>
 
             {/* Auth Action Buttons */}
-            {(!user.email || user.email === 'guest@dataquest.internal' || user.id === 'usr_guest_demo') ? (
+            {(!user.email || user.email.includes('guest') || user.id?.startsWith('usr_guest_') || user.id === 'usr_guest_demo') ? (
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => {
