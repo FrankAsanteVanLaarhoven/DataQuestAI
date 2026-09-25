@@ -218,6 +218,7 @@ export const Header: React.FC = () => {
 
           {/* Primary Navigation Links */}
           <nav className="hidden lg:flex items-center gap-1 bg-zinc-200/50 dark:bg-white/[0.05] p-1 rounded-xl border border-zinc-300/40 dark:border-white/[0.06] backdrop-blur-md">
+            {/* 1. Home / Overview */}
             <button
               onClick={() => setActiveTab('capstone')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
@@ -229,17 +230,8 @@ export const Header: React.FC = () => {
               <Home className="w-3.5 h-3.5 opacity-80" />
               {t.home}
             </button>
-            <button
-              onClick={() => setActiveTab('missions')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === 'missions'
-                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white shadow-xs font-semibold'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-white'
-              }`}
-            >
-              <Compass className="w-3.5 h-3.5 opacity-80" />
-              {t.missions}
-            </button>
+
+            {/* 2. Learn / Curriculum */}
             <button
               onClick={() => setActiveTab('learn')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
@@ -254,6 +246,8 @@ export const Header: React.FC = () => {
                 Course
               </span>
             </button>
+
+            {/* 3. ER Diagram / Schema Modeling */}
             <button
               onClick={() => setActiveTab('erd')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
@@ -268,39 +262,21 @@ export const Header: React.FC = () => {
                 Studio
               </span>
             </button>
+
+            {/* 4. Missions / Interactive Capstones */}
             <button
-              onClick={() => setActiveTab('analytics')}
+              onClick={() => setActiveTab('missions')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === 'analytics'
+                activeTab === 'missions'
                   ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white shadow-xs font-semibold'
                   : 'text-zinc-600 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-white'
               }`}
             >
-              <BarChart3 className="w-3.5 h-3.5 opacity-80" />
-              {t.analytics}
+              <Compass className="w-3.5 h-3.5 opacity-80" />
+              {t.missions}
             </button>
-            <button
-              onClick={() => setActiveTab('community')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === 'community'
-                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white shadow-xs font-semibold'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-white'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5 opacity-80" />
-              {t.community}
-            </button>
-            <button
-              onClick={() => setActiveTab('leaderboard')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === 'leaderboard'
-                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white shadow-xs font-semibold'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-white'
-              }`}
-            >
-              <Award className="w-3.5 h-3.5 opacity-80" />
-              {t.leaderboard}
-            </button>
+
+            {/* 5. Campus Sim / Live System Simulation */}
             <button
               onClick={() => setActiveTab('university')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
@@ -315,6 +291,47 @@ export const Header: React.FC = () => {
                 Live
               </span>
             </button>
+
+            {/* 6. Analytics / Telemetry & Query Plans */}
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'analytics'
+                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white shadow-xs font-semibold'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-white'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5 opacity-80" />
+              {t.analytics}
+            </button>
+
+            {/* 7. Community / Shared Architectures */}
+            <button
+              onClick={() => setActiveTab('community')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'community'
+                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white shadow-xs font-semibold'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-white'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5 opacity-80" />
+              {t.community}
+            </button>
+
+            {/* 8. Leaderboard / Achievements & Standing */}
+            <button
+              onClick={() => setActiveTab('leaderboard')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'leaderboard'
+                  ? 'bg-white dark:bg-zinc-800 text-slate-950 dark:text-white shadow-xs font-semibold'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-slate-950 dark:hover:text-white'
+              }`}
+            >
+              <Award className="w-3.5 h-3.5 opacity-80" />
+              {t.leaderboard}
+            </button>
+
+            {/* 9. Teacher / Educator Studio */}
             <button
               onClick={() => setActiveTab('teacher')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
@@ -333,6 +350,8 @@ export const Header: React.FC = () => {
                 </span>
               )}
             </button>
+
+            {/* 10. Super Admin Command Center (Privileged) */}
             {user?.role === 'super_admin' && (
               <button
                 onClick={() => setActiveTab('super_admin')}
