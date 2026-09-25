@@ -305,17 +305,9 @@ export const EnterpriseSplashScreen: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="font-mono font-bold tracking-wider text-[11px] text-emerald-400">
-              CORE SYSTEM: NOMINAL
+              SYSTEM ONLINE
             </span>
           </div>
-          <span className="hidden md:inline text-zinc-600">|</span>
-          <span className="hidden md:inline font-mono text-[10px] text-zinc-400 tracking-wider">
-            RESTRICTED ARCHITECTURE // CSC1033 SPECIFICATION
-          </span>
-          <span className="hidden lg:inline text-zinc-600">|</span>
-          <span className="hidden lg:inline font-mono text-[10px] text-zinc-400">
-            ISOLATION: WAL SANDBOX [NODE-ALPHA-01]
-          </span>
         </div>
 
         <div className="flex items-center gap-3">
@@ -358,7 +350,7 @@ export const EnterpriseSplashScreen: React.FC = () => {
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-md">
               <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
               <span className="font-mono text-[10px] uppercase tracking-widest text-indigo-300 font-bold">
-                Autonomous Relational Intelligence • CSC1033 Standard
+                Autonomous Relational Intelligence
               </span>
             </div>
 
@@ -789,7 +781,7 @@ export const EnterpriseSplashScreen: React.FC = () => {
         </div>
 
         <div className="font-mono text-[10px] text-slate-500">
-          CONFIDENTIAL & PROPRIETARY // CSC1033 DATABASE TOPICS
+          CONFIDENTIAL & PROPRIETARY // DATAQUEST AI
         </div>
       </footer>
     </div>

@@ -193,9 +193,6 @@ export const Header: React.FC = () => {
                 <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
                   DataQuest
                 </span>
-                <span className="px-1.5 py-0.5 text-[9px] font-mono font-semibold uppercase tracking-wider rounded-md bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60" title="Aligned to CSC1033 Learning Topics">
-                  CSC1033 Topics
-                </span>
                 <span className="px-1.5 py-0.5 text-[9px] font-mono font-semibold rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
                   SQL Lab
                 </span>

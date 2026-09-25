@@ -953,7 +953,7 @@ export const ERDStudio: React.FC = () => {
                 ER Diagram Studio
               </h1>
               <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/10 text-purple-300 border border-purple-500/20 font-mono">
-                CSC1033 Standard
+                Relational Canvas
               </span>
               <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
                 Full CRUD
@@ -979,11 +979,11 @@ export const ERDStudio: React.FC = () => {
                 setRelationships(csc1033UniversityTemplate.relationships);
                 setSelectedEntityId(null);
                 setSelectedRelationshipId(null);
-                awardXp(15, 'Loaded CSC1033 University ERD');
+                awardXp(15, 'Loaded Academic Registry ERD');
               }}
               className="px-2.5 py-1 rounded-lg font-semibold hover:bg-slate-700 text-slate-200 transition-all text-xs"
             >
-              🎓 CSC1033 University
+              🎓 Academic Registry
             </button>
             <button
               onClick={() => {
