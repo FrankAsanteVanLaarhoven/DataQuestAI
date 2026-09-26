@@ -31,7 +31,8 @@ export async function GET() {
       recentReviews,
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('Feedback query error:', err.message);
+    return NextResponse.json({ error: 'Failed to retrieve feedback stats.' }, { status: 500 });
   }
 }
 
@@ -112,6 +113,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ error: 'Invalid feedback action specified.' }, { status: 400 });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('Feedback submission error:', err.message);
+    return NextResponse.json({ error: 'Failed to process feedback action.' }, { status: 500 });
   }
 }

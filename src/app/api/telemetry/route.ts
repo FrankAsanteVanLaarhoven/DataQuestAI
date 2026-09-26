@@ -92,7 +92,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, eventId });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('Telemetry ingestion error:', err.message);
+    return NextResponse.json({ error: 'Failed to record telemetry.' }, { status: 500 });
   }
 }
 
@@ -118,6 +119,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ success: true, events: recent });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('Telemetry query error:', err.message);
+    return NextResponse.json({ error: 'Failed to retrieve telemetry stream.' }, { status: 500 });
   }
 }

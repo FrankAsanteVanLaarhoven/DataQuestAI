@@ -95,7 +95,8 @@ export async function GET() {
 
     return NextResponse.json({ success: true, designs });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('Designs query error:', err.message);
+    return NextResponse.json({ error: 'Failed to retrieve architectures.' }, { status: 500 });
   }
 }
 
@@ -144,7 +145,8 @@ export async function POST(request: Request) {
       }
     });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('Design publishing error:', err.message);
+    return NextResponse.json({ error: 'Failed to publish architecture.' }, { status: 500 });
   }
 }
 
@@ -163,6 +165,7 @@ export async function PATCH(request: Request) {
     const updated: any = db.prepare('SELECT * FROM designs WHERE id = ?').get(id);
     return NextResponse.json({ success: true, design: updated });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('Design reaction error:', err.message);
+    return NextResponse.json({ error: 'Failed to update reaction.' }, { status: 500 });
   }
 }

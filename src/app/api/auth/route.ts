@@ -10,12 +10,20 @@ import {
   validateSessionToken,
   UserRole,
 } from '@/lib/auth';
+import {
+  checkAuthRateLimit,
+  validateTokenStructure,
+} from '@/lib/rate-limiter';
 
 export async function POST(request: Request) {
   try {
     const db = getPlatformDb();
     const body = await request.json();
     const { action, email, password, name, role, avatar, interests, superAdminKey } = body;
+
+    // Extract client IP for security rate limiting and audit logging
+    const forwardedHeader = request.headers.get('x-forwarded-for');
+    const clientIp = forwardedHeader ? forwardedHeader.split(',')[0].trim() : '127.0.0.1';
 
     // 1. SIGNUP
     if (action === 'signup') {
@@ -81,11 +89,11 @@ export async function POST(request: Request) {
         VALUES (?, ?, ?, ?)
       `).run(sessionToken, id, userRole, expiresAt);
 
-      // Audit log
+      // Audit log (sanitized, zero password or salt leakage)
       db.prepare(`
         INSERT INTO audit_logs (id, user_id, action, details)
         VALUES (?, ?, ?, ?)
-      `).run('aud_' + Date.now(), id, 'SIGNUP_SUCCESS', `New user registered with role ${userRole} and ${interestsArray.length} interests`);
+      `).run('aud_' + Date.now(), id, 'SIGNUP_SUCCESS', `New user registered with role ${userRole} from ${clientIp}`);
 
       const user = {
         id,
@@ -100,24 +108,47 @@ export async function POST(request: Request) {
         isBlocked: false,
       };
 
-      return NextResponse.json({ success: true, user, token: sessionToken });
+      const response = NextResponse.json({ success: true, user, token: sessionToken });
+      response.cookies.set('dqs_token', sessionToken, {
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+      });
+      return response;
     }
 
-    // 2. LOGIN
+    // 2. LOGIN (With Intelligent Brute-Force Rate Limiting & Token Guard)
     if (action === 'login') {
       if (!email || !password) {
         return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 });
       }
 
       const normalizedEmail = email.toLowerCase().trim();
+      const authIdentifier = `${clientIp}:${normalizedEmail}`;
+
+      // Check Rate Limit (Prevents brute-force credential stuffing)
+      const rateCheck = checkAuthRateLimit(authIdentifier);
+      if (!rateCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: `Security Lockout: Too many failed login attempts. To prevent unauthorized access, please wait ${rateCheck.retryAfterSeconds} seconds before trying again.`,
+          },
+          { status: 429 }
+        );
+      }
+
       const userRecord: any = db.prepare('SELECT * FROM users WHERE email = ?').get(normalizedEmail);
 
       if (!userRecord) {
-        // Audit log failed attempt
+        // Record failed attempt for rate limiting
+        checkAuthRateLimit(authIdentifier, true);
+
         db.prepare(`
           INSERT INTO audit_logs (id, user_id, action, details)
           VALUES (?, ?, ?, ?)
-        `).run('aud_' + Date.now(), 'anonymous', 'LOGIN_FAILED', `No account found for ${normalizedEmail}`);
+        `).run('aud_' + Date.now(), 'anonymous', 'LOGIN_FAILED', `No account found for ${normalizedEmail} from ${clientIp}`);
 
         return NextResponse.json(
           { error: 'No account found with this email. Would you like to create one?', suggestSignup: true },
@@ -141,18 +172,24 @@ export async function POST(request: Request) {
         );
       }
 
-      // Verify Password Hash
+      // Verify Password Hash (Constant-Time PBKDF2)
       const isValid = await verifyPassword(password, userRecord.password_salt, userRecord.password_hash);
       if (!isValid) {
+        // Record failed attempt for rate limiting
+        checkAuthRateLimit(authIdentifier, true);
+
         db.prepare(`
           INSERT INTO audit_logs (id, user_id, action, details)
           VALUES (?, ?, ?, ?)
-        `).run('aud_' + Date.now(), userRecord.id, 'LOGIN_FAILED_CREDENTIALS', `Incorrect password for ${normalizedEmail}`);
+        `).run('aud_' + Date.now(), userRecord.id, 'LOGIN_FAILED_CREDENTIALS', `Incorrect password for ${normalizedEmail} from ${clientIp}`);
 
         return NextResponse.json({ error: 'Incorrect password. Please try again or use a demo account.' }, { status: 401 });
       }
 
-      // Generate Session
+      // Success! Clear failed attempts so legitimate user isn't hindered
+      checkAuthRateLimit(authIdentifier, false);
+
+      // Generate Cryptographic Session Token
       const sessionToken = createSessionToken(userRecord.id, userRecord.role);
       const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
 
@@ -165,7 +202,7 @@ export async function POST(request: Request) {
       db.prepare(`
         INSERT INTO audit_logs (id, user_id, action, details)
         VALUES (?, ?, ?, ?)
-      `).run('aud_' + Date.now(), userRecord.id, 'LOGIN_SUCCESS', `User logged in from web client with role ${userRecord.role}`);
+      `).run('aud_' + Date.now(), userRecord.id, 'LOGIN_SUCCESS', `User logged in from ${clientIp} with role ${userRecord.role}`);
 
       let parsedInterests: string[] = [];
       try {
@@ -189,6 +226,8 @@ export async function POST(request: Request) {
       response.cookies.set('dqs_token', sessionToken, {
         path: '/',
         maxAge: 7 * 24 * 60 * 60,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
       });
       return response;
@@ -222,12 +261,12 @@ export async function POST(request: Request) {
         db.prepare(`
           INSERT INTO audit_logs (id, user_id, action, details)
           VALUES (?, ?, ?, ?)
-        `).run('aud_' + Date.now(), id, 'OAUTH_SIGNUP_SUCCESS', `Registered via ${provider.toUpperCase()}`);
+        `).run('aud_' + Date.now(), id, 'OAUTH_SIGNUP_SUCCESS', `Registered via ${provider.toUpperCase()} from ${clientIp}`);
       } else {
         db.prepare(`
           INSERT INTO audit_logs (id, user_id, action, details)
           VALUES (?, ?, ?, ?)
-        `).run('aud_' + Date.now(), userRecord.id, 'OAUTH_LOGIN_SUCCESS', `Logged in via ${provider.toUpperCase()}`);
+        `).run('aud_' + Date.now(), userRecord.id, 'OAUTH_LOGIN_SUCCESS', `Logged in via ${provider.toUpperCase()} from ${clientIp}`);
       }
 
       const sessionToken = createSessionToken(userRecord.id, userRecord.role);
@@ -253,12 +292,14 @@ export async function POST(request: Request) {
       response.cookies.set('dqs_token', sessionToken, {
         path: '/',
         maxAge: 7 * 24 * 60 * 60,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
       });
       return response;
     }
 
-    // 4. GUEST ACCESS (Issues real ephemeral student sandbox session - zero teacher/super_admin privileges)
+    // 4. GUEST ACCESS (Issues ephemeral student sandbox session - zero teacher/super_admin privileges)
     if (action === 'guest') {
       const guestId = 'usr_guest_' + Math.random().toString(36).substring(2, 9);
       const safeUser = {
@@ -285,14 +326,24 @@ export async function POST(request: Request) {
       response.cookies.set('dqs_token', guestToken, {
         path: '/',
         maxAge: 24 * 60 * 60,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
       });
       return response;
     }
 
-    // 5. VERIFY ACTIVE SESSION
+    // 5. VERIFY ACTIVE SESSION (With Token Misuse & Replay Guard)
     if (action === 'verify_session') {
       const token = body.token || extractBearerToken(request);
+
+      if (!validateTokenStructure(token)) {
+        return NextResponse.json(
+          { valid: false, error: 'Malformed or unauthorized token structure.' },
+          { status: 401 }
+        );
+      }
+
       const authCheck = validateSessionToken(token, db);
       if (!authCheck.valid) {
         return NextResponse.json({ valid: false, error: authCheck.error }, { status: authCheck.statusCode || 401 });
@@ -300,7 +351,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ valid: true, user: authCheck.user, role: authCheck.role });
     }
 
-    // 6. LOGOUT
+    // 6. LOGOUT (Invalidates Token Immediately from Authoritative Session Store)
     if (action === 'logout') {
       const token = body.token || extractBearerToken(request);
       if (token) {
@@ -310,12 +361,84 @@ export async function POST(request: Request) {
       }
       const response = NextResponse.json({ success: true, message: 'Logged out successfully.' });
       response.cookies.delete('dqs_token');
+      response.cookies.set('dqs_token', '', {
+        path: '/',
+        maxAge: 0,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+      });
+      return response;
+    }
+
+    // 7. GDPR DATA PORTABILITY (Article 20 - Export All My Data)
+    if (action === 'gdpr_export') {
+      const token = body.token || extractBearerToken(request);
+      const authCheck = validateSessionToken(token, db);
+      if (!authCheck.valid || !authCheck.user) {
+        return NextResponse.json({ error: 'Authentication required for GDPR data export.' }, { status: 401 });
+      }
+
+      const userId = authCheck.user.id;
+      const userRecord: any = db.prepare(
+        'SELECT id, email, name, role, level, xp, streak, avatar, interests_json, created_at FROM users WHERE id = ?'
+      ).get(userId);
+      const userSessions = db.prepare('SELECT id, role, created_at, expires_at FROM sessions WHERE user_id = ?').all(userId);
+      const userAudits = db.prepare('SELECT action, details, timestamp FROM audit_logs WHERE user_id = ? ORDER BY timestamp DESC LIMIT 50').all(userId);
+
+      return NextResponse.json({
+        success: true,
+        gdprNotice: 'Export generated pursuant to GDPR Article 20 (Right to Data Portability).',
+        exportedAt: new Date().toISOString(),
+        userData: {
+          profile: userRecord,
+          activeSessions: userSessions,
+          auditHistory: userAudits,
+        },
+      });
+    }
+
+    // 8. GDPR RIGHT TO ERASURE / RIGHT TO BE FORGOTTEN (Article 17)
+    if (action === 'gdpr_delete') {
+      const token = body.token || extractBearerToken(request);
+      const authCheck = validateSessionToken(token, db);
+      if (!authCheck.valid || !authCheck.user) {
+        return NextResponse.json({ error: 'Authentication required to exercise GDPR Right to Erasure.' }, { status: 401 });
+      }
+
+      const userId = authCheck.user.id;
+
+      // Wipe all user records completely
+      db.prepare('DELETE FROM sessions WHERE user_id = ?').run(userId);
+      db.prepare('DELETE FROM audit_logs WHERE user_id = ?').run(userId);
+      try {
+        db.prepare('DELETE FROM designs WHERE user_id = ?').run(userId);
+      } catch {}
+      db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+
+      const response = NextResponse.json({
+        success: true,
+        message: 'Your account and all associated personal records have been permanently erased pursuant to GDPR Article 17.',
+      });
+      response.cookies.delete('dqs_token');
+      response.cookies.set('dqs_token', '', {
+        path: '/',
+        maxAge: 0,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+      });
       return response;
     }
 
     return NextResponse.json({ error: 'Invalid authentication action specified.' }, { status: 400 });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Authentication error' }, { status: 500 });
+    // Zero internal stack or database error leakage
+    console.error('Authentication Error:', err.message);
+    return NextResponse.json(
+      { error: 'An unexpected authentication error occurred. Please try again.' },
+      { status: 500 }
+    );
   }
 }
 
@@ -336,6 +459,7 @@ export async function GET(request: Request) {
     const users = db.prepare('SELECT id, email, name, role, level, xp, streak, avatar, created_at FROM users').all();
     return NextResponse.json({ success: true, users });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error('Roster query error:', err.message);
+    return NextResponse.json({ error: 'Failed to retrieve roster.' }, { status: 500 });
   }
 }
