@@ -66,7 +66,7 @@ import {
 } from 'lucide-react';
 
 // ============================================================================
-// BENCHMARK ARCHITECTURAL TEMPLATES
+// CURATED ARCHITECTURAL TEMPLATES
 // ============================================================================
 
 export type DiagramMode = 'relational' | 'uml' | 'distributed';
