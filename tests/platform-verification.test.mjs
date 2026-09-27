@@ -268,5 +268,57 @@ test('17. SQL Lab Engine: EXPLAIN QUERY PLAN for Relational Joins', () => {
   assert.match(joinStep.detail, /Join/i);
 });
 
+test('18. Conversational Voice Loop: State Machine, Continuous Dialogue, and Interruption Telemetry', async () => {
+  const { voiceConversation } = await import('../src/lib/voice-conversation-engine.ts');
+
+  // Initial state verification
+  const initialState = voiceConversation.getState();
+  assert.equal(initialState.phase, 'idle');
+  assert.equal(initialState.isContinuousMode, true);
+
+  // Toggle continuous mode
+  voiceConversation.setContinuousMode(false);
+  assert.equal(voiceConversation.getState().isContinuousMode, false);
+  voiceConversation.setContinuousMode(true);
+  assert.equal(voiceConversation.getState().isContinuousMode, true);
+
+  // Profile selection
+  voiceConversation.setVoiceProfile('lecturer');
+  assert.equal(voiceConversation.getState().activeProfile, 'lecturer');
+  voiceConversation.setVoiceProfile('mentor');
+  assert.equal(voiceConversation.getState().activeProfile, 'mentor');
+
+  // Verify listener notification mechanism
+  let stateReceived = null;
+  const unsubscribe = voiceConversation.subscribe((s) => {
+    stateReceived = s;
+  });
+  assert.ok(stateReceived !== null);
+  assert.equal(stateReceived.activeProfile, 'mentor');
+
+  // Interruption barge-in
+  voiceConversation.interrupt();
+  assert.equal(voiceConversation.getState().phase, 'idle');
+
+  unsubscribe();
+});
+
+test('19. Audio Cues Engine: Start, Stop, Turn Ready, and Interrupt Signals', async () => {
+  const { sound } = await import('../src/lib/audio.ts');
+
+  assert.equal(typeof sound.playListenStart, 'function');
+  assert.equal(typeof sound.playListenStop, 'function');
+  assert.equal(typeof sound.playTurnReady, 'function');
+  assert.equal(typeof sound.playInterrupt, 'function');
+
+  // Safe invocation without crashing in headless environment
+  sound.playListenStart();
+  sound.playListenStop();
+  sound.playTurnReady();
+  sound.playInterrupt();
+  assert.ok(true, 'Audio cues invoke without errors in headless runtime');
+});
+
+
 
 

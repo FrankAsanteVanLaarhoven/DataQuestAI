@@ -77,6 +77,7 @@ export const Header: React.FC = () => {
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiModalMode, setAiModalMode] = useState<'chat' | 'schema' | 'sql' | 'voice'>('chat');
   const userMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -796,6 +797,7 @@ export const Header: React.FC = () => {
             <button
               onClick={() => {
                 sound.playClick();
+                setAiModalMode('chat');
                 setIsAiModalOpen(true);
               }}
               title="OpenRouter AI Assistant & Socratic Database Tutor"
@@ -842,30 +844,23 @@ export const Header: React.FC = () => {
               )}
             </button>
 
-            {/* Conversational Voice Assistant Toggle */}
+            {/* Conversational Voice Assistant Dialogue Trigger */}
             <button
-              onClick={toggleVoice}
-              title={
-                voiceEnabled
-                  ? `Conversational Voice Active (${voiceProfile}) - Click to mute narration`
-                  : 'Enable Conversational Voice'
-              }
-              className={`p-2 rounded-xl border transition-all flex items-center gap-1 cursor-pointer ${
-                voiceEnabled
-                  ? 'border-violet-500/40 bg-violet-500/10 text-violet-600 dark:text-violet-300 ring-1 ring-violet-500/20'
-                  : 'border-zinc-200/80 dark:border-white/[0.08] bg-zinc-100/60 dark:bg-white/[0.04] text-zinc-400'
-              }`}
+              onClick={() => {
+                sound.playClick();
+                setAiModalMode('voice');
+                setIsAiModalOpen(true);
+              }}
+              title="Launch Live Voice AI Dialogue (Hands-Free Turn-Taking)"
+              className="p-2 rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer border-violet-500/40 bg-violet-500/10 hover:bg-violet-500/20 text-violet-600 dark:text-violet-300 ring-1 ring-violet-500/20 shadow-2xs"
             >
-              {voiceEnabled ? (
-                <div className="flex items-center gap-1">
-                  <Mic className="w-3.5 h-3.5 text-violet-500" />
-                  {isSpeaking && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-ping" />
-                  )}
-                </div>
-              ) : (
-                <MicOff className="w-3.5 h-3.5 text-zinc-400" />
-              )}
+              <div className="flex items-center gap-1.5">
+                <Mic className="w-3.5 h-3.5 text-violet-500 animate-pulse" />
+                <span className="hidden xl:inline text-[11px] font-bold text-violet-600 dark:text-violet-300">Voice AI</span>
+                {isSpeaking && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-ping" />
+                )}
+              </div>
             </button>
 
             {/* Auth Action Buttons */}
@@ -913,6 +908,7 @@ export const Header: React.FC = () => {
       {/* Global OpenRouter AI Architecture Copilot Modal */}
       <AiAssistantModal
         isOpen={isAiModalOpen}
+        initialMode={aiModalMode}
         onClose={() => setIsAiModalOpen(false)}
       />
     </>

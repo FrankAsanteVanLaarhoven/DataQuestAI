@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Sparkles,
@@ -18,6 +17,9 @@ import {
   RefreshCw,
   Sliders,
   ChevronDown,
+  Mic,
+  MicOff,
+  Radio,
 } from 'lucide-react';
 import {
   OPENROUTER_MODELS,
@@ -27,11 +29,12 @@ import {
 import { useAppStore } from '@/lib/store';
 import { voiceEngine } from '@/lib/voice-engine';
 import { sound } from '@/lib/audio';
+import { VoiceDialogueView } from './VoiceDialogueView';
 
 interface AiAssistantModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialMode?: 'chat' | 'schema' | 'sql';
+  initialMode?: 'chat' | 'schema' | 'sql' | 'voice';
   canvasContext?: {
     entities?: any[];
     relationships?: any[];
@@ -54,13 +57,15 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
   onApplySchema,
 }) => {
   const { executeCrud, awardXp } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'chat' | 'schema' | 'sql'>(initialMode);
+  const [activeTab, setActiveTab] = useState<'chat' | 'schema' | 'sql' | 'voice'>(initialMode);
   const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_OPENROUTER_MODEL);
   const [customModelInput, setCustomModelInput] = useState<string>('');
   const [isCustomModel, setIsCustomModel] = useState<boolean>(false);
   const [apiKeyOverride, setApiKeyOverride] = useState<string>('');
   const [showKeySettings, setShowKeySettings] = useState<boolean>(false);
   const [hasServerKey, setHasServerKey] = useState<boolean>(true);
+  const [isDictatingChat, setIsDictatingChat] = useState<boolean>(false);
+  const dictationRef = useRef<any>(null);
 
   // Chat State
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -106,6 +111,12 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    if (isOpen && initialMode) {
+      setActiveTab(initialMode);
+    }
+  }, [isOpen, initialMode]);
 
   if (!isOpen) return null;
 
@@ -192,6 +203,109 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
       ]);
     } finally {
       setIsChatLoading(false);
+    }
+  };
+
+  // Handle Live Voice Query from VoiceDialogueView
+  const handleVoiceQuery = async (spokenPrompt: string): Promise<string | null> => {
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'chat',
+          prompt: spokenPrompt,
+          model: currentEffectiveModel,
+          apiKey: apiKeyOverride.trim() || undefined,
+          context: {
+            canvasEntitiesCount: canvasContext?.entities?.length || 0,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      const answer = data.content || data.fallbackContent || null;
+      if (answer) {
+        sound.playLevelUp();
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'user',
+            content: spokenPrompt,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+          {
+            role: 'assistant',
+            content: answer,
+            modelUsed: data.modelUsed || currentEffectiveModel,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        ]);
+        awardXp(15, 'Consulted Conversational Voice AI');
+        return answer;
+      }
+      return null;
+    } catch (err: any) {
+      console.error('Error in voice query:', err);
+      sound.playError();
+      return `Error communicating with model: ${err.message}`;
+    }
+  };
+
+  // Toggle dictation directly into chat input field
+  const handleToggleChatDictation = () => {
+    if (typeof window === 'undefined') return;
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert('Speech Recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
+      return;
+    }
+
+    if (isDictatingChat && dictationRef.current) {
+      try {
+        dictationRef.current.stop();
+      } catch {}
+      setIsDictatingChat(false);
+      sound.playListenStop();
+      return;
+    }
+
+    try {
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = true;
+      rec.lang = 'en-US';
+
+      rec.onstart = () => {
+        setIsDictatingChat(true);
+        sound.playListenStart();
+      };
+
+      rec.onresult = (event: any) => {
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        if (transcript) {
+          setChatInput((prev) => (prev ? prev + ' ' + transcript : transcript));
+        }
+      };
+
+      rec.onerror = () => {
+        setIsDictatingChat(false);
+      };
+
+      rec.onend = () => {
+        setIsDictatingChat(false);
+        sound.playListenStop();
+      };
+
+      dictationRef.current = rec;
+      rec.start();
+    } catch {
+      setIsDictatingChat(false);
     }
   };
 
@@ -370,6 +484,21 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
           <div className="flex p-0.5 bg-slate-900 rounded-xl border border-slate-800">
             <button
               type="button"
+              onClick={() => {
+                setActiveTab('voice');
+                sound.playClick();
+              }}
+              className={`px-3 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'voice'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Radio className={`w-3.5 h-3.5 ${activeTab === 'voice' ? 'text-pink-300 animate-pulse' : 'text-purple-400'}`} />
+              <span>Voice Dialogue</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab('chat')}
               className={`px-3 py-1 rounded-lg font-bold text-xs transition-all cursor-pointer ${
                 activeTab === 'chat' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
@@ -430,6 +559,15 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
               </button>
             </div>
           </div>
+        )}
+
+        {/* Tab 0: Conversational Voice Mode (Gemini / Dora style) */}
+        {activeTab === 'voice' && (
+          <VoiceDialogueView
+            currentModel={currentEffectiveModel}
+            onSendToLlm={handleVoiceQuery}
+            onSwitchToTextChat={() => setActiveTab('chat')}
+          />
         )}
 
         {/* Tab 1: Socratic Chat */}
@@ -512,19 +650,48 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
 
             {/* Input Bar */}
             <div className="p-3 sm:p-4 bg-slate-950 border-t border-slate-800 flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleToggleChatDictation}
+                title={isDictatingChat ? 'Stop Dictation' : 'Dictate with Speech-to-Text'}
+                className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+                  isDictatingChat
+                    ? 'bg-rose-500/20 border-rose-500 text-rose-300 animate-pulse shadow-md shadow-rose-500/20'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-purple-300 hover:border-purple-500/40'
+                }`}
+              >
+                {isDictatingChat ? <Mic className="w-4 h-4 text-rose-400 animate-bounce" /> : <Mic className="w-4 h-4" />}
+              </button>
+
               <input
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                placeholder="Ask any database question (schema design, SQL joins, query tuning)..."
-                className="flex-1 bg-slate-900 border border-slate-800 focus:border-purple-400 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 outline-hidden font-medium"
+                placeholder={isDictatingChat ? 'Listening to your voice... Speak now...' : 'Ask any database question (schema design, SQL joins, query tuning)...'}
+                className={`flex-1 bg-slate-900 border rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 outline-hidden font-medium transition-colors ${
+                  isDictatingChat ? 'border-rose-500/60 ring-1 ring-rose-500/20' : 'border-slate-800 focus:border-purple-400'
+                }`}
               />
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('voice');
+                  sound.playClick();
+                }}
+                title="Switch to Hands-Free Conversational Voice Dialogue"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 border border-purple-800/60 text-purple-300 font-bold text-xs transition-all cursor-pointer shrink-0"
+              >
+                <Radio className="w-3.5 h-3.5 text-pink-400 animate-pulse" />
+                <span>Voice Mode</span>
+              </button>
+
               <button
                 type="button"
                 disabled={isChatLoading || !chatInput.trim()}
                 onClick={() => handleSendChat()}
-                className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-purple-600/30 transition-all cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-purple-600/30 transition-all cursor-pointer shrink-0"
               >
                 {isChatLoading ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />

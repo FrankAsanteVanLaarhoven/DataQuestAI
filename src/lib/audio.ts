@@ -142,6 +142,99 @@ class SoundEngine {
       });
     } catch {}
   }
+
+  public playListenStart() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      // Gentle two-tone rising chime (Gemini/Siri style start cue)
+      const freqs = [480, 720];
+      freqs.forEach((freq, idx) => {
+        const osc = this.ctx!.createOscillator();
+        const gain = this.ctx!.createGain();
+        const startTime = this.ctx!.currentTime + idx * 0.07;
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(0.09, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.16);
+
+        osc.connect(gain);
+        gain.connect(this.ctx!.destination);
+        osc.start(startTime);
+        osc.stop(startTime + 0.18);
+      });
+    } catch {}
+  }
+
+  public playListenStop() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      // Soft descending chime indicating speech captured & submitted
+      const freqs = [640, 440];
+      freqs.forEach((freq, idx) => {
+        const osc = this.ctx!.createOscillator();
+        const gain = this.ctx!.createGain();
+        const startTime = this.ctx!.currentTime + idx * 0.06;
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(0.08, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.14);
+
+        osc.connect(gain);
+        gain.connect(this.ctx!.destination);
+        osc.start(startTime);
+        osc.stop(startTime + 0.15);
+      });
+    } catch {}
+  }
+
+  public playTurnReady() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      // Soft warm bell tone (784Hz G5) indicating assistant finished speaking, your turn
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(784, this.ctx.currentTime);
+      gain.gain.setValueAtTime(0.07, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.28);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.3);
+    } catch {}
+  }
+
+  public playInterrupt() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      // Soft quick damping click signaling speech interruption
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(380, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(220, this.ctx.currentTime + 0.04);
+      gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.05);
+    } catch {}
+  }
 }
 
 export const sound = new SoundEngine();
