@@ -22,6 +22,7 @@ import {
   generatePlantUml,
   generateMermaid,
 } from '@/lib/diagram-routing';
+import { AiAssistantModal } from './AiAssistantModal';
 import {
   Network,
   Database,
@@ -690,6 +691,62 @@ export const ERDStudio: React.FC = () => {
   const [exportTab, setExportTab] = useState<'sql' | 'plantuml' | 'mermaid' | 'json'>('sql');
   const [copiedCode, setCopiedCode] = useState(false);
   const [sqlSyncSuccess, setSqlSyncSuccess] = useState<string | null>(null);
+
+  // OpenRouter AI Architecture Copilot State
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiModalMode, setAiModalMode] = useState<'chat' | 'schema' | 'sql'>('schema');
+
+  const handleApplyAiSchema = (generated: any) => {
+    if (!generated?.entities || !Array.isArray(generated.entities)) return;
+
+    const newEntities: ERDEntity[] = generated.entities.map((ent: any, idx: number) => {
+      const col = idx % 3;
+      const row = Math.floor(idx / 3);
+      const entId = ent.id || `ent_${ent.name.toLowerCase()}`;
+      return {
+        id: entId,
+        name: ent.name,
+        x: 100 + col * 320,
+        y: 100 + row * 260,
+        color: '#8b5cf6',
+        stereotype: ent.stereotype || '<<entity>>',
+        comment: ent.comment || '',
+        attributes: (ent.attributes || []).map((attr: any, aIdx: number) => ({
+          id: `attr_${entId}_${aIdx}`,
+          name: attr.name,
+          dataType: attr.dataType || 'VARCHAR(255)',
+          isPrimaryKey: Boolean(attr.isPrimaryKey),
+          isForeignKey: Boolean(attr.isForeignKey),
+          isNullable: Boolean(attr.isNullable),
+        })),
+      };
+    });
+
+    const newRelationships: ERDRelationship[] = (generated.relationships || []).map((rel: any, rIdx: number) => {
+      const fromEnt = newEntities.find((e) => e.name.toLowerCase() === rel.fromEntityName?.toLowerCase());
+      const toEnt = newEntities.find((e) => e.name.toLowerCase() === rel.toEntityName?.toLowerCase());
+
+      const fromAttr = fromEnt?.attributes.find((a) => a.name.toLowerCase() === rel.fromAttributeName?.toLowerCase()) || fromEnt?.attributes[0];
+      const toAttr = toEnt?.attributes.find((a) => a.name.toLowerCase() === rel.toAttributeName?.toLowerCase()) || toEnt?.attributes[0];
+
+      return {
+        id: `rel_ai_${rIdx}_${Date.now()}`,
+        name: rel.name || 'relates',
+        fromEntityId: fromEnt?.id || newEntities[0]?.id || '',
+        fromAttributeId: fromAttr?.id || '',
+        toEntityId: toEnt?.id || newEntities[1]?.id || '',
+        toAttributeId: toAttr?.id || '',
+        cardinality: (rel.cardinality === '1:1' ? '1:1' : rel.cardinality === 'M:N' ? 'M:N' : '1:N') as ErdCardinality,
+        routingStyle: 'orthogonal' as RoutingStyle,
+        onDelete: rel.onDelete || 'CASCADE',
+      };
+    }).filter((r: any) => r.fromEntityId && r.toEntityId);
+
+    setEntities(newEntities);
+    setRelationships(newRelationships);
+    setSqlSyncSuccess(`✓ Deployed ${newEntities.length} AI-synthesized tables and ${newRelationships.length} relationships to canvas!`);
+    setTimeout(() => setSqlSyncSuccess(null), 4000);
+  };
 
   // Internal Clipboard for Copy & Paste
   const clipboardEntityRef = useRef<ERDEntity | null>(null);
@@ -2018,6 +2075,18 @@ export const ERDStudio: React.FC = () => {
 
         {/* Right Actions: Add Node & Export */}
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setAiModalMode('schema');
+              setShowAiModal(true);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-600 to-pink-600 hover:from-indigo-600 hover:to-pink-700 text-white text-xs font-bold shadow-md shadow-purple-600/30 transition-all cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>AI Copilot</span>
+          </button>
+
           <button
             type="button"
             onClick={handleOpenAddEntity}
@@ -3372,6 +3441,15 @@ export const ERDStudio: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* OpenRouter AI Architecture Copilot Modal */}
+      <AiAssistantModal
+        isOpen={showAiModal}
+        onClose={() => setShowAiModal(false)}
+        initialMode={aiModalMode}
+        canvasContext={{ entities, relationships }}
+        onApplySchema={handleApplyAiSchema}
+      />
     </div>
   );
 };

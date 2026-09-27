@@ -8,6 +8,7 @@ import { AuthModal } from './AuthModal';
 import { RatingModal } from './RatingModal';
 import { ShareModal } from './ShareModal';
 import { UserAvatar } from './UserAvatar';
+import { AiAssistantModal } from './AiAssistantModal';
 import {
   Network,
   Database,
@@ -75,6 +76,7 @@ export const Header: React.FC = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -790,6 +792,19 @@ export const Header: React.FC = () => {
               </span>
             </button>
 
+            {/* OpenRouter AI Architecture Copilot Button */}
+            <button
+              onClick={() => {
+                sound.playClick();
+                setIsAiModalOpen(true);
+              }}
+              title="OpenRouter AI Assistant & Socratic Database Tutor"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-purple-500/40 bg-gradient-to-r from-purple-500/15 via-indigo-500/15 to-pink-500/15 hover:from-purple-500/25 hover:to-pink-500/25 text-purple-600 dark:text-purple-300 font-bold text-xs shadow-xs transition-all cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-500 animate-pulse" />
+              <span className="hidden sm:inline">AI Copilot</span>
+            </button>
+
             {/* Theme Switcher (Dark / Light / System Theme) */}
             <button
               onClick={cycleTheme}
@@ -894,6 +909,12 @@ export const Header: React.FC = () => {
 
       {/* Classmate Referral & Viral Share Modal */}
       <ShareModal />
+
+      {/* Global OpenRouter AI Architecture Copilot Modal */}
+      <AiAssistantModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+      />
     </>
   );
 };

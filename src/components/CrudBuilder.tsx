@@ -17,11 +17,13 @@ import {
   X,
   Code,
 } from 'lucide-react';
+import { AiAssistantModal } from './AiAssistantModal';
 
 export const CrudBuilder: React.FC = () => {
   const { crudOperations, executeCrud, addCustomCrud, language } = useAppStore();
   const t = translations[language] || translations.en;
   const [modalOpen, setModalOpen] = useState(false);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
   const [modalType, setModalType] = useState<'C' | 'R' | 'U' | 'D'>('C');
   const [customTitle, setCustomTitle] = useState('');
   const [customTable, setCustomTable] = useState('Customers');
@@ -93,6 +95,16 @@ export const CrudBuilder: React.FC = () => {
               {lastFeedback}
             </span>
           )}
+
+          <button
+            type="button"
+            onClick={() => setAiModalOpen(true)}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/15 via-indigo-500/15 to-pink-500/15 border border-purple-500/30 hover:border-purple-400 text-purple-600 dark:text-purple-300 font-bold text-[10px] shadow-xs cursor-pointer transition-all"
+          >
+            <Sparkles className="w-3 h-3 text-purple-500" />
+            <span>AI SQL Assistant</span>
+          </button>
+
           <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
             Live Transaction Engine
           </span>
@@ -248,6 +260,13 @@ export const CrudBuilder: React.FC = () => {
           </form>
         </div>
       )}
+
+      {/* OpenRouter AI SQL Assistant Modal */}
+      <AiAssistantModal
+        isOpen={aiModalOpen}
+        onClose={() => setAiModalOpen(false)}
+        initialMode="sql"
+      />
     </div>
   );
 };

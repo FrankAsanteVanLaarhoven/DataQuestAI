@@ -14,6 +14,9 @@ export const VectorAiLab: React.FC = () => {
   const [question, setQuestion] = useState('How does Newcastle University handle library book loans?');
   const [isBrokenRetrieval, setIsBrokenRetrieval] = useState(false);
   const [similarityThreshold, setSimilarityThreshold] = useState(0.7);
+  const [isLiveRunning, setIsLiveRunning] = useState(false);
+  const [liveAnswer, setLiveAnswer] = useState<string | null>(null);
+  const [liveModelUsed, setLiveModelUsed] = useState<string | null>(null);
 
   // Documents in Vector Database
   const documents: VectorDocument[] = [
@@ -40,7 +43,39 @@ export const VectorAiLab: React.FC = () => {
   // Retrieved document based on mode
   const retrievedDoc = isBrokenRetrieval ? documents[1] : documents[0];
 
-  const generatedAnswer = isBrokenRetrieval
+  const handleRunLiveLlm = async () => {
+    setIsLiveRunning(true);
+    setLiveAnswer(null);
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'test_rag',
+          prompt: question,
+          context: {
+            documentText: retrievedDoc.text,
+            isBroken: isBrokenRetrieval,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (data.content) {
+        setLiveAnswer(data.content);
+        setLiveModelUsed(data.modelUsed);
+      } else {
+        setLiveAnswer(`Model error: ${data.error || 'Failed to synthesize'}`);
+      }
+    } catch (err: any) {
+      setLiveAnswer(`Connection error: ${err.message}`);
+    } finally {
+      setIsLiveRunning(false);
+    }
+  };
+
+  const generatedAnswer = liveAnswer
+    ? liveAnswer
+    : isBrokenRetrieval
     ? 'According to the retrieved context, books are served between 12:00 and 14:00 with daily lunch specials in the campus cafeteria. (HALLUCINATION / DATA RETRIEVAL FAILURE)'
     : 'Newcastle University students can borrow up to 30 books for a standard period of 4 weeks, with automatic renewal active unless another borrower recalls the item.';
 
@@ -59,10 +94,22 @@ export const VectorAiLab: React.FC = () => {
             Large Language Models (LLMs) have knowledge cutoff boundaries and hallucination tendencies. Learn how Vector Databases ground AI answers using high-dimensional cosine similarity embeddings.
           </p>
         </div>
-        <div className="flex items-center gap-2 self-start sm:self-center">
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
           <button
-            onClick={() => setIsBrokenRetrieval(!isBrokenRetrieval)}
-            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all ${
+            onClick={handleRunLiveLlm}
+            disabled={isLiveRunning}
+            className="px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-md shadow-purple-600/30 cursor-pointer disabled:opacity-50"
+          >
+            {isLiveRunning ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            <span>Synthesize with OpenRouter</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setIsBrokenRetrieval(!isBrokenRetrieval);
+              setLiveAnswer(null);
+            }}
+            className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
               isBrokenRetrieval
                 ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/30'
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700'

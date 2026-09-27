@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '@/lib/store';
 import { translations } from '@/lib/i18n';
 import { voiceEngine, VoiceEngineState, VOICE_PROFILES, VoiceProfileId } from '@/lib/voice-engine';
+import { AiAssistantModal } from './AiAssistantModal';
 import {
   Radio,
   Play,
@@ -43,6 +44,7 @@ export const LiveFeedSidebar: React.FC = () => {
   const t = translations[language] || translations.en;
 
   const [inspectEvent, setInspectEvent] = useState<any | null>(null);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [voiceState, setVoiceState] = useState<VoiceEngineState>(voiceEngine.getState());
 
   useEffect(() => {
@@ -293,6 +295,15 @@ export const LiveFeedSidebar: React.FC = () => {
             {t.nextBtn}
           </button>
         </div>
+
+        {/* Live OpenRouter Multi-Model Socratic Copilot Button */}
+        <button
+          onClick={() => setIsAiModalOpen(true)}
+          className="w-full mt-2.5 py-1.5 px-3 rounded-xl bg-gradient-to-r from-indigo-500/15 via-purple-500/15 to-pink-500/15 border border-purple-500/30 hover:border-purple-400 text-purple-600 dark:text-purple-300 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+          <span>Consult Live OpenRouter AI</span>
+        </button>
       </div>
 
       {/* Transaction Details Modal */}
@@ -330,6 +341,13 @@ export const LiveFeedSidebar: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Live AI Socratic Tutor Modal */}
+      <AiAssistantModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        initialMode="chat"
+      />
     </aside>
   );
 };
