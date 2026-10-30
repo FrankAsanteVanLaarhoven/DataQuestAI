@@ -73,9 +73,9 @@ export const CommunityGallery: React.FC = () => {
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-black uppercase tracking-wider mb-2">
             <Users className="w-3.5 h-3.5" /> Community Enterprise Showcase
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-            Architectural Designs & Justifications
-          </h1>
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+            Architectural Designs &amp; Justifications
+          </h2>
           <p className="mt-1 text-xs sm:text-sm text-pink-100 max-w-xl">
             Explore schemas designed by CS students and enterprise architects. Learn their architectural reasoning, fork templates into your canvas, or publish your own unique designs!
           </p>

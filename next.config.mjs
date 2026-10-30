@@ -1,10 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
-  turbopack: {
-    root: '/Users/favl/.gemini/antigravity-ide/scratch',
+  productionBrowserSourceMaps: false,
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? { exclude: ['error'] } : false,
   },
-  async headers() {
+    async headers() {
     return [
       {
         source: '/(.*)',

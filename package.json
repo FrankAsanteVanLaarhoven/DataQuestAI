@@ -2,8 +2,11 @@
   "name": "dataquest",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
-    "dev": "next dev -p 3008",
+    "dev": "next dev --webpack -p 3008",
     "build": "next build --webpack",
     "start": "next start -p 3008",
     "lint": "next lint",
@@ -12,6 +15,7 @@
     "test:harness": "node --experimental-strip-types scripts/verify-all.mjs"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.9.23",
     "@types/pg": "^8.23.1",
     "framer-motion": "^12.34.0",
     "lucide-react": "^0.507.0",

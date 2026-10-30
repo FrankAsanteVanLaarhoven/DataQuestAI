@@ -195,9 +195,9 @@ export const DigitalUniversitySimulation: React.FC = () => {
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-black uppercase tracking-wider mb-2">
               <Building2 className="w-3.5 h-3.5" /> Ultimate Capstone Simulation
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
               Digital University: Live Enterprise Data Infrastructure
-            </h1>
+            </h2>
             <p className="mt-1 text-xs sm:text-sm text-blue-100 max-w-xl">
               All 10 campus systems connected live: Admissions, Student SIS, Courses, Library, Payments, Accommodation, Search, OLAP Warehouse, AI RAG, and Privacy Governance.
             </p>

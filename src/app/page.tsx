@@ -18,6 +18,7 @@ import { TeacherStudio } from '@/components/TeacherStudio';
 import { SuperAdminConsole } from '@/components/SuperAdminConsole';
 import { DigitalUniversitySimulation } from '@/components/DigitalUniversitySimulation';
 import { ERDStudio } from '@/components/ERDStudio';
+import { FoundryLab } from '@/components/FoundryLab';
 import { EnterpriseSplashScreen } from '@/components/EnterpriseSplashScreen';
 import { translations, languages } from '@/lib/i18n';
 import {
@@ -63,6 +64,8 @@ export default function HomePage() {
 
   useEffect(() => {
     const root = document.documentElement;
+    root.setAttribute('dir', dir);
+    root.setAttribute('lang', language);
     if (isDarkTheme) {
       root.classList.add('dark');
       document.body.classList.add('dark');
@@ -74,7 +77,7 @@ export default function HomePage() {
       document.body.style.backgroundColor = '#fbf8f5';
       document.body.style.color = '#1e293b';
     }
-  }, [isDarkTheme]);
+  }, [isDarkTheme, dir, language]);
 
   if (!hasEnteredConsole) {
     return (
@@ -176,6 +179,7 @@ export default function HomePage() {
         )}
 
         {activeTab === 'missions' && <MissionsView />}
+        {activeTab === 'foundry' && <FoundryLab />}
         {activeTab === 'erd' && <ERDStudio />}
         {activeTab === 'learn' && <LearnRoadmap />}
         {activeTab === 'analytics' && <AnalyticsView />}

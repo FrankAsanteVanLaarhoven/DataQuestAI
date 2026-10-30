@@ -5,7 +5,34 @@ import { useAppStore } from '@/lib/store';
 import { sound } from '@/lib/audio';
 import { dbSimulator } from '@/lib/db-engine';
 import { voiceEngine } from '@/lib/voice-engine';
-import { CSC1033_WEEKS, WeekCurriculum } from '@/lib/csc1033-curriculum';
+import {
+  CSC1033_WEEKS,
+  WeekCurriculum,
+  CANVAS_COURSE_METADATA,
+  CANVAS_MODULES_70330,
+  CanvasModuleTopic,
+  CanvasItem,
+  EXAM_QUESTIONS_70330,
+} from '@/lib/csc1033-curriculum';
+import {
+  CSC1032_WEEKS,
+  CANVAS_COURSE_METADATA_1032,
+  CANVAS_MODULES_1032,
+  EXAM_QUESTIONS_1032,
+} from '@/lib/csc1032-curriculum';
+import {
+  BSC_COURSES,
+  BSC_COURSE_LIST,
+  getBscCourse,
+  BscModuleCode,
+} from '@/lib/bsc-courses';
+import { SecureProgrammingLab } from './labs/SecureProgrammingLab';
+import { SystemsImplementationLab } from './labs/SystemsImplementationLab';
+import { SoftwareEngineeringLab } from './labs/SoftwareEngineeringLab';
+import { DevOpsOperationsLab } from './labs/DevOpsOperationsLab';
+import { ProgrammingPortfolioLab } from './labs/ProgrammingPortfolioLab';
+import { AlgorithmAnalysisLab } from './labs/AlgorithmAnalysisLab';
+import { DissertationStudioLab } from './labs/DissertationStudioLab';
 import {
   BookOpen,
   CheckCircle,
@@ -41,6 +68,14 @@ import {
   Activity,
   CheckCircle2,
   Terminal,
+  ExternalLink,
+  MapPin,
+  Mail,
+  Filter,
+  FileText,
+  Clock,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 import { SearchEngineLab } from './labs/SearchEngineLab';
@@ -51,9 +86,18 @@ import { FacetedSearchLab } from './labs/FacetedSearchLab';
 import { CloudScalingLab } from './labs/CloudScalingLab';
 import { VectorAiLab } from './labs/VectorAiLab';
 import { DataEthicsLab } from './labs/DataEthicsLab';
+import { ComputerSystemsLab } from './labs/ComputerSystemsLab';
 
 export const LearnRoadmap: React.FC = () => {
-  const { awardXp, explanationMode, setExplanationMode, competencies, user } = useAppStore();
+  const {
+    awardXp,
+    explanationMode,
+    setExplanationMode,
+    competencies,
+    user,
+    activeModuleCode,
+    setActiveModuleCode,
+  } = useAppStore();
   const [activeWeek, setActiveWeek] = useState(1);
   const [dataInspectorFormat, setDataInspectorFormat] = useState<'structured' | 'semi' | 'unstructured'>('structured');
   const [sqlQuery, setSqlQuery] = useState("SELECT * FROM Students WHERE Class = '10A'");
@@ -72,11 +116,25 @@ export const LearnRoadmap: React.FC = () => {
   const [simulateCrash, setSimulateCrash] = useState(false);
   const [txnStatus, setTxnStatus] = useState<string | null>(null);
 
-  // Gamification Quiz State across 12 Weeks
-  const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
-  const [quizCompleted, setQuizCompleted] = useState<Record<number, boolean>>({});
+  // Gamification Quiz State across 12 Weeks (scoped by module)
+  const [userAnswers, setUserAnswers] = useState<Record<string, number>>({});
+  const [quizCompleted, setQuizCompleted] = useState<Record<string, boolean>>({});
   const [showCertificate, setShowCertificate] = useState(false);
   const [speakingText, setSpeakingText] = useState<string | null>(null);
+
+  // Newcastle Canvas Course 70330 Navigation & Assessment States
+  const [curriculumTab, setCurriculumTab] = useState<'weeks' | 'canvas' | 'assessment'>('weeks');
+  const [canvasSemesterFilter, setCanvasSemesterFilter] = useState<'all' | '1' | '2' | 'assess'>('all');
+  const [expandedCanvasModule, setExpandedCanvasModule] = useState<string | null>('mod_intro');
+  const [examSection, setExamSection] = useState<'A' | 'B'>('A');
+  const [revealedExamSolutions, setRevealedExamSolutions] = useState<Record<string, boolean>>({});
+  const [courseworkSchemaInput, setCourseworkSchemaInput] = useState<string>(
+    `CREATE TABLE Departments (\n  DepartmentID INT PRIMARY KEY,\n  DeptName VARCHAR(80) NOT NULL\n);\n\nCREATE TABLE Students (\n  StudentID INT PRIMARY KEY,\n  Name VARCHAR(60) NOT NULL,\n  DepartmentID INT REFERENCES Departments(DepartmentID)\n);\n\nCREATE TABLE Books (\n  BookID INT PRIMARY KEY,\n  Title VARCHAR(120) NOT NULL\n);\n\nCREATE TABLE Loans (\n  LoanID INT PRIMARY KEY,\n  StudentID INT REFERENCES Students(StudentID),\n  BookID INT REFERENCES Books(BookID),\n  LoanDate DATE NOT NULL\n);`
+  );
+  const [courseworkValidationResult, setCourseworkValidationResult] = useState<{
+    valid: boolean;
+    checks: { title: string; pass: boolean; note: string }[];
+  } | null>(null);
 
   useEffect(() => {
     const unsub = voiceEngine.subscribe((st) => {
@@ -110,16 +168,18 @@ export const LearnRoadmap: React.FC = () => {
   };
 
   const handleAnswerQuiz = (weekNum: number, optionIndex: number) => {
-    const weekData = CSC1033_WEEKS.find((w) => w.week === weekNum);
+    const course = getBscCourse(activeModuleCode);
+    const weekData = course.weeks.find((w) => w.week === weekNum);
     if (!weekData) return;
 
-    setUserAnswers((prev) => ({ ...prev, [weekNum]: optionIndex }));
+    const quizKey = `${activeModuleCode}_${weekNum}`;
+    setUserAnswers((prev) => ({ ...prev, [quizKey]: optionIndex }));
 
     if (optionIndex === weekData.quiz.correctIndex) {
       sound.playSuccess();
-      if (!quizCompleted[weekNum]) {
-        awardXp(50, `Mastered Week ${weekNum} Knowledge Check`);
-        setQuizCompleted((prev) => ({ ...prev, [weekNum]: true }));
+      if (!quizCompleted[quizKey]) {
+        awardXp(50, `Mastered ${activeModuleCode} Week ${weekNum} Knowledge Check`);
+        setQuizCompleted((prev) => ({ ...prev, [quizKey]: true }));
       }
     } else {
       sound.playError();
@@ -145,27 +205,142 @@ export const LearnRoadmap: React.FC = () => {
     awardXp(20, 'Executed ACID Transaction with WAL');
   };
 
-  const totalQuizzesPassed = Object.values(quizCompleted).filter(Boolean).length;
-  const currentWeekData = CSC1033_WEEKS.find((w) => w.week === activeWeek) || CSC1033_WEEKS[0];
+  const handleValidateCoursework = () => {
+    sound.playClick();
+    const hasPK = courseworkSchemaInput.includes('PRIMARY KEY');
+    const hasFK = courseworkSchemaInput.includes('REFERENCES') || courseworkSchemaInput.includes('FOREIGN KEY');
+    const has3NF = !courseworkSchemaInput.toLowerCase().includes('zip_city') && courseworkSchemaInput.includes('DepartmentID');
+    const hasNotNull = courseworkSchemaInput.includes('NOT NULL');
+
+    const checks = [
+      {
+        title: 'Primary Key Uniqueness Enforcement',
+        pass: hasPK,
+        note: hasPK ? 'Entity identifiers defined with PRIMARY KEY on each relation.' : 'Missing PRIMARY KEY on one or more relations.',
+      },
+      {
+        title: 'Referential Integrity & Foreign Key Links',
+        pass: hasFK,
+        note: hasFK ? 'Foreign key references established across parent-child relations.' : 'Missing REFERENCES/FOREIGN KEY definitions.',
+      },
+      {
+        title: 'Domain & NOT NULL Constraints',
+        pass: hasNotNull,
+        note: hasNotNull ? 'Mandatory attributes protected against NULL corruption.' : 'Consider adding NOT NULL constraints on critical columns.',
+      },
+      {
+        title: '3NF Relational Decomposition',
+        pass: has3NF,
+        note: has3NF ? 'Relations decomposed into 3NF without transitive dependencies.' : 'Potential transitive dependency detected.',
+      },
+    ];
+
+    const allPass = checks.every((c) => c.pass);
+    if (allPass) {
+      sound.playSuccess();
+      awardXp(35, 'Verified Coursework Relational Schema in Validator');
+    } else {
+      sound.playError();
+    }
+
+    setCourseworkValidationResult({
+      valid: allPass,
+      checks,
+    });
+  };
+
+  const toggleExamSolution = (id: string) => {
+    sound.playClick();
+    setRevealedExamSolutions((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const is1032 = activeModuleCode === 'CSC1032';
+  const currentCourse = getBscCourse(activeModuleCode);
+  const currentWeeks = currentCourse.weeks;
+  const currentCanvasMetadata = currentCourse.metadata;
+  const currentCanvasModules = currentCourse.canvasModules;
+  const currentExamQuestions = currentCourse.examQuestions;
+
+  const totalQuizzesPassed = currentWeeks.filter((w) => quizCompleted[`${activeModuleCode}_${w.week}`]).length;
+  const currentWeekData = currentWeeks.find((w) => w.week === activeWeek) || currentWeeks[0];
 
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto p-2 sm:p-4">
-      {/* Course Hero Banner with CSC1033 Weekly Accreditation */}
-      <div className="bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-700 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+      {/* Newcastle BSc Computing Science Modules Header Selector */}
+      <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-3xl shadow-sm space-y-2">
+        <div className="flex items-center justify-between px-2 text-xs font-mono text-slate-400">
+          <span className="font-bold uppercase tracking-wider text-slate-300">Newcastle University • BSc Computing Science Modules</span>
+          <span className="hidden sm:inline">All 12-Week Syllabi &amp; Canvas VLE Sync</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {BSC_COURSE_LIST.map((c) => {
+            const isSelected = activeModuleCode === c.moduleCode;
+            return (
+              <button
+                key={c.moduleCode}
+                onClick={() => {
+                  setActiveModuleCode(c.moduleCode);
+                  setActiveWeek(1);
+                  setExpandedCanvasModule(null);
+                  sound.playClick();
+                }}
+                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                  isSelected
+                    ? 'border-purple-500 bg-gradient-to-br from-purple-900/40 to-indigo-900/40 shadow-md ring-1 ring-purple-500/50'
+                    : 'border-slate-800 bg-slate-950/60 hover:bg-slate-800/80 hover:border-slate-700 text-slate-400 hover:text-white'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                    isSelected ? 'bg-purple-500 text-white' : 'bg-slate-800 text-slate-300'
+                  }`}>
+                    {c.stage} • {c.moduleCode}
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    Canvas #{c.canvasCourseId}
+                  </span>
+                </div>
+
+                <div className="text-xs font-bold text-white line-clamp-1">
+                  {c.moduleTitle}
+                </div>
+
+                <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                  <span>{c.credits} Credits</span>
+                  <span className="text-emerald-400 font-semibold">12 Weeks Ready</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Course Hero Banner with Module Weekly Accreditation */}
+      <div className={`rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden bg-gradient-to-r ${currentCourse.colorTheme}`}>
         <div className="relative z-10 max-w-3xl">
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-black uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5" /> Complete 12-Week CSC1033 Curriculum
+              <Sparkles className="w-3.5 h-3.5" /> Complete 12-Week {currentCourse.moduleCode} Curriculum
             </div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400 text-slate-950 text-xs font-black uppercase tracking-wider">
-              <Zap className="w-3.5 h-3.5 fill-slate-950" /> Real Live Capstones &amp; Reference Points
+              <Zap className="w-3.5 h-3.5 fill-slate-950" /> {currentCourse.stage} Core • {currentCourse.credits} Credits
             </div>
+            <a
+              href={currentCourse.canvasUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/40 hover:bg-black/60 border border-white/30 text-white text-xs font-mono font-bold transition-all shadow-sm"
+            >
+              <span>Canvas #{currentCourse.canvasCourseId}</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
-            CSC1033: Databases &amp; Information Retrieval
-          </h1>
-          <p className="mt-2 text-sm sm:text-base text-pink-100 font-medium leading-relaxed">
-            Full semester curriculum organized in chronological weekly sequence: from physical binary storage and Codd&apos;s relational algebra to B-Tree indexing, ACID transactions, search engines, and modern AI vector databases.
+          <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
+            {currentCourse.moduleCode}: {currentCourse.moduleTitle}
+          </h2>
+          <p className="mt-2 text-sm sm:text-base text-white/90 font-medium leading-relaxed">
+            {currentCourse.tagline}
           </p>
 
           {/* Course Mastery Progress Bar */}
@@ -181,8 +356,8 @@ export const LearnRoadmap: React.FC = () => {
                     {totalQuizzesPassed}/12 Weeks Mastered
                   </span>
                 </div>
-                <p className="text-[11px] text-pink-100">
-                  Earn +50 XP per weekly knowledge check. Complete all 12 weeks to unlock your verified CSC1033 Course Certificate!
+                <p className="text-[11px] text-white/80">
+                  Earn +50 XP per weekly knowledge check. Complete all 12 weeks to unlock your verified {currentCourse.moduleCode} Course Certificate!
                 </p>
               </div>
             </div>
@@ -209,7 +384,7 @@ export const LearnRoadmap: React.FC = () => {
               <Calendar className="w-6 h-6" />
             </div>
             <span className="text-[10px] font-bold uppercase tracking-widest text-pink-100 block">
-              SEMESTER SYLLABUS
+              {activeModuleCode} SYLLABUS
             </span>
             <span className="text-[9px] font-semibold text-amber-300 uppercase block tracking-wider mt-0.5">
               12 Weeks Complete Order
@@ -267,14 +442,59 @@ export const LearnRoadmap: React.FC = () => {
         </div>
       </div>
 
-      {/* 12-Week Semester Sequence Selector Bar */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2 px-1">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            <h2 className="text-sm font-black text-slate-800 dark:text-slate-100">
-              CSC1033 Weekly Course Order (Weeks 1 to 12)
-            </h2>
+      {/* Curriculum View Switcher: Weekly Syllabus vs Canvas 70330 Modules vs Coursework & Exam Hub */}
+      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl">
+        <button
+          onClick={() => {
+            setCurriculumTab('weeks');
+            sound.playClick();
+          }}
+          className={`flex-1 min-w-[200px] py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            curriculumTab === 'weeks'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <Calendar className="w-4 h-4" /> 12-Week Interactive Syllabus
+        </button>
+        <button
+          onClick={() => {
+            setCurriculumTab('canvas');
+            sound.playClick();
+          }}
+          className={`flex-1 min-w-[200px] py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            curriculumTab === 'canvas'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <BookOpen className="w-4 h-4" /> Newcastle Canvas Course 70330 Modules
+        </button>
+        <button
+          onClick={() => {
+            setCurriculumTab('assessment');
+            sound.playClick();
+          }}
+          className={`flex-1 min-w-[200px] py-2.5 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            curriculumTab === 'assessment'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <GraduationCap className="w-4 h-4" /> Coursework (50%) &amp; Exam (50%) Hub
+        </button>
+      </div>
+
+      {curriculumTab === 'weeks' && (
+        <>
+          {/* 12-Week Semester Sequence Selector Bar */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2 px-1">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <h2 className="text-sm font-black text-slate-800 dark:text-slate-100">
+                  {activeModuleCode} Weekly Course Order (Weeks 1 to 12)
+                </h2>
           </div>
           <span className="text-xs font-bold text-purple-600 dark:text-purple-400 font-mono">
             Active: Week {activeWeek} of 12
@@ -283,9 +503,9 @@ export const LearnRoadmap: React.FC = () => {
 
         {/* 12 Weekly Nav Buttons Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-12 gap-1.5">
-          {CSC1033_WEEKS.map((w) => {
+          {currentWeeks.map((w) => {
             const isCurrent = activeWeek === w.week;
-            const isPassed = quizCompleted[w.week];
+            const isPassed = quizCompleted[`${activeModuleCode}_${w.week}`];
             return (
               <button
                 key={w.week}
@@ -397,7 +617,7 @@ export const LearnRoadmap: React.FC = () => {
             <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
               <div className="flex items-center gap-1.5 text-purple-400 font-bold text-[11px]">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>CSC1033 Syllabus Alignment</span>
+                <span>{activeModuleCode} Syllabus Alignment</span>
               </div>
               <p className="text-[11px] text-slate-300 leading-snug font-mono">
                 {currentWeekData.accreditedSpec}
@@ -450,12 +670,30 @@ export const LearnRoadmap: React.FC = () => {
             {currentWeekData.capstone.description}
           </p>
 
-          {/* WEEK 1 CAPSTONE: Multi-Format Data Inspector & Bitstream */}
-          {activeWeek === 1 && (
-            <div className="space-y-4">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setDataInspectorFormat('structured')}
+          {activeModuleCode === 'CSC1032' ? (
+            <ComputerSystemsLab week={activeWeek} />
+          ) : activeModuleCode === 'CSC1036' ? (
+            <ProgrammingPortfolioLab week={activeWeek} />
+          ) : activeModuleCode === 'CSC2031' ? (
+            <SecureProgrammingLab week={activeWeek} />
+          ) : activeModuleCode === 'CSC2032' ? (
+            <AlgorithmAnalysisLab week={activeWeek} />
+          ) : activeModuleCode === 'CSC2035' ? (
+            <SystemsImplementationLab week={activeWeek} />
+          ) : activeModuleCode === 'CSC2033' ? (
+            <SoftwareEngineeringLab week={activeWeek} />
+          ) : activeModuleCode === 'CSC3095' ? (
+            <DissertationStudioLab week={activeWeek} />
+          ) : activeModuleCode === 'CSC3131' ? (
+            <DevOpsOperationsLab week={activeWeek} />
+          ) : (
+            <>
+              {/* WEEK 1 CAPSTONE: Multi-Format Data Inspector & Bitstream */}
+              {activeWeek === 1 && (
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setDataInspectorFormat('structured')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                     dataInspectorFormat === 'structured'
                       ? 'bg-purple-600 text-white border-purple-600'
@@ -829,6 +1067,8 @@ export const LearnRoadmap: React.FC = () => {
               <VectorAiLab />
             </div>
           )}
+            </>
+          )}
         </div>
 
         {/* Weekly Knowledge Check Quiz Checkpoint */}
@@ -847,11 +1087,16 @@ export const LearnRoadmap: React.FC = () => {
                 </span>
               </div>
             </div>
-            {quizCompleted[currentWeekData.week] && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-300">
-                <Check className="w-3 h-3" /> Mastered (+50 XP)
-              </span>
-            )}
+            {(() => {
+              const quizKey = `${activeModuleCode}_${currentWeekData.week}`;
+              const userAnswer = userAnswers[quizKey];
+              const isCorrect = userAnswer !== undefined && userAnswer === currentWeekData.quiz.correctIndex;
+              return isCorrect ? (
+                <span className="inline-flex items-center gap-1 text-[10px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-300">
+                  <Check className="w-3 h-3" /> Mastered (+50 XP)
+                </span>
+              ) : null;
+            })()}
           </div>
 
           <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
@@ -859,62 +1104,718 @@ export const LearnRoadmap: React.FC = () => {
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {currentWeekData.quiz.options.map((opt, idx) => {
-              const userAnswer = userAnswers[currentWeekData.week];
+            {(() => {
+              const quizKey = `${activeModuleCode}_${currentWeekData.week}`;
+              const userAnswer = userAnswers[quizKey];
               const isAnswered = userAnswer !== undefined;
-              const isSelected = userAnswer === idx;
-              let btnStyle = 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-purple-400';
 
-              if (isAnswered) {
-                if (idx === currentWeekData.quiz.correctIndex) {
-                  btnStyle = 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 text-emerald-800 dark:text-emerald-200 font-bold ring-2 ring-emerald-400/30';
-                } else if (isSelected) {
-                  btnStyle = 'bg-rose-50 dark:bg-rose-950/60 border-rose-500 text-rose-800 dark:text-rose-200';
+              return currentWeekData.quiz.options.map((opt, idx) => {
+                const isSelected = userAnswer === idx;
+                let btnStyle = 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-purple-400';
+
+                if (isAnswered) {
+                  if (idx === currentWeekData.quiz.correctIndex) {
+                    btnStyle = 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 text-emerald-800 dark:text-emerald-200 font-bold ring-2 ring-emerald-400/30';
+                  } else if (isSelected) {
+                    btnStyle = 'bg-rose-50 dark:bg-rose-950/60 border-rose-500 text-rose-800 dark:text-rose-200';
+                  }
                 }
-              }
 
-              return (
-                <button
-                  key={idx}
-                  onClick={() => handleAnswerQuiz(currentWeekData.week, idx)}
-                  className={`p-3 rounded-xl border text-left text-xs transition-all flex items-start gap-2 cursor-pointer ${btnStyle}`}
-                >
-                  <span className="w-5 h-5 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
-                    {String.fromCharCode(65 + idx)}
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => handleAnswerQuiz(currentWeekData.week, idx)}
+                    className={`p-3 rounded-xl border text-left text-xs transition-all flex items-start gap-2 cursor-pointer ${btnStyle}`}
+                  >
+                    <span className="w-5 h-5 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                      {String.fromCharCode(65 + idx)}
+                    </span>
+                    <span className="leading-snug">{opt}</span>
+                  </button>
+                );
+              });
+            })()}
+          </div>
+
+          {(() => {
+            const quizKey = `${activeModuleCode}_${currentWeekData.week}`;
+            const userAnswer = userAnswers[quizKey];
+            if (userAnswer === undefined) return null;
+            const isCorrect = userAnswer === currentWeekData.quiz.correctIndex;
+
+            return (
+              <div
+                className={`p-3 rounded-xl text-xs flex items-start gap-2 ${
+                  isCorrect
+                    ? 'bg-emerald-100/70 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                    : 'bg-rose-100/70 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
+                }`}
+              >
+                {isCorrect ? (
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                ) : (
+                  <X className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <p className="font-bold">
+                    {isCorrect
+                      ? 'Correct! +50 XP Awarded'
+                      : 'Not quite. Check the academic explanation below:'}
+                  </p>
+                  <p className="text-[11px] mt-0.5">{currentWeekData.quiz.explanation}</p>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+        </>
+      )}
+
+      {/* Newcastle Canvas Course Modules View */}
+      {curriculumTab === 'canvas' && (
+        <div className="space-y-6">
+          {/* Canvas Course Overview & Administrative Card */}
+          <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border border-indigo-800/40 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-3 max-w-2xl">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold border border-indigo-400/30 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5" /> {currentCanvasMetadata.academicInstitution}
                   </span>
-                  <span className="leading-snug">{opt}</span>
+                  <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold border border-amber-400/30">
+                    Course ID: {currentCanvasMetadata.courseId} • 20 Credits
+                  </span>
+                  <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-400/30">
+                    {currentCanvasMetadata.academicYear}
+                  </span>
+                </div>
+
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                  {currentCanvasMetadata.moduleCode}: {currentCanvasMetadata.moduleTitle}
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-medium">
+                  Official Newcastle University syllabus module hosted on Canvas VLE. Complete curriculum integration covering lecture slide decks, practical laboratory specifications, staff drop-ins, and assessment guidelines.
+                </p>
+
+                <div className="pt-2 flex flex-wrap items-center gap-3">
+                  <a
+                    href={currentCanvasMetadata.canvasUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
+                  >
+                    <ExternalLink className="w-4 h-4" /> Open Official Canvas Portal
+                  </a>
+                  <button
+                    onClick={() => {
+                      setCurriculumTab('assessment');
+                      sound.playClick();
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-all cursor-pointer"
+                  >
+                    <GraduationCap className="w-4 h-4 text-amber-400" /> View 50% CW &amp; 50% Exam Specs
+                  </button>
+                </div>
+              </div>
+
+              {/* Staff Directory Quick Card */}
+              <div className="bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-2xl p-4 lg:w-80 shrink-0 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-black text-amber-400 border-b border-slate-700 pb-2">
+                  <Mail className="w-4 h-4" /> Teaching Team &amp; Contacts
+                </div>
+                <div className="space-y-2 text-xs">
+                  {(currentCanvasMetadata?.staff || []).map((member: any) => (
+                    <div key={member.name} className="p-2 rounded-xl bg-slate-900/60 border border-slate-800">
+                      <div className="font-bold text-white flex items-center justify-between">
+                        <span>{member.name}</span>
+                        <a
+                          href={`mailto:${member.email}`}
+                          className="text-[10px] text-purple-400 hover:underline"
+                        >
+                          Email
+                        </a>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{member.role}</p>
+                      <p className="text-[9px] text-slate-500 font-mono mt-0.5">{member.office}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Timetable & Venue Banner */}
+            <div className="mt-6 pt-4 border-t border-indigo-900/40 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div className="p-3 rounded-xl bg-black/30 border border-white/5 space-y-1">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-purple-300 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" /> Weekly Lectures
+                </span>
+                <p className="text-slate-300 font-medium">
+                  {currentCanvasMetadata?.timetable?.lectures ||
+                   currentCanvasMetadata?.timetable?.semester1?.lectures ||
+                   'Tuesdays & Thursdays • Urban Sciences Building (USB)'}
+                </p>
+                <p className="text-slate-400 text-[11px]">
+                  {currentCanvasMetadata?.timetable?.practicals ||
+                   currentCanvasMetadata?.timetable?.semester1?.practicals ||
+                   'USB Floor 3 Flat Floor Teaching Space'}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-black/30 border border-white/5 space-y-1">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-300 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" /> Practicals &amp; Drop-ins
+                </span>
+                <p className="text-slate-300 font-medium">
+                  {currentCanvasMetadata?.timetable?.surgeries ||
+                   currentCanvasMetadata?.timetable?.semester2?.lectures ||
+                   'Weekly Surgery & Lab Demonstrator Support'}
+                </p>
+                <p className="text-slate-400 text-[11px]">
+                  {currentCanvasMetadata?.timetable?.semester2?.practicals ||
+                   'Urban Sciences Building (USB) Computing Labs'}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-black/30 border border-white/5 space-y-1">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-amber-300 flex items-center gap-1.5">
+                  <Bookmark className="w-3.5 h-3.5" /> Recommended Texts
+                </span>
+                <p className="text-slate-300 text-[11px] leading-tight">
+                  {Array.isArray(currentCanvasMetadata?.recommendedTexts) && currentCanvasMetadata.recommendedTexts.length > 0
+                    ? currentCanvasMetadata.recommendedTexts.join(' • ')
+                    : 'Official Newcastle University Module Reading List & Academic Papers'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Module Filter Toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-xs">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                Filter Canvas Modules:
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {[
+                { id: 'all', label: `All Modules (${currentCanvasModules.length})` },
+                { id: '1', label: is1032 ? 'Foundations & Circuits' : 'Semester 1 (Database Systems)' },
+                { id: '2', label: is1032 ? 'Architecture & Memory' : 'Semester 2 (Information Retrieval)' },
+                { id: 'assess', label: 'Coursework & Exam Prep' },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => {
+                    setCanvasSemesterFilter(f.id as any);
+                    sound.playClick();
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    canvasSemesterFilter === f.id
+                      ? 'bg-purple-600 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {f.label}
                 </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Canvas Modules List */}
+          <div className="space-y-3">
+            {currentCanvasModules.filter((mod) => {
+              const code = mod.code || `MODULE-${mod.moduleNumber || mod.associatedWeek}`;
+              if (canvasSemesterFilter === '1') return (mod.associatedWeek <= 5) && !code.startsWith('ASSESS');
+              if (canvasSemesterFilter === '2') return (mod.associatedWeek > 5) && !code.startsWith('ASSESS');
+              if (canvasSemesterFilter === 'assess') return code.startsWith('ASSESS') || code === 'MODULE-0';
+              return true;
+            }).map((mod) => {
+              const modId = mod.id || `mod_${mod.moduleNumber || mod.associatedWeek}`;
+              const modCode = mod.code || `MOD-${mod.moduleNumber || mod.associatedWeek}`;
+              const isExpanded = expandedCanvasModule === modId;
+              return (
+                <div
+                  key={modId}
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs transition-all hover:border-purple-300 dark:hover:border-purple-800"
+                >
+                  {/* Module Card Summary Header */}
+                  <div
+                    onClick={() => {
+                      setExpandedCanvasModule(isExpanded ? null : modId);
+                      sound.playClick();
+                    }}
+                    className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer select-none"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 flex items-center justify-center font-black text-xs shrink-0 mt-0.5">
+                        {modCode.replace('TOPIC-', 'T').replace('MODULE-', 'M').replace('ASSESS-', 'A')}
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            {modCode}
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300">
+                            Semester {mod.semester || 1}
+                          </span>
+                          {mod.slideDeck && (
+                            <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                              {mod.slideDeck}
+                            </span>
+                          )}
+                        </div>
+
+                        <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
+                          {mod.title}
+                        </h3>
+                        {mod.subtitle && (
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {mod.subtitle}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                      <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 hidden md:block">
+                        {mod.items.length} Canvas Items
+                      </span>
+                      <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400">
+                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expanded Module Details */}
+                  {isExpanded && (
+                    <div className="border-t border-slate-100 dark:border-slate-800 p-4 sm:p-5 bg-slate-50/50 dark:bg-slate-950/30 space-y-4">
+                      {/* Metadata bar */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                        <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                          <span className="text-[10px] font-bold uppercase text-slate-400 block">Lecturer &amp; Timetable</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">{mod.lecturer || 'School of Computing Faculty'}</span>
+                          <span className="text-[11px] text-slate-500 block">{mod.schedule || 'Scheduled Canvas Delivery'}</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                          <span className="text-[10px] font-bold uppercase text-slate-400 block">Lab Venue &amp; Slides</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">{mod.practicalVenue || 'Urban Sciences Building (USB)'}</span>
+                          <span className="text-[11px] text-purple-600 dark:text-purple-400 font-mono block">{mod.slideDeck || 'Interactive Canvas Spec'}</span>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                          <span className="text-[10px] font-bold uppercase text-slate-400 block">Reading Reference</span>
+                          <span className="text-[11px] text-slate-700 dark:text-slate-300 line-clamp-2">{mod.readingReference || 'Official Module Reading List'}</span>
+                        </div>
+                      </div>
+
+                      {/* Items Checklist */}
+                      <div className="space-y-2">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">
+                          Canvas Learning Activities &amp; Practical Resources:
+                        </span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {mod.items.map((item) => (
+                            <div
+                              key={item.id}
+                              className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-start gap-2.5"
+                            >
+                              <div className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5">
+                                {item.type === 'lecture' && <BookOpen className="w-3.5 h-3.5" />}
+                                {item.type === 'practical' && <Terminal className="w-3.5 h-3.5" />}
+                                {item.type === 'reading' && <Bookmark className="w-3.5 h-3.5" />}
+                                {item.type === 'assessment' && <GraduationCap className="w-3.5 h-3.5" />}
+                                {item.type === 'dropin' && <Clock className="w-3.5 h-3.5" />}
+                                {item.type === 'guide' && <FileText className="w-3.5 h-3.5" />}
+                              </div>
+
+                              <div className="space-y-0.5 text-xs">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                                    {item.title}
+                                  </span>
+                                  {item.durationOrRoom && (
+                                    <span className="text-[10px] px-1.5 py-0.2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-md">
+                                      {item.durationOrRoom}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                                  {item.details}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="text-[11px] text-slate-400">
+                          Associated Roadmap Week: <strong>Week {mod.associatedWeek}</strong>
+                        </span>
+                        <button
+                          onClick={() => {
+                            setActiveWeek(mod.associatedWeek);
+                            setCurriculumTab('weeks');
+                            sound.playSuccess();
+                            awardXp(10, `Launched interactive lab for Canvas module ${mod.code}`);
+                          }}
+                          className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Play className="w-3.5 h-3.5" /> Launch Live Week {mod.associatedWeek} Lab &amp; Quiz
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
+        </div>
+      )}
 
-          {userAnswers[currentWeekData.week] !== undefined && (
-            <div
-              className={`p-3 rounded-xl text-xs flex items-start gap-2 ${
-                userAnswers[currentWeekData.week] === currentWeekData.quiz.correctIndex
-                  ? 'bg-emerald-100/70 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
-                  : 'bg-rose-100/70 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
-              }`}
-            >
-              {userAnswers[currentWeekData.week] === currentWeekData.quiz.correctIndex ? (
-                <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              ) : (
-                <X className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-              )}
+      {/* Coursework (50%) & Formal Written Exam (50%) Hub */}
+      {curriculumTab === 'assessment' && (
+        <div className="space-y-6">
+          {/* Assessment Header Card */}
+          <div className="bg-gradient-to-r from-amber-500 via-orange-600 to-rose-700 rounded-3xl p-6 sm:p-8 text-white shadow-xl">
+            <div className="max-w-3xl space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3 py-1 rounded-full bg-black/20 text-white text-xs font-black uppercase tracking-wider">
+                  {activeModuleCode} Official Assessment Architecture
+                </span>
+                <span className="px-3 py-1 rounded-full bg-white text-slate-950 text-xs font-black">
+                  50% Coursework + 50% Written Examination
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
+                Coursework Portfolio &amp; Written Exam Simulation Hub
+              </h2>
+              <p className="text-xs sm:text-sm text-amber-100 font-medium leading-relaxed">
+                Complete guidance for your {activeModuleCode} module assessments. Test your implementations against our interactive validators, and practice formal university exam problems with verified step-by-step model derivations.
+              </p>
+            </div>
+          </div>
+
+          {/* Section 1: Semester 1 Coursework (50%) */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-5">
+            <div className="border-b border-slate-100 dark:border-slate-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <p className="font-bold">
-                  {userAnswers[currentWeekData.week] === currentWeekData.quiz.correctIndex
-                    ? 'Correct! +50 XP Awarded'
-                    : 'Not quite. Check the academic explanation below:'}
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[10px] font-black uppercase tracking-wider">
+                    50% Weighting • Semester 1
+                  </span>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                    {is1032
+                      ? 'Computer Systems Architecture & Assembly Lab Portfolio'
+                      : 'Database Design & Implementation Coursework Portfolio'}
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {is1032
+                    ? 'Deliverables: Digital logic minimization, 4-bit ALU adder design, assembly subroutine calling conventions, and cache locality profiling.'
+                    : 'Deliverables: Requirement elicitation, Crow’s foot ERD, 3NF decomposition, SQL DDL script with integrity constraints, tuple seeding, and 5 analytical queries.'}
                 </p>
-                <p className="text-[11px] mt-0.5">{currentWeekData.quiz.explanation}</p>
+              </div>
+
+              <span className="text-xs font-bold text-slate-400">
+                Deadline: Semester 1 Teaching Week 10
+              </span>
+            </div>
+
+            {/* Coursework Deliverables Checklist */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-1">
+                <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                  {is1032 ? '1. Digital Logic Design' : '1. Conceptual ERD'}
+                </span>
+                <p className="text-[11px] text-slate-500">
+                  {is1032
+                    ? 'Truth tables and circuit synthesis minimizing gates using De Morgan’s laws.'
+                    : 'Crow’s foot notation with mandatory/optional multiplicities and primary identifiers.'}
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-1">
+                <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                  {is1032 ? '2. 4-Bit ALU Subsystem' : '2. 3NF Decomposition'}
+                </span>
+                <p className="text-[11px] text-slate-500">
+                  {is1032
+                    ? 'Ripple-carry adder design with carry propagation delay and overflow flags.'
+                    : 'Documented functional dependencies proving 1NF, 2NF, and 3NF without transitive anomalies.'}
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-1">
+                <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                  {is1032 ? '3. Assembly Subroutines' : '3. SQL DDL Implementation'}
+                </span>
+                <p className="text-[11px] text-slate-500">
+                  {is1032
+                    ? 'Subroutines implementing caller/callee-saved registers, PUSH/POP frames, and RET.'
+                    : 'CREATE TABLE scripts specifying PRIMARY KEY, FOREIGN KEY, and NOT NULL constraints.'}
+                </p>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-1">
+                <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                  {is1032 ? '4. Memory Hierarchy' : '4. Analytical Queries'}
+                </span>
+                <p className="text-[11px] text-slate-500">
+                  {is1032
+                    ? 'Cache address parsing, hit rate derivations, and spatial/temporal locality benchmarks.'
+                    : '5 business questions answered using multi-table JOINs, GROUP BY HAVING, and subqueries.'}
+                </p>
               </div>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Verified 12-Week CSC1033 Certificate Modal */}
+            {/* Interactive Coursework Schema / Code Validator */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-purple-200 dark:border-purple-900/60 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                    {is1032 ? 'Interactive Assembly & RTL Logic Validator' : 'Interactive Coursework Relational Schema Validator'}
+                  </h4>
+                </div>
+                <span className="text-[11px] text-slate-400">
+                  Pre-submission automated integrity sanity check
+                </span>
+              </div>
+
+              <textarea
+                value={courseworkSchemaInput}
+                onChange={(e) => setCourseworkSchemaInput(e.target.value)}
+                rows={7}
+                className="w-full p-3 font-mono text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder={is1032 ? "Paste your assembly routines or HDL modules here..." : "Paste your CREATE TABLE scripts here..."}
+              />
+
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <button
+                  onClick={handleValidateCoursework}
+                  className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <ShieldCheck className="w-4 h-4" /> Run Coursework Validation (+35 XP)
+                </button>
+                <span className="text-[11px] text-slate-500">
+                  Automated verification and syntax inspection
+                </span>
+              </div>
+
+              {courseworkValidationResult && (
+                <div className="space-y-2 pt-2 animate-in fade-in">
+                  <div
+                    className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
+                      courseworkValidationResult.valid
+                        ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                        : 'bg-rose-100 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
+                    }`}
+                  >
+                    {courseworkValidationResult.valid ? (
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    ) : (
+                      <X className="w-4 h-4 text-rose-600 shrink-0" />
+                    )}
+                    <span>
+                      {courseworkValidationResult.valid
+                        ? 'Excellent! Coursework portfolio code meets foundational university standards.'
+                        : 'Validation warnings detected. Review checks below:'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {courseworkValidationResult.checks.map((check, i) => (
+                      <div
+                        key={i}
+                        className={`p-3 rounded-xl border flex items-start gap-2 ${
+                          check.pass
+                            ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900 text-emerald-900 dark:text-emerald-200'
+                            : 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900 text-rose-900 dark:text-rose-200'
+                        }`}
+                      >
+                        {check.pass ? (
+                          <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        ) : (
+                          <X className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                        )}
+                        <div>
+                          <strong className="block">{check.title}</strong>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">{check.note}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Section 2: Formal Written Examination Practice (50%) */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-5">
+            <div className="border-b border-slate-100 dark:border-slate-800 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 text-[10px] font-black uppercase tracking-wider">
+                    50% Weighting • 1.5 Hours
+                  </span>
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                    {is1032
+                      ? 'Formal 1.5-Hour Digital Exam Simulator (Inspera)'
+                      : 'Formal 1.5-Hour Written Examination Simulator'}
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  {is1032
+                    ? 'Format: Section A (Data Representation & Digital Logic) + Section B (Processor Architecture, Assembly, and Memory Hierarchy).'
+                    : 'Format: Section A (Relational Database Systems) + Section B (Information Retrieval & Search Architecture).'}
+                </p>
+              </div>
+
+              {/* Section Selector */}
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                <button
+                  onClick={() => {
+                    setExamSection('A');
+                    sound.playClick();
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    examSection === 'A'
+                      ? 'bg-purple-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  {is1032 ? 'Section A: Number Systems & Logic' : 'Section A: Relational Databases'}
+                </button>
+                <button
+                  onClick={() => {
+                    setExamSection('B');
+                    sound.playClick();
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    examSection === 'B'
+                      ? 'bg-purple-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  {is1032 ? 'Section B: Architecture & Memory' : 'Section B: Information Retrieval'}
+                </button>
+              </div>
+            </div>
+
+            {/* Questions for Active Exam Section */}
+            <div className="space-y-4">
+              {currentExamQuestions[examSection].map((q, idx) => {
+                const isRevealed = !!revealedExamSolutions[q.id];
+                return (
+                  <div
+                    key={q.id}
+                    className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 space-y-3"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-lg bg-purple-600 text-white flex items-center justify-center text-xs font-black">
+                          {idx + 1}
+                        </span>
+                        <h4 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200">
+                          {q.topic || q.title}
+                        </h4>
+                      </div>
+                      <span className="text-xs font-bold text-amber-600 dark:text-amber-400 font-mono">
+                        [{q.marks} Marks]
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed whitespace-pre-line space-y-2">
+                      <p>{q.question || q.scenario}</p>
+                      {q.tasks && q.tasks.length > 0 && (
+                        <div className="mt-2 pl-3 border-l-2 border-purple-500/50 space-y-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400 block">Required Tasks:</span>
+                          {q.tasks.map((task: string, tIdx: number) => (
+                            <div key={tIdx} className="text-[11px] text-slate-300">
+                              • {task}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {q.subQuestions && q.subQuestions.length > 0 && (
+                        <div className="mt-2 space-y-2">
+                          {q.subQuestions.map((sq, sqIdx) => (
+                            <div key={sqIdx} className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1">
+                              <div className="flex items-center justify-between text-[11px] font-bold text-amber-400">
+                                <span>Part {sq.part}</span>
+                                <span className="font-mono text-slate-400">[{sq.marks} Marks]</span>
+                              </div>
+                              <p className="text-[11px] text-slate-300">{sq.prompt}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-2 flex items-center justify-between">
+                      <button
+                        onClick={() => toggleExamSolution(q.id)}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                          isRevealed
+                            ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200'
+                            : 'bg-purple-600 hover:bg-purple-500 text-white shadow-xs'
+                        }`}
+                      >
+                        <Lightbulb className="w-3.5 h-3.5" />
+                        {isRevealed ? 'Hide Model Derivation' : 'Reveal Model Answer & Derivation'}
+                      </button>
+
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        Question Ref: {activeModuleCode}-{examSection}{idx + 1}
+                      </span>
+                    </div>
+
+                    {isRevealed && (
+                      <div className="mt-3 p-4 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-xs text-purple-950 dark:text-purple-200 space-y-2 animate-in fade-in">
+                        <div className="font-black text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4" /> Academic Model Solution &amp; Step Derivation:
+                        </div>
+                        {q.solution && (
+                          <div className="font-mono text-[11px] leading-relaxed whitespace-pre-line bg-white/70 dark:bg-slate-900/70 p-3 rounded-lg border border-purple-200/50 dark:border-purple-900/50">
+                            {q.solution}
+                          </div>
+                        )}
+                        {q.modelAnswer && !q.subQuestions && (
+                          <div className="font-mono text-[11px] leading-relaxed whitespace-pre-line bg-white/70 dark:bg-slate-900/70 p-3 rounded-lg border border-purple-200/50 dark:border-purple-900/50">
+                            {q.modelAnswer}
+                          </div>
+                        )}
+                        {q.subQuestions && q.subQuestions.length > 0 && (
+                          <div className="space-y-2">
+                            {q.subQuestions.map((sq, sqIdx) => (
+                              <div key={sqIdx} className="p-3 rounded-lg bg-white/70 dark:bg-slate-900/70 border border-purple-200/50 dark:border-purple-900/50 space-y-1 font-mono text-[11px]">
+                                <div className="font-bold text-purple-600 dark:text-purple-400">Part {sq.part} Model Answer:</div>
+                                <div className="text-slate-700 dark:text-slate-300 whitespace-pre-line">{sq.modelAnswer}</div>
+                                {sq.markingCriteria && sq.markingCriteria.length > 0 && (
+                                  <div className="pt-1 border-t border-slate-700/50 text-[10px] text-amber-500 font-sans">
+                                    <span className="font-bold block">Marking Rubric:</span>
+                                    {sq.markingCriteria.map((crit, cIdx) => (
+                                      <div key={cIdx}>• {crit}</div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Verified 12-Week Certificate Modal */}
       {showCertificate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white dark:bg-slate-900 border-2 border-amber-400 rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center relative shadow-2xl">
@@ -933,17 +1834,21 @@ export const LearnRoadmap: React.FC = () => {
               Verified Academic Credential
             </span>
             <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
-              CSC1033 Database Architecture &amp; IR Completion Certificate
+              {is1032
+                ? 'CSC1032 Computer Systems Design & Architecture Certificate'
+                : 'CSC1033 Database Architecture & IR Completion Certificate'}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
-              Awarded to <strong className="text-purple-600 dark:text-purple-400">{user.name}</strong> for completing all 12 accredited weeks of the CSC1033 curriculum with verified capstone proof.
+              Awarded to <strong className="text-purple-600 dark:text-purple-400">{user.name}</strong> for completing all 12 accredited weeks of the {activeModuleCode} curriculum with verified capstone proof.
             </p>
 
             <div className="my-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs font-mono text-amber-900 dark:text-amber-200 text-left space-y-1">
-              <div className="font-bold">Module: CSC1033 (12 Weeks Complete)</div>
-              <div>Credential ID: DQ-CSC1033-{Date.now().toString(36).toUpperCase()}</div>
+              <div className="font-bold">Module: {activeModuleCode} (12 Weeks Complete)</div>
+              <div>Credential ID: DQ-{activeModuleCode}-{Date.now().toString(36).toUpperCase()}</div>
               <div className="text-[10px] text-amber-700 dark:text-amber-400 mt-1">
-                Verified: Relational Algebra • 3NF Normalization • B-Tree Indexing • ACID • Search Inverted Postings • W3C Semantic Web • Cloud Scalability • UK GDPR Ethics • Vector Embeddings
+                {is1032
+                  ? 'Verified: Two’s Complement • IEEE 754 Floating Point • Logic Minimization • Ripple-Carry ALUs • Von Neumann Datapath • ISA Assembly • Call Stacks • Cache Partitioning • Virtual Memory MMU • Process Scheduling'
+                  : 'Verified: Relational Algebra • 3NF Normalization • B-Tree Indexing • ACID • Search Inverted Postings • W3C Semantic Web • Cloud Scalability • UK GDPR Ethics • Vector Embeddings'}
               </div>
             </div>
 

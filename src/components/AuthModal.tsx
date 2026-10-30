@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import { useAppStore } from '@/lib/store';
 import { sound } from '@/lib/audio';
 import { UserAvatar } from '@/components/UserAvatar';
+import { ClerkAuthTrigger } from './ClerkAuthTrigger';
 import {
   Trophy,
   X,
@@ -384,6 +385,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
           </div>
         )}
+
+        {/* Clerk One-Click SSO Integration */}
+        <div className="mb-3">
+          <ClerkAuthTrigger mode={mode} />
+        </div>
 
         {/* Social Authentication */}
         <div className="grid grid-cols-2 gap-2 mb-4">

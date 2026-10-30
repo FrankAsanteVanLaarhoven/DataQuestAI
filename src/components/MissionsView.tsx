@@ -48,9 +48,9 @@ export const MissionsView: React.FC = () => {
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-700 dark:text-violet-300 text-xs font-semibold uppercase tracking-wider mb-2.5">
           <Compass className="w-3.5 h-3.5" /> Hands-On Industry Capstone Track
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
           Real-World Data Architecture Capstones
-        </h1>
+        </h2>
         <p className="mt-1.5 text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 max-w-2xl leading-relaxed">
           Step into the role of Lead Data Architect across 4 real-world enterprise deployments. Solve hands-on transactional, clinical, streaming, and data warehouse challenges with simplified, intuitive visual guidance.
         </p>

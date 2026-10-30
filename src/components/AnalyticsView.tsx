@@ -149,9 +149,9 @@ export const AnalyticsView: React.FC = () => {
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-black uppercase tracking-wider mb-2">
           <BarChart3 className="w-3.5 h-3.5" /> Genuine Telemetry &amp; Execution Observability
         </div>
-        <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+        <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
           System Analytics &amp; Query Plan Benchmarking
-        </h1>
+        </h2>
         <p className="mt-1 text-xs sm:text-sm text-blue-100 max-w-xl">
           Real-time metrics streaming from actual student SQL executions: latency percentiles, B-tree index seek efficiency, and OLAP star schema aggregations.
         </p>

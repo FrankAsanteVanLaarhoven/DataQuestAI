@@ -139,9 +139,9 @@ export const TeacherStudio: React.FC = () => {
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-black uppercase tracking-wider mb-2">
               <GraduationCap className="w-3.5 h-3.5" /> Instructor &amp; Pedagogical Studio
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
               Teacher Studio: Mission Authoring &amp; Class Analytics
-            </h1>
+            </h2>
             <p className="mt-1 text-xs sm:text-sm text-emerald-100 max-w-xl">
               Construct verified database modeling challenges without code, publish directly to learner dashboards, and inspect class-wide misconception telemetry.
             </p>

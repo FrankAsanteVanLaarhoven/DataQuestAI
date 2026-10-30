@@ -29,7 +29,7 @@ export const ShareModal: React.FC = () => {
 
   if (!isShareModalOpen) return null;
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://data-quest-ai-zeta.vercel.app';
+  const origin = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || 'https://dataquest.ai');
   const referralLink = `${origin}/?ref=${encodeURIComponent(user?.id || 'learner')}`;
   const shareMessage = `Master relational databases, SQL AST execution, and CSC1033 modules with interactive labs on DataQuestAI! Try it here: ${referralLink}`;
 

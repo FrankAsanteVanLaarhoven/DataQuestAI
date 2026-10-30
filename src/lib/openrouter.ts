@@ -125,7 +125,7 @@ export async function callOpenRouter(
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': 'https://data-quest-ai-zeta.vercel.app',
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://dataquest.ai',
         'X-Title': 'DataQuestAI Enterprise Laboratory',
         'Content-Type': 'application/json',
       },

@@ -104,10 +104,14 @@ export const INITIAL_COMPETENCIES: CompetencyBadge[] = [
   },
 ];
 
+import { BscModuleCode } from './bsc-courses';
+
 interface AppState {
   // Navigation & User
-  activeTab: 'capstone' | 'missions' | 'learn' | 'analytics' | 'community' | 'leaderboard' | 'teacher' | 'university' | 'super_admin' | 'erd';
+  activeTab: 'capstone' | 'missions' | 'learn' | 'analytics' | 'community' | 'leaderboard' | 'teacher' | 'university' | 'super_admin' | 'erd' | 'foundry';
   setActiveTab: (tab: AppState['activeTab']) => void;
+  activeModuleCode: BscModuleCode;
+  setActiveModuleCode: (code: BscModuleCode) => void;
   hintCount?: number;
   user: {
     id?: string;
@@ -795,6 +799,11 @@ export const useAppStore = create<AppState>((set, get) => {
     setActiveTab: (tab) => {
       sound.playClick();
       set({ activeTab: tab });
+    },
+    activeModuleCode: 'CSC1033',
+    setActiveModuleCode: (code) => {
+      sound.playClick();
+      set({ activeModuleCode: code });
     },
 
     user: {

@@ -319,6 +319,91 @@ test('19. Audio Cues Engine: Start, Stop, Turn Ready, and Interrupt Signals', as
   assert.ok(true, 'Audio cues invoke without errors in headless runtime');
 });
 
+test('20. BSc Curriculum Registry: 9 Accredited Modules, 108 Teaching Weeks & Canvas Links', async () => {
+  const { BSC_COURSES, BSC_COURSE_LIST } = await import('../src/lib/bsc-courses.ts');
+
+  assert.equal(BSC_COURSE_LIST.length, 9, 'Should register exactly 9 core BSc modules across Stages 1, 2, and 3');
+  const expectedCodes = ['CSC1032', 'CSC1033', 'CSC1036', 'CSC2031', 'CSC2032', 'CSC2033', 'CSC2035', 'CSC3095', 'CSC3131'];
+
+  for (const code of expectedCodes) {
+    const course = BSC_COURSES[code];
+    assert.ok(course, `Module ${code} must exist in registry`);
+    assert.equal(course.weeks.length, 12, `Module ${code} must have 12 accredited weeks`);
+    assert.ok(course.canvasUrl.includes('ncl.instructure.com/courses/'), `Module ${code} must have valid Canvas URL`);
+    assert.ok(course.metadata.staff.length > 0, `Module ${code} must specify teaching team`);
+
+    // Verify pedagogical depth of each week
+    for (const w of course.weeks) {
+      assert.ok(w.title && w.title.length > 3, `Week ${w.week} of ${code} must have title`);
+      assert.ok(w.pedagogy.simple && w.pedagogy.engineer, `Week ${w.week} of ${code} must have dual-mode pedagogy`);
+      assert.ok(w.referencePoint.academic, `Week ${w.week} of ${code} must have academic reference`);
+      assert.ok(w.quiz && w.quiz.options.length >= 3, `Week ${w.week} of ${code} must have knowledge check quiz`);
+      assert.ok(w.capstone && w.capstone.title, `Week ${w.week} of ${code} must have capstone`);
+    }
+  }
+});
+
+test('21. Architecture Simulator (Foundry Lab): Image Missions Verification', async () => {
+  const { CHALLENGES } = await import('../src/lib/foundry-missions.ts');
+
+  assert.ok(Array.isArray(CHALLENGES), 'CHALLENGES must be an array');
+  assert.equal(CHALLENGES.length, 7, 'Must have exactly 7 foundry challenges matching user screenshots');
+
+  const missionIds = CHALLENGES.map((m) => m.id);
+  const expectedMissions = [
+    'freeform',
+    'c1_security',
+    'c2_design',
+    'c3_cicd',
+    'c4_scale',
+    'c5_observability',
+    'c6_status',
+  ];
+
+  for (const id of expectedMissions) {
+    assert.ok(missionIds.includes(id), `Missing required foundry challenge: ${id}`);
+    const mission = CHALLENGES.find((m) => m.id === id);
+    assert.ok(mission.title && mission.goal, `Mission ${id} must have title and goal`);
+    assert.ok(typeof mission.checkSuccess === 'function', `Mission ${id} must have an automated rule verification function`);
+  }
+});
+
+test('22. Examination Hub: Sections A & B Model Solutions across All Courses', async () => {
+  const { BSC_COURSES } = await import('../src/lib/bsc-courses.ts');
+
+  for (const [code, course] of Object.entries(BSC_COURSES)) {
+    const exams = course.examQuestions;
+    assert.ok(exams.A && exams.A.length > 0, `Module ${code} must have Section A exam questions`);
+    assert.ok(exams.B && exams.B.length > 0, `Module ${code} must have Section B exam questions`);
+
+    for (const q of [...exams.A, ...exams.B]) {
+      assert.ok(q.id, `Exam question in ${code} must have id`);
+      assert.ok(q.marks > 0, `Exam question ${q.id} in ${code} must have positive marks`);
+      const hasSolution = !!(q.solution || q.modelAnswer || (q.subQuestions && q.subQuestions.length > 0));
+      assert.ok(hasSolution, `Exam question ${q.id} in ${code} must provide model solution`);
+    }
+  }
+});
+
+test('23. Multilingual Support: Arabic (RTL) and Hindi (हिन्दी) Verification', async () => {
+  const { languages, translations } = await import('../src/lib/i18n.ts');
+
+  // Verify Arabic language configuration
+  const arabic = languages.find((l) => l.code === 'ar');
+  assert.ok(arabic, 'Arabic (ar) must be registered in languages list');
+  assert.equal(arabic.dir, 'rtl', 'Arabic must have dir: rtl for Right-to-Left script');
+  assert.ok(translations.ar, 'Arabic translation dictionary must exist');
+  assert.ok(translations.ar.learn && translations.ar.home, 'Arabic must translate core platform navigation');
+
+  // Verify Hindi language configuration
+  const hindi = languages.find((l) => l.code === 'hi');
+  assert.ok(hindi, 'Hindi (hi) must be registered in languages list');
+  assert.equal(hindi.dir, 'ltr', 'Hindi must have dir: ltr');
+  assert.ok(translations.hi, 'Hindi translation dictionary must exist');
+  assert.ok(translations.hi.learn && translations.hi.home, 'Hindi must translate core platform navigation');
+});
+
+
 
 
 

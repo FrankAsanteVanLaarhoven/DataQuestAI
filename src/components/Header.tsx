@@ -12,6 +12,7 @@ import { AiAssistantModal } from './AiAssistantModal';
 import {
   Network,
   Database,
+  Layers,
   Flame,
   Star,
   Home,
@@ -200,6 +201,7 @@ export const Header: React.FC = () => {
   const mainLinks: { tab: typeof activeTab; label: string; icon: typeof Home }[] = [
     { tab: 'capstone', label: t.home, icon: Home },
     { tab: 'learn', label: t.learn, icon: BookOpen },
+    { tab: 'foundry', label: 'Foundry Lab', icon: Layers },
     { tab: 'erd', label: 'ER Diagram', icon: Network },
     { tab: 'missions', label: t.missions, icon: Compass },
     { tab: 'university', label: 'Campus Sim', icon: Building2 },

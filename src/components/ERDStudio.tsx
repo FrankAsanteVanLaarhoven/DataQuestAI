@@ -1947,9 +1947,9 @@ export const ERDStudio: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-sm sm:text-base font-bold text-white tracking-tight">
+              <h2 className="text-sm sm:text-base font-bold text-white tracking-tight">
                 Architecture &amp; UML Studio
-              </h1>
+              </h2>
             </div>
             <p className="text-[10px] text-slate-400 hidden md:block">
               Visual database design, relational schema modeling, and system architectures

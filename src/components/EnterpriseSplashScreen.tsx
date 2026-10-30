@@ -364,12 +364,12 @@ export const EnterpriseSplashScreen: React.FC = () => {
 
             {/* Headline */}
             <div className="space-y-2">
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight">
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight">
                 DataQuest{' '}
                 <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
                   Enterprise
                 </span>
-              </h1>
+              </h2>
               <p className="text-base sm:text-lg text-slate-300 font-light leading-relaxed max-w-2xl">
                 The autonomous relational intelligence and database systems simulator. Master
                 First-Principles database architecture, relational algebra, B-Tree query planning,

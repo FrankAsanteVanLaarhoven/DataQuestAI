@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#08090e" />
+      <stop offset="50%" stop-color="#0f111a" />
+      <stop offset="100%" stop-color="#161928" />
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#08090e" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="text-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="50%" stop-color="#c4b5fd" />
+      <stop offset="100%" stop-color="#93c5fd" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <rect width="1200" height="630" fill="url(#glow)" />
+
+  <!-- Grid lines -->
+  <g stroke="#ffffff" stroke-opacity="0.04" stroke-width="1">
+    <line x1="0" y1="100" x2="1200" y2="100" />
+    <line x1="0" y1="200" x2="1200" y2="200" />
+    <line x1="0" y1="300" x2="1200" y2="300" />
+    <line x1="0" y1="400" x2="1200" y2="400" />
+    <line x1="0" y1="500" x2="1200" y2="500" />
+    <line x1="200" y1="0" x2="200" y2="630" />
+    <line x1="400" y1="0" x2="400" y2="630" />
+    <line x1="600" y1="0" x2="600" y2="630" />
+    <line x1="800" y1="0" x2="800" y2="630" />
+    <line x1="1000" y1="0" x2="1000" y2="630" />
+  </g>
+
+  <!-- Brand Symbol -->
+  <g transform="translate(100, 110)">
+    <rect width="72" height="72" rx="18" fill="#1e1b4b" stroke="#6366f1" stroke-width="2" />
+    <ellipse cx="36" cy="22" rx="18" ry="7" fill="#818cf8" />
+    <path d="M18 22v14c0 3.86 8.06 7 18 7s18-3.14 18-7V22" stroke="#a5b4fc" stroke-width="3" stroke-linecap="round" fill="none" />
+    <path d="M18 36v14c0 3.86 8.06 7 18 7s18-3.14 18-7V36" stroke="#60a5fa" stroke-width="3" stroke-linecap="round" fill="none" />
+  </g>
+
+  <!-- Typography -->
+  <text x="195" y="160" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="700" fill="#ffffff" letter-spacing="-0.5">DataQuest<tspan fill="#818cf8">AI</tspan></text>
+
+  <text x="100" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="54" font-weight="800" fill="url(#text-grad)" letter-spacing="-1.5">Interactive Database Systems</text>
+  <text x="100" y="345" font-family="system-ui, -apple-system, sans-serif" font-size="54" font-weight="800" fill="#ffffff" letter-spacing="-1.5">&amp; Relational Architecture Lab</text>
+
+  <text x="100" y="420" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#94a3b8" font-weight="400">
+    Master schema design, ERD normalization, ACID transactions, and performant SQL query plans.
+  </text>
+
+  <!-- Badges -->
+  <g transform="translate(100, 480)">
+    <rect width="180" height="42" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="90" y="27" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#e2e8f0" text-anchor="middle">⚡ Relational Canvas</text>
+
+    <rect x="200" width="190" height="42" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="295" y="27" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#e2e8f0" text-anchor="middle">🔬 Interactive SQL Engine</text>
+
+    <rect x="410" width="170" height="42" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <text x="495" y="27" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#e2e8f0" text-anchor="middle">🎯 Query Plan Analyzer</text>
+  </g>
+</svg>

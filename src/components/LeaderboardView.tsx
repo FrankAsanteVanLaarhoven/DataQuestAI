@@ -33,9 +33,9 @@ export const LeaderboardView: React.FC = () => {
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-black uppercase tracking-wider mb-2">
             <Trophy className="w-3.5 h-3.5" /> Enterprise & Student Rankings
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
             DataQuest Global Leaderboard
-          </h1>
+          </h2>
           <p className="mt-1 text-xs sm:text-sm text-amber-100 max-w-xl">
             Compete with students and enterprise architects worldwide. Earn XP by completing capstone missions, fixing database anomalies, and publishing high-scale schemas!
           </p>

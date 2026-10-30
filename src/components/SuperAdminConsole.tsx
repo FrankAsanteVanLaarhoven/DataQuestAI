@@ -329,11 +329,11 @@ export const SuperAdminConsole: React.FC = () => {
               <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-300">
                 <ShieldCheck className="w-4 h-4" />
               </div>
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
                 Super Administrator Command Center
-              </h1>
+              </h2>
               <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[10px] font-bold uppercase tracking-wider font-mono">
-                Tier-0 Frank Clearance
+                Executive System Clearance
               </span>
             </div>
             <p className="text-xs text-zinc-400 max-w-2xl leading-relaxed">

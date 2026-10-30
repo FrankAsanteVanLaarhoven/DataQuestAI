@@ -13,6 +13,16 @@
   --accent-emerald: #059669;
   --border-subtle: rgba(0, 0, 0, 0.08);
   --canvas-grid: rgba(203, 213, 225, 0.6);
+
+  /* Keel Architecture Foundry Theme Tokens */
+  --paper: #fbf8f5;
+  --raised: #ffffff;
+  --line: #e2dbd2;
+  --ink: #1c1917;
+  --soft: #78716c;
+  --copper: #c2410c;
+  --good: #15803d;
+  --danger: #b91c1c;
 }
 
 body {
@@ -39,10 +49,34 @@ body.theme-system,
   --text-secondary: #cbd5e1;
   --border-subtle: rgba(255, 255, 255, 0.1);
   --canvas-grid: rgba(255, 255, 255, 0.08);
+
+  /* Keel Architecture Foundry Theme Tokens Dark */
+  --paper: #090a0f;
+  --raised: #12141f;
+  --line: #232738;
+  --ink: #f8fafc;
+  --soft: #94a3b8;
+  --copper: #fb923c;
+  --good: #4ade80;
+  --danger: #f87171;
+
   color-scheme: dark;
   background-color: #090a0f !important;
   color: #ffffff !important;
 }
+
+/* Foundry Semantic Theme Classes */
+.bg-paper { background-color: var(--paper) !important; }
+.bg-raised { background-color: var(--raised) !important; }
+.border-line { border-color: var(--line) !important; }
+.text-ink { color: var(--ink) !important; }
+.text-soft { color: var(--soft) !important; }
+.text-copper { color: var(--copper) !important; }
+.text-good { color: var(--good) !important; }
+.text-danger { color: var(--danger) !important; }
+.border-copper { border-color: var(--copper) !important; }
+.bg-copper { background-color: var(--copper) !important; }
+.text-raised { color: var(--raised) !important; }
 
 /* High-Contrast Readability Enhancements for Dark Mode (WCAG AAA) */
 .dark h1,
